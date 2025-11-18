@@ -171,7 +171,7 @@ const AdminSidebar = () => {
           {openMenus.masters && (
             <div className="ml-12 mt-1 space-y-1 text-gray-300">
               <NavLink
-                to="/add-property"
+                to="/add"
                 className="block px-3 py-2 rounded hover:bg-slate-800"
                 onClick={() => setIsOpen(false)}
               >
