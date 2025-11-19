@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { NavLink } from "react-router-dom";
+import { useAuthStore } from "../store/authStore.js";
 import {
   FiHome,
   FiUsers,
@@ -14,6 +15,7 @@ import {
 
 const AdminSidebar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const user = useAuthStore((state) => state.user);
 
   const [openMenus, setOpenMenus] = useState({
     leads: false,
@@ -22,7 +24,25 @@ const AdminSidebar = () => {
   });
 
   const toggleMenu = (menu) => {
-    setOpenMenus((prev) => ({ ...prev, [menu]: !prev[menu] }));
+    setOpenMenus((prev) => {
+      // Close all other menus and toggle the clicked menu
+      const newState = {
+        leads: false,
+        employee: false,
+        masters: false,
+      };
+      // Toggle the clicked menu only if it's currently closed
+      newState[menu] = !prev[menu];
+      return newState;
+    });
+  };
+
+  const closeAllMenus = () => {
+    setOpenMenus({
+      leads: false,
+      employee: false,
+      masters: false,
+    });
   };
 
   return (
@@ -48,13 +68,13 @@ const AdminSidebar = () => {
       {/* 🧭 Sidebar */}
       <div
         className={`
-          bg-slate-900 text-white min-h-screen fixed md:static top-0 left-0 z-50 
+          bg-slate-900 text-white h-screen flex flex-col fixed md:fixed top-0 left-0 z-50 
           transition-all duration-300 ease-in-out
           ${isOpen ? "w-64 translate-x-0" : "-translate-x-full md:translate-x-0 md:w-64"}
         `}
       >
         {/* Logo Section */}
-        <div className="relative w-[64px] h-[64px] overflow-hidden shadow-2xl transition-transform duration-300 active:scale-95 m-24 mt-4 mb-0">
+        <div className="relative w-16 h-16 overflow-hidden shadow-2xl transition-transform duration-300 active:scale-95 m-24 mt-4 mb-0">
           <img
             src="/Property ATM Logo.png"
             alt="Property ATM Logo"
@@ -69,7 +89,7 @@ const AdminSidebar = () => {
         </div>
 
         {/* MENU LIST */}
-        <nav className="mt-6 text-sm font-medium">
+        <nav className="mt-6 text-sm font-medium flex-1 overflow-y-auto">
           {/* Dashboard */}
           <NavLink
             to="/dashboard"
@@ -77,7 +97,10 @@ const AdminSidebar = () => {
               `flex items-center gap-4 px-6 py-3 transition-colors duration-200 hover:bg-slate-800 
                ${isActive ? "bg-slate-800 border-l-4 border-yellow-400" : ""}`
             }
-            onClick={() => setIsOpen(false)}
+            onClick={() => {
+              setIsOpen(false);
+              closeAllMenus();
+            }}
           >
             <FiHome className="text-lg" />
             Dashboard
@@ -157,27 +180,31 @@ const AdminSidebar = () => {
             </div>
           )}
 
-          {/* Masters Dropdown */}
-          <button
-            onClick={() => toggleMenu("masters")}
-            className="flex w-full items-center justify-between px-6 py-3 hover:bg-slate-800 transition-colors"
-          >
-            <span className="flex items-center gap-4">
-              <FiFolder className="text-lg" /> Masters
-            </span>
-            {openMenus.masters ? <FiChevronDown /> : <FiChevronRight />}
-          </button>
-
-          {openMenus.masters && (
-            <div className="ml-12 mt-1 space-y-1 text-gray-300">
-              <NavLink
-                to="/add"
-                className="block px-3 py-2 rounded hover:bg-slate-800"
-                onClick={() => setIsOpen(false)}
+          {/* Masters Dropdown - Only visible for admins */}
+          {user?.role !== "employee" && (
+            <>
+              <button
+                onClick={() => toggleMenu("masters")}
+                className="flex w-full items-center justify-between px-6 py-3 hover:bg-slate-800 transition-colors"
               >
-                Add Property Details
-              </NavLink>
-            </div>
+                <span className="flex items-center gap-4">
+                  <FiFolder className="text-lg" /> Masters
+                </span>
+                {openMenus.masters ? <FiChevronDown /> : <FiChevronRight />}
+              </button>
+
+              {openMenus.masters && (
+                <div className="ml-12 mt-1 space-y-1 text-gray-300">
+                  <NavLink
+                    to="/add"
+                    className="block px-3 py-2 rounded hover:bg-slate-800"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Add Property Details
+                  </NavLink>
+                </div>
+              )}
+            </>
           )}
 
           {/* Settings */}
@@ -187,7 +214,10 @@ const AdminSidebar = () => {
               `flex items-center gap-4 px-6 py-3 transition-colors duration-200 hover:bg-slate-800 
                ${isActive ? "bg-slate-800 border-l-4 border-yellow-400" : ""}`
             }
-            onClick={() => setIsOpen(false)}
+            onClick={() => {
+              setIsOpen(false);
+              closeAllMenus();
+            }}
           >
             <FiSettings className="text-lg" />
             Settings

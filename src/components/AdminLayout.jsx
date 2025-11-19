@@ -13,12 +13,12 @@ const AdminLayout = () => {
       <Sidebar />
 
       {/* Main Area */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col md:ml-64">
         {/* Navbar */}
         <Navbar onLogout={logout} />
 
         {/* Page Content */}
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-6 pt-16 md:pt-0 overflow-y-auto">
           <Outlet />
         </main>
       </div>

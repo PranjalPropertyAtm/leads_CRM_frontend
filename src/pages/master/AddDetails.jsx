@@ -14,6 +14,7 @@ export default function AddDetails() {
         { id: "subPropertyTypes", label: "Sub Property Types", icon: <MapPin size={16} /> },
         { id: "sources", label: "Sources", icon: <Plus size={16} /> },
         { id: "cities", label: "Cities", icon: <MapPin size={16} /> },
+        { id: "locations", label: "Locations", icon: <MapPin size={16} /> },
     ];
 
     const [activeTab, setActiveTab] = useState("propertyTypes");
@@ -22,6 +23,7 @@ export default function AddDetails() {
     const [label, setLabel] = useState("");
     const [value, setValue] = useState(""); // optional value field
     const [selectedPropertyType, setSelectedPropertyType] = useState("");
+    const [selectedCity, setSelectedCity] = useState("");
 
     // confirmation modal
     const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -38,6 +40,7 @@ export default function AddDetails() {
         subPropertyTypes: Array.isArray(masters?.subPropertyTypes) ? masters.subPropertyTypes : [],
         sources: Array.isArray(masters?.sources) ? masters.sources : [],
         cities: Array.isArray(masters?.cities) ? masters.cities : [],
+        locations: Array.isArray(masters?.locations) ? masters.locations : [],
         ...masters,
     };
 
@@ -94,6 +97,20 @@ export default function AddDetails() {
             setValue("");
             await persistMasters(newMasters, "City added");
         }
+        else if (activeTab === "locations") {
+            if (!selectedCity) {
+                notify?.error?.("Please select a city for the location");
+                return;
+            }
+            newMasters.locations = [
+                ...newMasters.locations,
+                { city: selectedCity, label: trimmedLabel, value: value || trimmedLabel },
+            ];
+            setLabel("");
+            setValue("");
+            setSelectedPropertyType("");
+            await persistMasters(newMasters, "Location added");
+        }
     };
 
     // request deletion (opens confirm modal)
@@ -131,6 +148,7 @@ export default function AddDetails() {
 
                             <span className="text-sm font-bold text-gray-800">{it.label ?? it.value}</span>
                             {it.propertyType && <span className="text-xs text-gray-500">Parent: {it.propertyType}</span>}
+                            {it.city && <span className="text-xs text-gray-500">City: {it.city}</span>}
                         </div>
                         <div className="flex items-center gap-3">
                             <button
@@ -188,6 +206,20 @@ export default function AddDetails() {
                                 ))}
                             </select>
                         )}
+                        {activeTab === "locations" && (
+                            <select
+                                value={selectedCity}   
+                                onChange={(e) => setSelectedCity(e.target.value)}
+                                className="border px-3 py-2 rounded-lg focus:ring-2 focus:ring-slate-900 outline-none"
+                            >
+                                <option value="">Select City</option>
+                                {safeMasters.cities.map((city, idx) => (
+                                    <option key={idx} value={city.label}>   
+                                        {city.label}
+                                    </option>
+                                ))}
+                            </select>
+                        )}
 
                         <input
                             type="text"
@@ -200,7 +232,9 @@ export default function AddDetails() {
                                             ? "Source name (e.g. Facebook)"
                                             : activeTab === "propertyTypes"
                                                 ? "Property type (e.g. Residential)"
-                                                : "Label"
+                                                : activeTab === "locations"
+                                                    ? "Location name (e.g. Vikas Nagar)"
+                                                    : "Label"
                             }
 
                             className="border px-3 py-2 rounded-lg focus:ring-2 focus:ring-slate-900 outline-none"
