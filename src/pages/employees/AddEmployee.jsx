@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Users, Mail, Phone, Lock, Briefcase, AlertCircle } from "lucide-react";
-import { useEmployeeStore } from "../../store/employeeStore.js";
+import { useAddEmployee } from "../../hooks/useEmployeeQueries.js";
 import { notify } from "../../utils/toast.js";
 
 export default function AddEmployee() {
@@ -13,7 +13,7 @@ export default function AddEmployee() {
     designation: "",
   });
 
-  const { addEmployee, loading } = useEmployeeStore();
+  const { mutate: addEmployee, isPending: loading } = useAddEmployee();
   const [errors, setErrors] = useState({});
 
   const handleInputChange = (e) => {
@@ -53,21 +53,23 @@ export default function AddEmployee() {
       return;
     }
 
-    const result = await addEmployee(formData);
-
-    if (result.success) {
-      notify.success("Employee added successfully");
-      setFormData({
-        name: "",
-        email: "",
-        phone: "",
-        password: "",
-        designation: "",
-      });
-      setErrors({});
-    } else {
-      notify.error(result.error || "Failed to add employee");
-    }
+    addEmployee(formData, {
+      onSuccess: () => {
+        notify.success("Employee added successfully");
+        setFormData({
+          name: "",
+          email: "",
+          phone: "",
+          password: "",
+          designation: "",
+        });
+        setErrors({});
+      },
+      onError: (error) => {
+        const errorMsg = error.response?.data?.message || "Failed to add employee";
+        notify.error(errorMsg);
+      },
+    });
   };
 
   const containerVariants = {

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { NavLink } from "react-router-dom";
-import { useAuthStore } from "../store/authStore.js";
+import { useLoadUser } from "../hooks/useAuthQueries.js";
 import {
   FiHome,
   FiUsers,
@@ -15,7 +15,7 @@ import {
 
 const AdminSidebar = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const user = useAuthStore((state) => state.user);
+  const { data: user } = useLoadUser();
 
   const [openMenus, setOpenMenus] = useState({
     leads: false,

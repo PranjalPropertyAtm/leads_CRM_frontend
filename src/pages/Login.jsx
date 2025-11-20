@@ -1,33 +1,52 @@
 
 
-
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Mail, Lock, LogIn, Eye, EyeOff } from "lucide-react";
-import { useAuthStore } from "../store/authStore.js";
+import { useLogin, useLoadUser } from "../hooks/useAuthQueries.js";
+import { notify } from "../utils/toast.js";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
 
   const navigate = useNavigate();
 
-  const loginUser = useAuthStore((state) => state.login);
-  const loading = useAuthStore((state) => state.loading);
-  const errorStore = useAuthStore((state) => state.error);
+  const loginMutation = useLogin();
+  const loadUserQuery = useLoadUser();
+
+  useEffect(() => {
+    // Check if user is already logged in
+    if (loadUserQuery.data) {
+      navigate("/dashboard");
+    }
+  }, [loadUserQuery.data, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
 
-    if (!email || !password) return;
-
-    const response = await loginUser(email, password);
-
-    if (response.success) {
-      navigate("/dashboard"); // OR "/"
+    if (!email || !password) {
+      setError("Please enter email and password");
+      return;
     }
+
+    loginMutation.mutate(
+      { email, password },
+      {
+        onSuccess: () => {
+          notify.success("Login successful");
+          navigate("/dashboard");
+        },
+        onError: (error) => {
+          const errorMsg = error.response?.data?.message || "Login failed";
+          setError(errorMsg);
+          notify.error(errorMsg);
+        },
+      }
+    );
   };
 
   return (
@@ -58,9 +77,9 @@ const Login = () => {
         </p>
 
         {/* Error Box */}
-        {errorStore && (
+        {error && (
           <div className="mb-4 p-3 text-center rounded-lg bg-red-500/20 border border-red-400 text-red-100 text-sm">
-            {errorStore}
+            {error}
           </div>
         )}
 
@@ -118,12 +137,12 @@ const Login = () => {
           {/* Submit */}
           <button
             type="submit"
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-red-600 
+            disabled={loginMutation.isPending}
+            className="w-full flex items-center justify-center gap-2 bg-linear-to-r from-orange-500 to-red-600 
             text-white font-semibold py-2.5 rounded-lg shadow-lg hover:opacity-90 transition disabled:opacity-50"
           >
             <LogIn size={18} />
-            {loading ? "Signing in..." : "Sign In"}
+            {loginMutation.isPending ? "Signing in..." : "Sign In"}
           </button>
         </form>
 

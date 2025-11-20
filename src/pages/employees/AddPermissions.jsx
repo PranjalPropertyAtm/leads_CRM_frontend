@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Users, Lock, AlertCircle, CheckCircle, Loader } from "lucide-react";
-import { useEmployeeStore } from "../../store/employeeStore.js";
+import { useFetchEmployees, useUpdateEmployee } from "../../hooks/useEmployeeQueries.js";
 import { notify } from "../../utils/toast.js";
 
 const PERMISSION_GROUPS = {
@@ -18,22 +18,13 @@ const PERMISSION_GROUPS = {
 };
 
 export default function AddPermissions() {
-  const { employees, fetchEmployees, updateEmployee, loading: storeLoading } = useEmployeeStore();
+  const { data: employees = [], isLoading: storeLoading } = useFetchEmployees();
+  const { mutate: updateEmployee, isPending: updatingPermissions } = useUpdateEmployee();
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [permissions, setPermissions] = useState([]);
-  const [updatingPermissions, setUpdatingPermissions] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Fetch all employees
-  useEffect(() => {
-    const loadEmployees = async () => {
-      const result = await fetchEmployees();
-      if (!result.success) {
-        notify.error("Failed to fetch employees");
-      }
-    };
-    loadEmployees();
-  }, [fetchEmployees]);
+  // Fetch all employees is now handled by useFetchEmployees hook
 
   // Handle employee selection
   const handleSelectEmployee = (employee) => {
@@ -58,21 +49,22 @@ export default function AddPermissions() {
       return;
     }
 
-    setUpdatingPermissions(true);
-    const result = await updateEmployee(selectedEmployee._id, {
-      permissions: permissions,
-    });
-    setUpdatingPermissions(false);
-
-    if (result.success) {
-      notify.success("Permissions updated successfully");
-      setSelectedEmployee({
-        ...selectedEmployee,
-        permissions: permissions,
-      });
-    } else {
-      notify.error(result.error || "Failed to update permissions");
-    }
+    updateEmployee(
+      { employeeId: selectedEmployee._id, updateData: { permissions } },
+      {
+        onSuccess: () => {
+          notify.success("Permissions updated successfully");
+          setSelectedEmployee({
+            ...selectedEmployee,
+            permissions: permissions,
+          });
+        },
+        onError: (error) => {
+          const errorMsg = error.response?.data?.message || "Failed to update permissions";
+          notify.error(errorMsg);
+        },
+      }
+    );
   };
 
   // Filter employees based on search

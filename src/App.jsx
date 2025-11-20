@@ -12,6 +12,7 @@ const AdminLayout = lazy(() => import("./components/AdminLayout.jsx"));
 const AddDetails = lazy(() => import("./pages/master/AddDetails.jsx"));
 const AddEmployee = lazy(() => import("./pages/employees/AddEmployee.jsx"));
 const AddPermissions = lazy(() => import("./pages/employees/AddPermissions.jsx"));
+const AllEmployees = lazy(() => import("./pages/employees/AllEmployees.jsx"));
 
 // Loading fallback component
 const LoadingFallback = () => (
@@ -42,6 +43,7 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/add" element={<AddDetails />} />
             <Route path="/add-employee" element={<AddEmployee />} />
+            <Route path="/all-employee" element={<AllEmployees />} />
             <Route path="/permissions" element={<AddPermissions />} />
           </Route>
 

@@ -2,12 +2,13 @@
 import React, { act, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Trash2, Plus, Square, MapPin } from "lucide-react";
-import { useMastersStore } from "../../store/masterStore";
+import { useFetchMasters, useSaveMasters } from "../../hooks/useMastersQueries.js";
 import {notify} from "../../utils/toast.js";
 // if notify path differs, adjust or remove notifications
 
 export default function AddDetails() {
-    const { masters, fetchMasters, saveMasters, loading } = useMastersStore();
+    const { data: masters = {}, isLoading: loading } = useFetchMasters();
+    const saveMastersMutation = useSaveMasters();
 
     const tabs = [
         { id: "propertyTypes", label: "Property Types", icon: <Square size={16} /> },
@@ -29,11 +30,6 @@ export default function AddDetails() {
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [toDelete, setToDelete] = useState(null); // { tab, index, label }
 
-    // fetch masters once
-    useEffect(() => {
-        fetchMasters();
-    }, []);
-
     // ensure masters shape exists
     const safeMasters = {
         propertyTypes: Array.isArray(masters?.propertyTypes) ? masters.propertyTypes : [],
@@ -44,18 +40,18 @@ export default function AddDetails() {
         ...masters,
     };
 
-    // helper to persist: update store state then call saveMasters
+    // helper to persist: call saveMasters mutation
     const persistMasters = async (newMasters, successMsg) => {
-        // update zustand state
-        useMastersStore.setState({ masters: newMasters });
-        try {
-            await saveMasters(); // saveMasters reads get().masters internally
-              if (successMsg) notify?.success?.(successMsg);
-        } catch (e) {
-            // saveMasters shows toast on error; still keep guard
-            console.error("Save masters failed", e);
-              notify?.error?.("Failed to save changes");
-        }
+        saveMastersMutation.mutate(newMasters, {
+            onSuccess: () => {
+                if (successMsg) notify?.success?.(successMsg);
+            },
+            onError: (error) => {
+                console.error("Save masters failed", error);
+                const errorMsg = error.response?.data?.message || "Failed to save changes";
+                notify?.error?.(errorMsg);
+            },
+        });
     };
 
     // Add item for current tab
