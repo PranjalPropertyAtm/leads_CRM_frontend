@@ -18,7 +18,8 @@ const PERMISSION_GROUPS = {
 };
 
 export default function AddPermissions() {
-  const { data: employees = [], isLoading: storeLoading } = useFetchEmployees();
+  const { data: paginated = { employees: [] }, isLoading: storeLoading } = useFetchEmployees();
+  const employees = paginated.employees || [];
   const { mutate: updateEmployee, isPending: updatingPermissions } = useUpdateEmployee();
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [permissions, setPermissions] = useState([]);

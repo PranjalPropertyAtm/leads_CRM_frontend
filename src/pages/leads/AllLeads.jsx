@@ -1,31 +1,36 @@
-
-
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Eye, Trash2, Search, X, ChevronLeft, ChevronRight } from "lucide-react";
-import { useFetchEmployees, useDeleteEmployee } from "../../hooks/useEmployeeQueries.js";
+import { useFetchLeads, useDeleteLead } from "../../hooks/useLeadQueries.js";
 import { notify } from "../../utils/toast.js";
 
-export default function AllEmployees() {
+export default function AllLeads() {
   const [filter, setFilter] = useState("");
   const [selected, setSelected] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  const { data: paginatedData = { employees: [], total: 0, totalPages: 0, page: 1 }, isLoading } = useFetchEmployees(currentPage, pageSize);
-  const { employees = [], total = 0, totalPages = 0 } = paginatedData;
-  const deleteMutation = useDeleteEmployee();
+  const { data: paginatedData = { leads: [], total: 0, totalPages: 0, page: 1 }, isLoading } = useFetchLeads(currentPage, pageSize);
+  const { leads = [], total = 0, totalPages = 0 } = paginatedData;
+
+  // Create delete hook (if available)
+  const deleteLeadMutation = useDeleteLead?.();
 
   const handleDelete = (id) => {
-    if (!confirm("Delete this employee?")) return;
+    if (!window.confirm("Are you sure you want to delete this lead?")) return;
 
-    deleteMutation.mutate(id, {
+    if (!deleteLeadMutation) {
+      notify.error("Delete operation not available");
+      return;
+    }
+
+    deleteLeadMutation.mutate(id, {
       onSuccess: () => {
-        notify.success("Employee deleted");
+        notify.success("Lead deleted successfully");
         if (selected?._id === id) setSelected(null);
       },
       onError: (err) => {
-        const msg = err?.response?.data?.message || "Failed to delete";
+        const msg = err?.response?.data?.message || "Failed to delete lead";
         notify.error(msg);
       },
     });
@@ -43,38 +48,41 @@ export default function AllEmployees() {
     setCurrentPage(1);
   };
 
-  const filtered = employees.filter((emp) => {
+  const filtered = leads.filter((lead) => {
     const q = filter.trim().toLowerCase();
     if (!q) return true;
 
     return (
-      emp.name?.toLowerCase().includes(q) ||
-      emp.email?.toLowerCase().includes(q) ||
-      emp.phone?.toLowerCase().includes(q) ||
-      emp.designation?.toLowerCase().includes(q)
+      lead.customerName?.toLowerCase().includes(q) ||
+      lead.ownerName?.toLowerCase().includes(q) ||
+      lead.email?.toLowerCase().includes(q) ||
+      lead.mobileNumber?.toLowerCase().includes(q) ||
+      lead.city?.toLowerCase().includes(q) ||
+      lead.propertyType?.toLowerCase().includes(q) ||
+      lead.source?.toLowerCase().includes(q) ||
+      lead.budget?.toString().toLowerCase().includes(q) ||
+      lead.createdBy?.name?.toLowerCase().includes(q) 
     );
   });
 
-
   return (
-    <div className="min-h-screen  bg-slate-50 p-4 font-[Inter] ">
+    <div className="min-h-screen bg-slate-50 p-4 font-[Inter]">
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         className="max-w-7xl mx-auto"
       >
-
         {/* HEADER */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-semibold text-gray-900">Employees</h1>
-            <p className="text-sm text-gray-500">Manage your internal team</p>
+            <h1 className="text-3xl font-semibold text-gray-900">Leads</h1>
+            <p className="text-sm text-gray-500">View and manage all leads</p>
           </div>
 
           <div className="relative">
             <Search className="absolute left-3 top-3 text-gray-400" size={16} />
             <input
-              placeholder="Search employees..."
+              placeholder="Search leads..."
               className="pl-10 pr-4 py-2 rounded-lg border border-gray-300 bg-white shadow-sm w-80 
                          focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
               value={filter}
@@ -85,17 +93,17 @@ export default function AllEmployees() {
 
         {/* TABLE CONTAINER */}
         <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-          <div >
+          <div>
             {isLoading ? (
               <div className="py-10 text-center text-gray-500">Loading...</div>
             ) : filtered.length === 0 ? (
-              <div className="py-10 text-center text-gray-500">No employees found</div>
+              <div className="py-10 text-center text-gray-500">No leads found</div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full border-separate border-spacing-0 text-sm">
                   <thead>
                     <tr className="bg-gray-50 text-gray-600 text-xs uppercase tracking-wide border-b">
-                      {["S.NO","Name", "Email","Phone", "Designation", "Role", "Actions"].map((h) => (
+                      {["S.NO", "Name", "Type","Date", "Mobile", "City","Preferred Location", "Property Type","Budget", "Source","Created By", "Actions"].map((h) => (
                         <th key={h} className="px-5 py-4 font-semibold text-left border-b border-gray-200">
                           {h}
                         </th>
@@ -104,9 +112,9 @@ export default function AllEmployees() {
                   </thead>
 
                   <tbody>
-                    {filtered.map((emp, idx) => (
+                    {filtered.map((lead, idx) => (
                       <tr
-                        key={emp._id}
+                        key={lead._id}
                         className={`${
                           idx % 2 === 0 ? "bg-white" : "bg-gray-50"
                         } hover:bg-blue-50/40 transition-colors`}
@@ -114,53 +122,63 @@ export default function AllEmployees() {
                         <td className="px-4 py-3 font-medium text-gray-900">
                           {(currentPage - 1) * pageSize + idx + 1}
                         </td>
+
                         {/* NAME */}
                         <td className="px-4 py-3 font-medium text-gray-900">
                           <div className="flex flex-col">
-                            {emp.name}
-                            <span className="text-xs text-gray-400">{emp._id}</span>
+                            <span>{lead.customerName || lead.ownerName || "N/A"}</span>
+                            <span className="text-xs text-gray-400">{lead._id}</span>
                           </div>
                         </td>
 
-                        {/* EMAIL */}
-                        <td className="px-5 py-4 text-gray-700">{emp.email}</td>
-
-                      
-
-                        {/* PHONE */}
-                        <td className="px-5 py-4 text-gray-700">{emp.phone}</td>
-
-                        {/* DESIGNATION */}
-                        <td className="px-5 py-4 text-gray-700">{emp.designation}</td>
-
-                        {/* ROLE */}
-                        <td className="px-3 py-4 ">
-                          <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-600 text-xs font-medium">
-                            {emp.role || "employee"}
+                        {/* TYPE */}
+                        <td className="px-5 py-4">
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                            lead.customerType === "tenant"
+                              ? "bg-blue-100 text-blue-600"
+                              : "bg-green-100 text-green-600"
+                          }`}>
+                            {lead.customerType === "tenant" ? "Tenant" : "Owner"}
                           </span>
                         </td>
 
-                        {/* PERMISSIONS */}
-                        {/* <td className="px-5 py-4">
-                          <span className="px-3 py-1 rounded-full bg-purple-100 text-purple-700 text-xs font-medium">
-                            {(emp.permissions || []).length}
-                          </span>
-                        </td> */}
+                         <td className="px-5 py-4 text-gray-700">{new Date(lead.createdAt).toLocaleDateString()}</td>
 
-                        {/* ACTION BUTTONS */}
+                        {/* MOBILE */}
+                        <td className="px-5 py-4 text-gray-700">{lead.mobileNumber}</td>
+
+                        {/* CITY */}
+                        <td className="px-5 py-4 text-gray-700">{lead.city}</td>
+
+                        <td className="px-5 py-4 text-gray-700">{lead.preferredLocation || "N/A"}</td>
+
+                        {/* PROPERTY TYPE */}
+                        <td className="px-5 py-4 text-gray-700">{lead.propertyType}</td>
+
+                        <td className="px-5 py-4 text-gray-700">{lead.budget ? `₹${lead.budget}` : "N/A"}</td>
+                        
+                       
+                        {/* SOURCE */}
+                        <td className="px-5 py-4 text-gray-700">{lead.source}</td>
+                        <td className="px-5 py-4 text-gray-700">{lead.createdBy?.name || "N/A"}</td>
+                        
+
+                        {/* ACTIONS */}
                         <td className="px-5 py-4 flex items-center gap-3">
                           <button
-                            onClick={() => setSelected(emp)}
+                            onClick={() => setSelected(lead)}
                             className="px-3 py-1.5 rounded-md bg-blue-100 text-blue-700 text-xs flex items-center gap-1 hover:bg-blue-200 transition"
+                            title="View details"
                           >
                             <Eye size={14} />
                           </button>
 
                           <button
-                            onClick={() => handleDelete(emp._id)}
+                            onClick={() => handleDelete(lead._id)}
                             className="px-3 py-1.5 rounded-md bg-red-100 text-red-700 text-xs flex items-center gap-1 hover:bg-red-200 transition"
+                            title="Delete lead"
                           >
-                            <Trash2 size={14} /> 
+                            <Trash2 size={14} />
                           </button>
                         </td>
                       </tr>
@@ -177,7 +195,7 @@ export default function AllEmployees() {
           <div className="mt-6 flex flex-col md:flex-row items-center justify-between bg-white rounded-xl shadow-md border border-gray-200 p-4 gap-4">
             <div className="flex items-center gap-4">
               <span className="text-sm text-gray-600">
-                Showing {Math.min((currentPage - 1) * pageSize + 1, total)} to {Math.min(currentPage * pageSize, total)} of {total} employees
+                Showing {Math.min((currentPage - 1) * pageSize + 1, total)} to {Math.min(currentPage * pageSize, total)} of {total} leads
               </span>
               <div className="flex items-center gap-2">
                 <label htmlFor="pageSize" className="text-sm text-gray-600">Items per page:</label>
@@ -242,7 +260,7 @@ export default function AllEmployees() {
           </div>
         )}
 
-        {/* MODAL / DRAWER */}
+        {/* DETAILS MODAL / DRAWER */}
         {selected && (
           <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center">
             <div className="absolute inset-0 bg-black/40" onClick={() => setSelected(null)} />
@@ -255,8 +273,12 @@ export default function AllEmployees() {
               {/* HEADER */}
               <div className="flex justify-between items-start">
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-900">{selected.name}</h3>
-                  <p className="text-sm text-gray-500">{selected.email}</p>
+                  <h3 className="text-xl font-semibold text-gray-900">
+                    {selected.customerName || selected.ownerName}
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    {selected.customerType === "tenant" ? "Tenant Lead" : "Owner Lead"}
+                  </p>
                 </div>
 
                 <button
@@ -269,37 +291,78 @@ export default function AllEmployees() {
 
               <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-5 text-sm">
                 <div>
-                  <p className="text-gray-500">Phone</p>
-                  <p className="font-medium">{selected.phone}</p>
+                  <p className="text-gray-500">Mobile Number</p>
+                  <p className="font-medium">{selected.mobileNumber}</p>
                 </div>
 
                 <div>
-                  <p className="text-gray-500">Designation</p>
-                  <p className="font-medium">{selected.designation}</p>
+                  <p className="text-gray-500">Email</p>
+                  <p className="font-medium">{selected.email || "N/A"}</p>
                 </div>
 
                 <div>
-                  <p className="text-gray-500">Role</p>
-                  <p className="font-medium">{selected.role}</p>
+                  <p className="text-gray-500">City</p>
+                  <p className="font-medium">{selected.city}</p>
+                </div>
+
+                {selected.customerType === "tenant" && (
+                  <>
+                    <div>
+                      <p className="text-gray-500">Preferred Location</p>
+                      <p className="font-medium">{selected.preferredLocation || "N/A"}</p>
+                    </div>
+
+                    <div>
+                      <p className="text-gray-500">Budget</p>
+                      <p className="font-medium">{selected.budget ? `₹${selected.budget}` : "N/A"}</p>
+                    </div>
+                  </>
+                )}
+
+                <div>
+                  <p className="text-gray-500">Property Type</p>
+                  <p className="font-medium">{selected.propertyType}</p>
                 </div>
 
                 <div>
-                  <p className="text-gray-500">Permissions</p>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {selected.permissions?.map((p) => (
-                      <span
-                        key={p}
-                        className="px-3 py-1 bg-purple-200 text-purple-700 rounded-lg text-xs font-medium"
-                      >
-                        {p}
-                      </span>
-                    ))}
+                  <p className="text-gray-500">Sub-Property Type</p>
+                  <p className="font-medium">{selected.subPropertyType}</p>
+                </div>
+
+                <div>
+                  <p className="text-gray-500">Source</p>
+                  <p className="font-medium">{selected.source}</p>
+                </div>
+
+                {selected.customerType === "owner" && (
+                  <>
+                    <div>
+                      <p className="text-gray-500">Property Location</p>
+                      <p className="font-medium">{selected.propertyLocation || "N/A"}</p>
+                    </div>
+
+                    <div>
+                      <p className="text-gray-500">Area</p>
+                      <p className="font-medium">{selected.area || "N/A"}</p>
+                    </div>
+
+                    <div>
+                      <p className="text-gray-500">Landmark</p>
+                      <p className="font-medium">{selected.landmark || "N/A"}</p>
+                    </div>
+                  </>
+                )}
+
+                {selected.requirements && (
+                  <div className="md:col-span-2">
+                    <p className="text-gray-500">Requirements</p>
+                    <p className="font-medium">{selected.requirements}</p>
                   </div>
-                </div>
+                )}
 
                 <div className="md:col-span-2">
-                  <p className="text-gray-500">Employee ID</p>
-                  <p className="text-xs text-gray-400">{selected._id}</p>
+                  <p className="text-gray-500">Lead ID</p>
+                  <p className="text-xs text-gray-400 word-break">{selected._id}</p>
                 </div>
               </div>
             </motion.div>
@@ -309,5 +372,3 @@ export default function AllEmployees() {
     </div>
   );
 }
-
-

@@ -5,9 +5,12 @@ import {
   FiSearch,
   FiLogOut,
 } from "react-icons/fi";
+import { useLoadUser } from "../hooks/useAuthQueries.js";
 
 const Navbar = ({ onLogout }) => {
   const [showMenu, setShowMenu] = useState(false);
+  const { data: user } = useLoadUser();
+
 
   return (
     <nav className="bg-white shadow-sm sticky top-0 z-40">
@@ -52,7 +55,9 @@ const Navbar = ({ onLogout }) => {
                 alt="Admin"
                 className="w-9 h-9 rounded-full border border-gray-300"
               />
-              <span className="text-gray-700 font-medium">Admin</span>
+              <span className="text-gray-700 font-medium">
+                {user?.role === "employee" ? "Employee" : "Admin"}
+              </span>
               <FiChevronDown className="text-gray-500" />
             </button>
 

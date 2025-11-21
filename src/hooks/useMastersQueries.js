@@ -35,3 +35,11 @@ export const useSaveMasters = () => {
     },
   })
 }
+
+export const getPropertyTypes = (masters) => (masters?.propertyTypes || []).map((p) => p.label)
+export const getSubPropertyTypes = (masters, propertyType) =>
+  (masters?.subPropertyTypes || []).filter((s) => !propertyType || s.propertyType === propertyType).map((s) => s.label)
+export const getSources = (masters) => (masters?.sources || []).map((s) => s.label)
+export const getCities = (masters) => (masters?.cities || []).map((c) => c.label)
+export const getLocations = (masters, city) =>
+  (masters?.locations || []).filter((l) => !city || l.city === city).map((l) => l.label)

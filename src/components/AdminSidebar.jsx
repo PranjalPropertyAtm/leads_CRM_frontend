@@ -144,6 +144,8 @@ const AdminSidebar = () => {
           )}
 
           {/* Employee Dropdown */}
+          {user?.role !== "employee" && (
+            <>
           <button
             onClick={() => toggleMenu("employee")}
             className="flex w-full items-center justify-between px-6 py-3 hover:bg-slate-800 transition-colors"
@@ -178,6 +180,8 @@ const AdminSidebar = () => {
                 Add Permissions
               </NavLink>
             </div>
+          )}
+          </>
           )}
 
           {/* Masters Dropdown - Only visible for admins */}
