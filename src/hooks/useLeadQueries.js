@@ -6,24 +6,24 @@ export const useFetchLeads = (page = 1, limit = 10) => {
   return useQuery({
     queryKey: ['leads', page, limit],
     queryFn: async () => {
-      const response = await axios.get('/leads/all', {
-        params: {
-          page,
-          limit,
-        },
+      const response = await axios.get('/leads/all',{
+        params: { page, limit },
       })
+      const data = response.data;
+      // const leads = data.data || []
+      // const total = data.count ?? leads.length
 
-      // Backend currently returns { success, count, data }
-      const data = response.data || {}
-      const leads = data.data || []
-      const total = data.count ?? (Array.isArray(leads) ? leads.length : 0)
+      // Slice manually
+      // const start = (page - 1) * limit
+      // const end = start + limit
+      // const paginatedLeads = leads.slice(start, end)
 
       return {
-        leads,
-        total,
+        leads: data.data || [],
+        total: data.total || 0,
         page: data.page || page,
-        limit: data.limit || limit,
-        totalPages: data.totalPages ?? (limit ? Math.ceil(total / limit) : 1),
+        limit:  data.limit || limit,
+        totalPages: data.totalPages || Math.ceil((data.total || 0) / limit),
       }
     },
   })
@@ -80,16 +80,30 @@ export const useDeleteLead = () => {
 }
 
 // Fetch current user's leads (employee view)
-export const useMyLeads = () => {
+export const useMyLeads = (page = 1, limit = 10) => {
   return useQuery({
-    queryKey: ['leads', 'my'],
+    queryKey: ['leads', 'my', page, limit],
     queryFn: async () => {
-      const response = await axios.get('/leads/my')
-      const data = response.data || {}
-      return {
+      const response = await axios.get('/leads/my', {
+        params: { page, limit },
+      });
+      const data = response.data;
+      // const leads = data.data || [];
+      // const total = data.count ?? (Array.isArray(leads) ? leads.length : 0);
+
+           // Slice manually
+      // const start = (page - 1) * limit
+      // const end = start + limit
+      // const paginatedLeads = leads.slice(start, end)
+
+
+     return {
         leads: data.data || [],
-        total: data.count ?? (Array.isArray(data.data) ? data.data.length : 0),
-      }
+        total: data.total || 0,
+        page: data.page || page,
+        limit:  data.limit || limit,
+        totalPages: data.totalPages || Math.ceil((data.total || 0) / limit),
+      };
     },
-  })
-}
+  });
+};

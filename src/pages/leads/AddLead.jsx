@@ -717,10 +717,11 @@ export default function AddLead() {
                   error={errors.propertyLocation}
                 />
 
-                <InputField
+                <SelectField
                   label="City *"
                   name="city"
                   value={form.city}
+                  options={cities}
                   onChange={handleChange}
                   error={errors.city}
                 />
