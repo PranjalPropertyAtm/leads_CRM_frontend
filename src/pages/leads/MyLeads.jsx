@@ -21,6 +21,9 @@ export default function MyLeads() {
     const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
+  const [regLead, setRegLead] = useState(null);
+
+
 
   const {
     data = { leads: [], total: 0, totalPages: 0, page: 1 },
@@ -53,12 +56,12 @@ export default function MyLeads() {
   // REGISTER LEAD (FIXED)
   // -----------------------------
   const handleRegisterLead = async () => {
-    if (!regPlan.trim()) return notify.error("Plan name is required");
-    if (!selected?._id) return notify.error("Lead not selected!");
+  if (!regPlan.trim()) return notify.error("Plan name is required");
+  if (!regLead?._id) return notify.error("Lead not selected!");
 
     try {
       const { data } = await axiosInstance.post("/registrations/add", {
-        leadId: selected._id,
+        leadId: regLead._id,
         planName: regPlan,
         registrationDate: regDate || new Date(),
         registeredBy: user._id,
@@ -66,20 +69,22 @@ export default function MyLeads() {
 
       notify.success(data.message);
 
-      // Update selected state
-      setSelected({
-        ...selected,
-        isRegistered: true,
-        registrationDetails: {
-          planName: regPlan,
-          registrationDate: regDate,
-          registeredBy: user._id, // Optional: replace with actual user
-        },
-      });
+     
+
+        setRegLead({
+      ...regLead,
+      isRegistered: true,
+      registrationDetails: {
+        planName: regPlan,
+        registrationDate: regDate || new Date(),
+        registeredBy: user._id,
+      },
+    });
 
       setShowRegModal(false);
       setRegPlan("");
       setRegDate("");
+      setRegLead(null);
     } catch (error) {
       notify.error(
         error.response?.data?.message || "Failed to register customer"
@@ -122,12 +127,19 @@ function ActionMenu({ children }) {
   const [coords, setCoords] = useState({ top: 0, left: 0 });
   const btnRef = useRef(null);
 
-  const toggleMenu = () => {
+  const updatePosition = () => {
+    if (!btnRef.current) return;
+
     const rect = btnRef.current.getBoundingClientRect();
+
     setCoords({
-      top: rect.bottom + 6,
-      left: rect.left - 120, // dropdown width adjust
+      top: rect.top + rect.height + window.scrollY + 6,
+      left: rect.left + window.scrollX - 120, 
     });
+  };
+
+  const toggleMenu = () => {
+    updatePosition();
     setOpen((prev) => !prev);
   };
 
@@ -140,9 +152,24 @@ function ActionMenu({ children }) {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  // Scroll & Resize reposition
+  useEffect(() => {
+    if (!open) return;
+
+    const handleScroll = () => updatePosition();
+    const handleResize = () => updatePosition();
+
+    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [open]);
+
   return (
     <>
-      {/* Button */}
       <button
         ref={btnRef}
         onClick={toggleMenu}
@@ -151,7 +178,6 @@ function ActionMenu({ children }) {
         <MoreVertical size={18} />
       </button>
 
-      {/* DROPDOWN PORTAL */}
       {createPortal(
         <AnimatePresence>
           {open && (
@@ -162,7 +188,7 @@ function ActionMenu({ children }) {
               transition={{ duration: 0.15 }}
               className="absolute bg-white shadow-xl border rounded-lg w-44 z-[9999]"
               style={{
-                position: "fixed",
+                position: "absolute",
                 top: coords.top,
                 left: coords.left,
               }}
@@ -176,6 +202,7 @@ function ActionMenu({ children }) {
     </>
   );
 }
+
 
 
   function InfoRow({ label, value }) {
@@ -288,7 +315,7 @@ function ActionMenu({ children }) {
                           {!lead.isRegistered && (
                             <button
                               onClick={() => {
-                                setSelected(lead);
+                                setRegLead(lead);
                                 setShowRegModal(true);
                               }}
                               className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-green-600 transition"
@@ -524,7 +551,7 @@ function ActionMenu({ children }) {
         {/* ---------------------------------------- */}
         {/* REGISTRATION MODAL — FIXED */}
         {/* ---------------------------------------- */}
-        {showRegModal && (
+        {showRegModal && regLead &&(
           <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
             <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-white p-6 rounded-xl max-w-md w-full">
 

@@ -16,6 +16,7 @@ import {
 import axiosInstance from "../../lib/axios.js";
 import { notify } from "../../utils/toast.js";
 import { useFetchLeads, useDeleteLead } from "../../hooks/useLeadQueries.js";
+import { createPortal } from "react-dom";
 import { useLoadUser } from "../../hooks/useAuthQueries.js";
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -34,6 +35,8 @@ export default function AllLeads() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+
+    const [regLead, setRegLead] = useState(null);
 
 
   const {
@@ -71,11 +74,12 @@ export default function AllLeads() {
   // REGISTRATION — PROFESSIONAL WAY
   // -------------------------------------------------
   const handleRegisterLead = async () => {
-    if (!regPlan.trim()) return notify.error("Plan name is required");
+  if (!regPlan.trim()) return notify.error("Plan name is required");
+  if (!regLead?._id) return notify.error("Lead not selected!");
 
     try {
       const { data } = await axiosInstance.post("/registrations/add", {
-        leadId: selected._id,
+        leadId: regLead._id,
         planName: regPlan,
         registrationDate: regDate || new Date(),
         registeredBy: user._id,
@@ -83,26 +87,29 @@ export default function AllLeads() {
 
       notify.success(data.message);
 
-      // Update selected lead locally (no need zustand or react-query)
-      setSelected({
-        ...selected,
-        isRegistered: true,
-        registrationDetails: {
-          planName: regPlan,
-          registrationDate: regDate,
-          registeredBy: user._id, // Optional: replace with actual user
-        },
-      });
+     
+
+        setRegLead({
+      ...regLead,
+      isRegistered: true,
+      registrationDetails: {
+        planName: regPlan,
+        registrationDate: regDate || new Date(),
+        registeredBy: user._id,
+      },
+    });
 
       setShowRegModal(false);
       setRegPlan("");
       setRegDate("");
+      setRegLead(null);
     } catch (error) {
       notify.error(
         error.response?.data?.message || "Failed to register customer"
       );
     }
   };
+
 
 
 
@@ -139,46 +146,127 @@ export default function AllLeads() {
     );
   });
 
+  // function ActionMenu({ children }) {
+  //   const [open, setOpen] = useState(false);
+  //   const ref = useRef();
+
+  //   // Close on click outside
+  //   useEffect(() => {
+  //     const closeOnOutsideClick = (e) => {
+  //       if (ref.current && !ref.current.contains(e.target)) {
+  //         setOpen(false);
+  //       }
+  //     };
+  //     document.addEventListener("mousedown", closeOnOutsideClick);
+  //     return () => document.removeEventListener("mousedown", closeOnOutsideClick);
+  //   }, []);
+
+  //   return (
+  //     <div className="relative" ref={ref}>
+  //       {/* 3 Dots Button */}
+  //       <button
+  //         onClick={() => setOpen((o) => !o)}
+  //         className="p-2 hover:bg-gray-100 rounded-full transition"
+  //       >
+  //         <MoreVertical size={18} />
+  //       </button>
+
+  //       {/* Dropdown */}
+  //       <AnimatePresence>
+  //         {open && (
+  //           <motion.div
+  //             initial={{ opacity: 0, scale: 0.9, y: -5 }}
+  //             animate={{ opacity: 1, scale: 1, y: 0 }}
+  //             exit={{ opacity: 0, scale: 0.9, y: -5 }}
+  //             transition={{ duration: 0.12 }}
+  //             className="absolute right-0 mt-2 w-40 bg-white shadow-lg border rounded-lg z-50"
+  //           >
+  //             {children}
+  //           </motion.div>
+  //         )}
+  //       </AnimatePresence>
+  //     </div>
+  //   );
+  // }
+
   function ActionMenu({ children }) {
     const [open, setOpen] = useState(false);
-    const ref = useRef();
-
-    // Close on click outside
+    const [coords, setCoords] = useState({ top: 0, left: 0 });
+    const btnRef = useRef(null);
+  
+    const updatePosition = () => {
+      if (!btnRef.current) return;
+  
+      const rect = btnRef.current.getBoundingClientRect();
+  
+      setCoords({
+        top: rect.top + rect.height + window.scrollY + 6,
+        left: rect.left + window.scrollX - 120, 
+      });
+    };
+  
+    const toggleMenu = () => {
+      updatePosition();
+      setOpen((prev) => !prev);
+    };
+  
+    // Close on outside click
     useEffect(() => {
-      const closeOnOutsideClick = (e) => {
-        if (ref.current && !ref.current.contains(e.target)) {
-          setOpen(false);
-        }
+      const handler = (e) => {
+        if (!btnRef.current.contains(e.target)) setOpen(false);
       };
-      document.addEventListener("mousedown", closeOnOutsideClick);
-      return () => document.removeEventListener("mousedown", closeOnOutsideClick);
+      document.addEventListener("mousedown", handler);
+      return () => document.removeEventListener("mousedown", handler);
     }, []);
-
+  
+    // Scroll & Resize reposition
+    useEffect(() => {
+      if (!open) return;
+  
+      const handleScroll = () => updatePosition();
+      const handleResize = () => updatePosition();
+  
+      window.addEventListener("scroll", handleScroll);
+      window.addEventListener("resize", handleResize);
+  
+      return () => {
+        window.removeEventListener("scroll", handleScroll);
+        window.removeEventListener("resize", handleResize);
+      };
+    }, [open]);
+  
     return (
-      <div className="relative" ref={ref}>
-        {/* 3 Dots Button */}
+      <>
         <button
-          onClick={() => setOpen((o) => !o)}
+          ref={btnRef}
+          onClick={toggleMenu}
           className="p-2 hover:bg-gray-100 rounded-full transition"
         >
           <MoreVertical size={18} />
         </button>
-
-        {/* Dropdown */}
-        <AnimatePresence>
-          {open && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: -5 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: -5 }}
-              transition={{ duration: 0.12 }}
-              className="absolute right-0 mt-2 w-40 bg-white shadow-lg border rounded-lg z-50"
-            >
-              {children}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+  
+        {createPortal(
+          <AnimatePresence>
+            {open && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: -5 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: -5 }}
+                transition={{ duration: 0.15 }}
+                className="absolute bg-white shadow-xl border rounded-lg w-44 z-[9999]"
+                style={{
+                  position: "absolute",
+                  top: coords.top,
+                  left: coords.left,
+                }}
+              >
+                {children}
+              </motion.div>
+            )}
+          </AnimatePresence>,
+          document.body
+        )}
+      </>
     );
   }
 
@@ -327,7 +415,7 @@ export default function AllLeads() {
                           {!lead.isRegistered && lead.createdBy?._id === user?._id && (
                             <button
                               onClick={() => {
-                                setSelected(lead);
+                                setRegLead(lead);
                                 setShowRegModal(true);
                               }}
                               className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-green-600 transition"
