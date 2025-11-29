@@ -16,6 +16,8 @@ const AllEmployees = lazy(() => import("./pages/employees/AllEmployees.jsx"));
 const AddLead = lazy(() => import("./pages/leads/AddLead.jsx"));
 const AllLeads = lazy(() => import("./pages/leads/AllLeads.jsx"));
 const MyLeads = lazy(() => import("./pages/leads/MyLeads.jsx"));
+const MyVisits = lazy(() => import("./pages/Visits/MyVisits.jsx"));
+const AllVisits = lazy(() => import("./pages/Visits/AllVisits.jsx"));
 
 // Loading fallback component
 const LoadingFallback = () => (
@@ -51,6 +53,8 @@ function App() {
             <Route path="/add-employee" element={<AddEmployee />} />
             <Route path="/all-employee" element={<AllEmployees />} />
             <Route path="/permissions" element={<AddPermissions />} />
+            <Route path="/my-visits" element={<MyVisits />} />
+            <Route path="/all-visits" element={<AllVisits />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/login" replace />} />

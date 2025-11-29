@@ -21,6 +21,7 @@ const AdminSidebar = () => {
     leads: false,
     employee: false,
     masters: false,
+    visits: false,
   });
 
   const toggleMenu = (menu) => {
@@ -30,6 +31,7 @@ const AdminSidebar = () => {
         leads: false,
         employee: false,
         masters: false,
+        visits: false,
       };
       // Toggle the clicked menu only if it's currently closed
       newState[menu] = !prev[menu];
@@ -42,6 +44,7 @@ const AdminSidebar = () => {
       leads: false,
       employee: false,
       masters: false,
+      visits: false,
     });
   };
 
@@ -56,7 +59,7 @@ const AdminSidebar = () => {
             className="w-8 h-8 object-cover"
           />
           <h1 className="text-lg font-semibold tracking-wide">
-            Property ATM 
+            Property ATM
           </h1>
         </div>
 
@@ -84,7 +87,7 @@ const AdminSidebar = () => {
 
         <div className="p-5 flex items-center justify-center border-b border-slate-700">
           <h2 className="text-xl font-bold tracking-wide text-gray-100">
-            Property ATM 
+            Property ATM
           </h2>
         </div>
 
@@ -143,45 +146,83 @@ const AdminSidebar = () => {
             </div>
           )}
 
-          {/* Employee Dropdown */}
-          {user?.role !== "employee" && (
-            <>
+          {/* Visits Dropdown */}
           <button
-            onClick={() => toggleMenu("employee")}
+            onClick={() => toggleMenu("visits")}
             className="flex w-full items-center justify-between px-6 py-3 hover:bg-slate-800 transition-colors"
           >
             <span className="flex items-center gap-4">
-              <FiUsers className="text-lg" /> Employees
+              <FiFolder className="text-lg" /> Visits
             </span>
-            {openMenus.employee ? <FiChevronDown /> : <FiChevronRight />}
+            {openMenus.visits ? <FiChevronDown /> : <FiChevronRight />}
           </button>
 
-          {openMenus.employee && (
+          {openMenus.visits && (
             <div className="ml-12 mt-1 space-y-1 text-gray-300">
+
+              {/* Admin sees both All + My visits */}
+              {user?.role !== "employee" && (
+                <NavLink
+                  to="/all-visits"
+                  className="block px-3 py-2 rounded hover:bg-slate-800"
+                  onClick={() => setIsOpen(false)}
+                >
+                  All Visits
+                </NavLink>
+              )}
+
+              {/* All users see My Visits */}
               <NavLink
-                to="/add-employee"
+                to="/my-visits"
                 className="block px-3 py-2 rounded hover:bg-slate-800"
                 onClick={() => setIsOpen(false)}
               >
-                Add Employee
+                My Visits
               </NavLink>
-              <NavLink
-                to="/all-employee"
-                className="block px-3 py-2 rounded hover:bg-slate-800"
-                onClick={() => setIsOpen(false)}
-              >
-                All Employees
-              </NavLink>
-              <NavLink
-                to="/permissions"
-                className="block px-3 py-2 rounded hover:bg-slate-800"
-                onClick={() => setIsOpen(false)}
-              >
-                Add Permissions
-              </NavLink>
+
             </div>
           )}
-          </>
+
+
+          {/* Employee Dropdown */}
+          {user?.role !== "employee" && (
+            <>
+              <button
+                onClick={() => toggleMenu("employee")}
+                className="flex w-full items-center justify-between px-6 py-3 hover:bg-slate-800 transition-colors"
+              >
+                <span className="flex items-center gap-4">
+                  <FiUsers className="text-lg" /> Employees
+                </span>
+                {openMenus.employee ? <FiChevronDown /> : <FiChevronRight />}
+              </button>
+
+              {openMenus.employee && (
+                <div className="ml-12 mt-1 space-y-1 text-gray-300">
+                  <NavLink
+                    to="/add-employee"
+                    className="block px-3 py-2 rounded hover:bg-slate-800"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Add Employee
+                  </NavLink>
+                  <NavLink
+                    to="/all-employee"
+                    className="block px-3 py-2 rounded hover:bg-slate-800"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    All Employees
+                  </NavLink>
+                  <NavLink
+                    to="/permissions"
+                    className="block px-3 py-2 rounded hover:bg-slate-800"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Add Permissions
+                  </NavLink>
+                </div>
+              )}
+            </>
           )}
 
           {/* Masters Dropdown - Only visible for admins */}

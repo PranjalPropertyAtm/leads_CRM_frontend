@@ -1,0 +1,92 @@
+import React, { useEffect } from "react";
+import { motion } from "framer-motion";
+import { X } from "lucide-react";
+
+export default function VisitDetailsModal({ open, onClose, visit }) {
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", handleEsc);
+    return () => document.removeEventListener("keydown", handleEsc);
+  }, [onClose]);
+
+  if (!open || !visit) return null;
+
+  return (
+    <div className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4">
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        className="bg-white rounded-xl shadow-2xl w-full max-w-xl p-6 space-y-6 overflow-y-auto max-h-[90vh]"
+      >
+        {/* HEADER */}
+        <div className="flex justify-between items-start border-b pb-3">
+          <div>
+            <h2 className="text-2xl font-semibold text-gray-800">Visit Details</h2>
+            <p className="text-sm text-gray-500">
+              {visit?.lead?.customerName || visit?.lead?.ownerName || "Lead"}
+            </p>
+          </div>
+
+          <button
+            className="text-gray-400 hover:text-gray-600"
+            onClick={onClose}
+          >
+            <X size={26} />
+          </button>
+        </div>
+
+        {/* BODY */}
+        <div className="space-y-6">
+          {/* Lead Information */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">Lead Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <Info label="Lead Name" value={visit?.lead?.customerName || visit?.lead?.ownerName || "N/A"} />
+              <Info label="Customer Type" value={visit?.lead?.customerType} />
+              <Info label="City" value={visit?.lead?.city} />
+            </div>
+          </div>
+
+          {/* Visit Information */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">Visit Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <Info label="Property Location" value={visit?.propertyLocation} />
+              <Info label="Property Details" value={visit?.propertyDetails} />
+              <Info
+                label="Visit Date"
+                value={new Date(visit?.visitDate).toLocaleDateString()}
+              />
+
+              <Info
+                label="Tenant Feedback"
+                value={visit?.tenantFeedback || "N/A"}
+              />
+            </div>
+          </div>
+
+          {/* Employee Information */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">Visited By</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <Info label="Employee Name" value={visit?.visitedBy?.name || "N/A"} />
+              <Info label="Employee Email" value={visit?.visitedBy?.email || "N/A"} />
+              <Info label="Role" value={visit?.visitedBy?.role || "N/A"} />
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+function Info({ label, value }) {
+  return (
+    <div>
+      <p className="text-gray-500">{label}</p>
+      <p className="font-medium text-gray-800">{value}</p>
+    </div>
+  );
+}
