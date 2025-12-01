@@ -39,17 +39,17 @@ const [selectedVisit, setSelectedVisit] = useState(null);
         </div>
 
         {/* TABLE */}
-        <div className="bg-white rounded-xl shadow border">
+       <div className="bg-white rounded-xl shadow-md border overflow-hidden">
           {isLoading ? (
             <div className="py-10 text-center text-gray-500">Loading...</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-gray-100">
-                  <tr>
+                   <tr className="bg-gray-50 text-gray-600 text-xs uppercase tracking-wide">
                     {["S.No", "Lead Name", "Visited By", "Location", "Date", "Actions"].map(
                       (h) => (
-                        <th key={h} className="px-4 py-3 text-left font-medium text-gray-600">
+                        <th key={h} className="px-3 py-4 font-semibold text-left">
                           {h}
                         </th>
                       )

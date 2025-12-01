@@ -7,8 +7,8 @@ import AddVisitModal from "../../components/AddVisitModal";
 
 export default function MyVisits() {
   const [filter, setFilter] = useState("");
-const [visitDetailsModal, setVisitDetailsModal] = useState(false);
-const [selectedVisit, setSelectedVisit] = useState(null);
+  const [visitDetailsModal, setVisitDetailsModal] = useState(false);
+  const [selectedVisit, setSelectedVisit] = useState(null);
 
   const [addModalOpen, setAddModalOpen] = useState(false);
 
@@ -51,17 +51,17 @@ const [selectedVisit, setSelectedVisit] = useState(null);
         </div>
 
         {/* TABLE */}
-        <div className="bg-white rounded-xl shadow border">
+       <div className="bg-white rounded-xl shadow-md border overflow-hidden">
           {isLoading ? (
             <div className="py-10 text-center text-gray-500">Loading...</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-gray-100">
-                  <tr>
+                  <tr className="bg-gray-50 text-gray-600 text-xs uppercase tracking-wide">
                     {["S.No", "Lead Name", "Property Location", "Date", "Actions"].map(
                       (h) => (
-                        <th key={h} className="px-4 py-3 text-left font-medium text-gray-600">
+                        <th key={h} className="px-3 py-4 font-semibold text-left">
                           {h}
                         </th>
                       )
@@ -81,15 +81,15 @@ const [selectedVisit, setSelectedVisit] = useState(null);
                         {new Date(visit.visitDate).toLocaleDateString()}
                       </td>
                       <td className="px-4 py-3">
-                       <button
-  onClick={() => {
-    setSelectedVisit(visit);
-    setVisitDetailsModal(true);
-  }}
-  className="px-3 py-2 text-blue-600 hover:bg-gray-100 rounded-md text-sm"
->
-  View Details
-</button>
+                        <button
+                          onClick={() => {
+                            setSelectedVisit(visit);
+                            setVisitDetailsModal(true);
+                          }}
+                          className="px-3 py-2 text-blue-600 hover:bg-gray-100 rounded-md text-sm"
+                        >
+                          View Details
+                        </button>
 
                       </td>
                     </tr>
@@ -102,10 +102,10 @@ const [selectedVisit, setSelectedVisit] = useState(null);
 
         {/* MODALS */}
         <VisitDetailsModal
-  open={visitDetailsModal}
-  onClose={() => setVisitDetailsModal(false)}
-  visit={selectedVisit}
-/>
+          open={visitDetailsModal}
+          onClose={() => setVisitDetailsModal(false)}
+          visit={selectedVisit}
+        />
 
 
         {addModalOpen && (
