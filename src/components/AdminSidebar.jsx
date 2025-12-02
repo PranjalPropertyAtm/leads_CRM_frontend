@@ -22,6 +22,7 @@ const AdminSidebar = () => {
     employee: false,
     masters: false,
     visits: false,
+    customers: false,
   });
 
   const toggleMenu = (menu) => {
@@ -32,6 +33,7 @@ const AdminSidebar = () => {
         employee: false,
         masters: false,
         visits: false,
+        customers: false,
       };
       // Toggle the clicked menu only if it's currently closed
       newState[menu] = !prev[menu];
@@ -45,6 +47,7 @@ const AdminSidebar = () => {
       employee: false,
       masters: false,
       visits: false,
+      customers: false,
     });
   };
 
@@ -182,6 +185,34 @@ const AdminSidebar = () => {
 
             </div>
           )}
+
+          {/* Customers Menu */}
+          {user?.role !== "employee" && (
+            <>
+              <button
+                onClick={() => toggleMenu("customers")}
+                className="flex w-full items-center justify-between px-6 py-3 hover:bg-slate-800 transition-colors"
+              >
+                <span className="flex items-center gap-4">
+                  <FiUsers className="text-lg" /> Customers
+                </span>
+                {openMenus.customers ? <FiChevronDown /> : <FiChevronRight />}
+              </button>
+
+              {openMenus.customers && (
+                <div className="ml-12 mt-1 space-y-1 text-gray-300">
+                  <NavLink
+                    to="/all-customers"
+                    className="block px-3 py-2 rounded hover:bg-slate-800"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    All Customers
+                  </NavLink>
+                </div>
+              )}
+            </>
+          )}
+
 
 
           {/* Employee Dropdown */}
