@@ -10,16 +10,20 @@ import {
   ChevronLeft,
   ChevronRight,
   UserPlus,
-  MoreVertical
+  MoreVertical,
+  HousePlus
 } from "lucide-react";
 
 import axiosInstance from "../../lib/axios.js";
+import { useQueryClient } from "@tanstack/react-query";
 import { notify } from "../../utils/toast.js";
 import { useFetchLeads, useDeleteLead } from "../../hooks/useLeadQueries.js";
 import { createPortal } from "react-dom";
 import { useLoadUser } from "../../hooks/useAuthQueries.js";
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import AddVisitModal from "../../components/AddVisitModal.jsx";
+import VisitHistory from "../../components/VisitHistory.jsx";
 
 
 export default function AllLeads() {
@@ -27,6 +31,8 @@ export default function AllLeads() {
   const { data: user } = useLoadUser();
   const [filter, setFilter] = useState("");
   const [selected, setSelected] = useState(null);
+
+  const queryClient = useQueryClient();
 
   // Registration Modal states
   const [showRegModal, setShowRegModal] = useState(false);
@@ -36,7 +42,13 @@ export default function AllLeads() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-    const [regLead, setRegLead] = useState(null);
+  const [regLead, setRegLead] = useState(null);
+
+  // Visits
+  const [visitModal, setVisitModal] = useState(false);
+  const [visitHistoryOpen, setVisitHistoryOpen] = useState(false);
+  const [visitLead, setVisitLead] = useState(null);
+
 
 
   const {
@@ -73,44 +85,54 @@ export default function AllLeads() {
   // -------------------------------------------------
   // REGISTRATION — PROFESSIONAL WAY
   // -------------------------------------------------
-  const handleRegisterLead = async () => {
+ const handleRegisterLead = async () => {
   if (!regPlan.trim()) return notify.error("Plan name is required");
   if (!regLead?._id) return notify.error("Lead not selected!");
 
-    try {
-      const { data } = await axiosInstance.post("/registrations/add", {
-        leadId: regLead._id,
-        planName: regPlan,
-        registrationDate: regDate || new Date(),
-        registeredBy: user._id,
-      });
-
-      notify.success(data.message);
-
-     
-
-        setRegLead({
-      ...regLead,
-      isRegistered: true,
-      registrationDetails: {
-        planName: regPlan,
-        registrationDate: regDate || new Date(),
-        registeredBy: user._id,
-      },
+  try {
+    const { data } = await axiosInstance.post("/registrations/add", {
+      leadId: regLead._id,
+      planName: regPlan,
+      registrationDate: regDate || new Date(),
+      registeredBy: user._id,
     });
 
-      setShowRegModal(false);
-      setRegPlan("");
-      setRegDate("");
-      setRegLead(null);
-    } catch (error) {
-      notify.error(
-        error.response?.data?.message || "Failed to register customer"
-      );
-    }
-  };
+    notify.success(data.message);
 
+    // 🔥 UPDATE REACT QUERY CACHE INSTANTLY
+    queryClient.setQueryData(["myLeads", currentPage, pageSize], (old) => {
+      if (!old) return old;
 
+      return {
+        ...old,
+        leads: old.leads.map((l) =>
+          l._id === regLead._id
+            ? {
+                ...l,
+                isRegistered: true,
+                registrationDetails: {
+                  planName: regPlan,
+                  registrationDate: regDate || new Date(),
+                  registeredBy: user,
+                },
+              }
+            : l
+        ),
+      };
+    });
+
+    // 🔥 Force Refetch (Guaranteed update)
+    queryClient.invalidateQueries(["myLeads"]);
+
+    // Close modal
+    setShowRegModal(false);
+    setRegPlan("");
+    setRegDate("");
+    setRegLead(null);
+  } catch (error) {
+    notify.error(error.response?.data?.message || "Failed to register customer");
+  }
+};
 
 
   // -------------------------------------------------
@@ -146,70 +168,28 @@ export default function AllLeads() {
     );
   });
 
-  // function ActionMenu({ children }) {
-  //   const [open, setOpen] = useState(false);
-  //   const ref = useRef();
-
-  //   // Close on click outside
-  //   useEffect(() => {
-  //     const closeOnOutsideClick = (e) => {
-  //       if (ref.current && !ref.current.contains(e.target)) {
-  //         setOpen(false);
-  //       }
-  //     };
-  //     document.addEventListener("mousedown", closeOnOutsideClick);
-  //     return () => document.removeEventListener("mousedown", closeOnOutsideClick);
-  //   }, []);
-
-  //   return (
-  //     <div className="relative" ref={ref}>
-  //       {/* 3 Dots Button */}
-  //       <button
-  //         onClick={() => setOpen((o) => !o)}
-  //         className="p-2 hover:bg-gray-100 rounded-full transition"
-  //       >
-  //         <MoreVertical size={18} />
-  //       </button>
-
-  //       {/* Dropdown */}
-  //       <AnimatePresence>
-  //         {open && (
-  //           <motion.div
-  //             initial={{ opacity: 0, scale: 0.9, y: -5 }}
-  //             animate={{ opacity: 1, scale: 1, y: 0 }}
-  //             exit={{ opacity: 0, scale: 0.9, y: -5 }}
-  //             transition={{ duration: 0.12 }}
-  //             className="absolute right-0 mt-2 w-40 bg-white shadow-lg border rounded-lg z-50"
-  //           >
-  //             {children}
-  //           </motion.div>
-  //         )}
-  //       </AnimatePresence>
-  //     </div>
-  //   );
-  // }
 
   function ActionMenu({ children }) {
     const [open, setOpen] = useState(false);
     const [coords, setCoords] = useState({ top: 0, left: 0 });
     const btnRef = useRef(null);
-  
+
     const updatePosition = () => {
       if (!btnRef.current) return;
-  
+
       const rect = btnRef.current.getBoundingClientRect();
-  
+
       setCoords({
         top: rect.top + rect.height + window.scrollY + 6,
-        left: rect.left + window.scrollX - 120, 
+        left: rect.left + window.scrollX - 120,
       });
     };
-  
+
     const toggleMenu = () => {
       updatePosition();
       setOpen((prev) => !prev);
     };
-  
+
     // Close on outside click
     useEffect(() => {
       const handler = (e) => {
@@ -218,23 +198,23 @@ export default function AllLeads() {
       document.addEventListener("mousedown", handler);
       return () => document.removeEventListener("mousedown", handler);
     }, []);
-  
+
     // Scroll & Resize reposition
     useEffect(() => {
       if (!open) return;
-  
+
       const handleScroll = () => updatePosition();
       const handleResize = () => updatePosition();
-  
+
       window.addEventListener("scroll", handleScroll);
       window.addEventListener("resize", handleResize);
-  
+
       return () => {
         window.removeEventListener("scroll", handleScroll);
         window.removeEventListener("resize", handleResize);
       };
     }, [open]);
-  
+
     return (
       <>
         <button
@@ -244,7 +224,7 @@ export default function AllLeads() {
         >
           <MoreVertical size={18} />
         </button>
-  
+
         {createPortal(
           <AnimatePresence>
             {open && (
@@ -331,6 +311,7 @@ export default function AllLeads() {
                       "Budget",
                       "Source",
                       "Registered",
+                      "Visits",
                       ""
 
                     ].map((h) => (
@@ -392,6 +373,12 @@ export default function AllLeads() {
                         )}
                       </td>
 
+                        <td className="px-4 py-3">
+                        <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full">
+                          {lead.totalVisits || 0} Visits
+                        </span>
+                      </td>
+
                       {/* ACTIONS */}
                       <td className="px-5 py-4 text-right">
                         <ActionMenu>
@@ -403,13 +390,7 @@ export default function AllLeads() {
                             <Eye size={14} /> View Details
                           </button>
 
-                          {/* DELETE */}
-                          <button
-                            onClick={() => handleDelete(lead._id)}
-                            className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-red-600 transition"
-                          >
-                            <Trash2 size={14} /> Delete
-                          </button>
+                         
 
                           {/* REGISTER - only if lead created by current user */}
                           {!lead.isRegistered && lead.createdBy?._id === user?._id && (
@@ -423,6 +404,40 @@ export default function AllLeads() {
                               <UserPlus size={14} /> Register
                             </button>
                           )}
+
+
+                          {/* VIEW VISITS */}
+                          <button
+                            onClick={() => {
+                              setVisitHistoryOpen(true);
+                              setVisitLead(lead);
+                            }}
+                            className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-blue-600 transition"
+                          >
+                            <Eye size={14} /> View Visits
+                          </button>
+
+                          {/* ADD VISIT - only for creator */}
+                          {lead.createdBy?._id === user?._id && (
+                            <button
+                              onClick={() => {
+                                setVisitModal(true);
+                                setVisitLead(lead);
+                              }}
+                              className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-green-600 transition"
+                            >
+                              <HousePlus size={14} /> Add Visit
+                            </button>
+                          )}
+
+                           {/* DELETE */}
+                          <button
+                            onClick={() => handleDelete(lead._id)}
+                            className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-red-600 transition"
+                          >
+                            <Trash2 size={14} /> Delete
+                          </button>
+
                         </ActionMenu>
                       </td>
 
@@ -703,6 +718,10 @@ export default function AllLeads() {
             </motion.div>
           </div>
         )}
+
+         {/* Visits */}
+                {visitModal && <AddVisitModal open={visitModal} onClose={() => setVisitModal(false)} lead={visitLead} />}
+                {visitHistoryOpen && <VisitHistory open={visitHistoryOpen} onClose={() => setVisitHistoryOpen(false)} leadId={visitLead?._id} />}
       </motion.div>
     </div>
   );

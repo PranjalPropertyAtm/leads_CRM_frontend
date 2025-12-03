@@ -1,11 +1,12 @@
 import React, { useState } from "react";
-import { Search, Eye, Users, ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
+import { Search, Eye, Users, ChevronLeft, ChevronRight, Trash2, X } from "lucide-react";
 import { motion } from "framer-motion";
 import { useFetchCustomers } from "../../hooks/useCustomerQueries.js";
 import { notify } from "../../utils/toast.js"
 
 export default function AllCustomers() {
   const [search, setSearch] = useState("");
+  const [selected,setSelected ] = useState("");
   const [filter, setFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -198,8 +199,8 @@ export default function AllCustomers() {
                       key={pageNum}
                       onClick={() => handlePageChange(pageNum)}
                       className={`px-3 py-1 rounded-lg text-sm transition ${currentPage === pageNum
-                          ? "bg-blue-600 text-white"
-                          : "border border-gray-300 text-gray-600 hover:bg-gray-50"
+                        ? "bg-blue-600 text-white"
+                        : "border border-gray-300 text-gray-600 hover:bg-gray-50"
                         }`}
                     >
                       {pageNum}
@@ -218,6 +219,129 @@ export default function AllCustomers() {
             </div>
           </div>
         )}
+
+        {selected && (
+          <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center">
+            <div
+              className="absolute inset-0 bg-black/40"
+              onClick={() => setSelected(null)}
+            />
+
+            <motion.div
+              initial={{ y: 30, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              className="relative bg-white rounded-xl shadow-xl w-full max-w-lg p-6 z-10"
+            >
+              {/* HEADER */}
+              <div className="flex justify-between items-start border-b pb-4">
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-900">
+                    {selected.name}
+                  </h3>
+                  <p className="text-sm text-gray-500">{selected.email || "No email"}</p>
+                </div>
+
+                <button
+                  className="text-gray-400 hover:text-gray-600"
+                  onClick={() => setSelected(null)}
+                >
+                  <X size={22} />
+                </button>
+              </div>
+
+              {/* CUSTOMER DETAILS */}
+              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-5 text-sm">
+
+                {/* PHONE */}
+                <div>
+                  <p className="text-gray-500">Phone</p>
+                  <p className="font-medium">{selected.mobileNumber || "N/A"}</p>
+                </div>
+
+                {/* TYPE */}
+                <div>
+                  <p className="text-gray-500">Customer Type</p>
+                  <span
+                    className={`px-3 py-1 text-xs rounded-full font-medium 
+              ${selected.customerType === "tenant"
+                        ? "bg-blue-100 text-blue-700"
+                        : "bg-green-100 text-green-700"}`}
+                  >
+                    {selected.customerType}
+                  </span>
+                </div>
+
+                {/* CITY */}
+                <div>
+                  <p className="text-gray-500">City</p>
+                  <p className="font-medium">{selected.city || "N/A"}</p>
+                </div>
+
+                {/* STATUS */}
+                <div>
+                  <p className="text-gray-500">Status</p>
+                  <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-lg text-xs font-medium">
+                    {selected.status || "Lead"}
+                  </span>
+                </div>
+
+                {/* TENANT FIELDS */}
+                {selected.customerType === "tenant" && (
+                  <>
+                    <div>
+                      <p className="text-gray-500">Preferred Location</p>
+                      <p className="font-medium">
+                        {selected.preferredLocation || "N/A"}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-gray-500">Budget</p>
+                      <p className="font-medium">
+                        {selected.budget ? `₹${selected.budget}` : "N/A"}
+                      </p>
+                    </div>
+                  </>
+                )}
+
+                {/* OWNER FIELDS */}
+                {selected.customerType === "owner" && (
+                  <>
+                    <div>
+                      <p className="text-gray-500">Property Location</p>
+                      <p className="font-medium">{selected.propertyLocation || "N/A"}</p>
+                    </div>
+
+                    <div>
+                      <p className="text-gray-500">Area</p>
+                      <p className="font-medium">{selected.area || "N/A"}</p>
+                    </div>
+
+                    <div>
+                      <p className="text-gray-500">Landmark</p>
+                      <p className="font-medium">{selected.landmark || "N/A"}</p>
+                    </div>
+                  </>
+                )}
+
+                {/* REQUIREMENTS */}
+                {selected.requirements && (
+                  <div className="md:col-span-2">
+                    <p className="text-gray-500">Requirements</p>
+                    <p className="font-medium">{selected.requirements}</p>
+                  </div>
+                )}
+
+                {/* CUSTOMER ID */}
+                <div className="md:col-span-2">
+                  <p className="text-gray-500">Customer ID</p>
+                  <p className="text-xs text-gray-400 break-all">{selected._id}</p>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
 
       </motion.div>
     </div>

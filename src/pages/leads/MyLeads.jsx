@@ -15,6 +15,7 @@ import {
   ChevronRight,
   HousePlus
 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useMyLeads, useDeleteLead } from "../../hooks/useLeadQueries.js";
 import { useLoadUser } from "../../hooks/useAuthQueries.js";
 import { createPortal } from "react-dom";
@@ -27,6 +28,8 @@ export default function MyLeads() {
   const { data: user } = useLoadUser(); // {data: user}
   const [filter, setFilter] = useState("");
   const [selected, setSelected] = useState(null);
+
+  const queryClient = useQueryClient();
 
   // Registration Modal
   const [showRegModal, setShowRegModal] = useState(false);
@@ -91,29 +94,29 @@ export default function MyLeads() {
 
       notify.success(data.message || "Registered successfully");
 
-      // update regLead locally so UI reflects immediate change
-      setRegLead({
-        ...regLead,
-        isRegistered: true,
-        registrationDetails: {
-          planName: regPlan,
-          registrationDate: regDate || new Date(),
-          registeredBy: user?._id,
-        },
-      });
+        queryClient.setQueryData(["myLeads", currentPage, pageSize], (old) => {
+      if (!old) return old;
 
-      // If the currently opened details modal is the same lead, update that too
-      if (selected?._id === regLead._id) {
-        setSelected((s) => ({
-          ...s,
-          isRegistered: true,
-          registrationDetails: {
-            planName: regPlan,
-            registrationDate: regDate || new Date(),
-            registeredBy: user?._id,
-          },
-        }));
-      }
+      return {
+        ...old,
+        leads: old.leads.map((l) =>
+          l._id === regLead._id
+            ? {
+                ...l,
+                isRegistered: true,
+                registrationDetails: {
+                  planName: regPlan,
+                  registrationDate: regDate || new Date(),
+                  registeredBy: user,
+                },
+              }
+            : l
+        ),
+      };
+    });
+
+    // 🔥 Force Refetch (Guaranteed update)
+    queryClient.invalidateQueries(["myLeads"]);
 
       setShowRegModal(false);
       setRegPlan("");
