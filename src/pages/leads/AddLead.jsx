@@ -345,7 +345,7 @@
 //                         ))
 //                     )}
 //                   </select>
-                            
+
 //                 </div>
 //               </>
 //             )}
@@ -367,7 +367,7 @@
 //                   ))
 //                 )}
 //               </select>
-              
+
 //               {errors.source && <p className="text-red-500 text-sm mt-1"><AlertCircle size={14} /> {errors.source}</p>}
 //             </div>
 
@@ -403,12 +403,15 @@ import {
   getSources,
   getLocations,
 } from "../../hooks/useMastersQueries";
+import { useFetchEmployees } from "../../hooks/useEmployeeQueries";
+import SearchableSelect from "../../components/SearchableSelect";
+
 
 export default function AddLead() {
   const [customerType, setCustomerType] = useState("tenant");
 
   const [form, setForm] = useState({
-    memberCode: "",
+    // memberCode: "",
     customerName: "",
     ownerName: "",
     mobileNumber: "",
@@ -420,6 +423,7 @@ export default function AddLead() {
     subPropertyType: "",
     budget: "",
     source: "",
+    assignedTo: "",
     requirements: "",
     area: "",
     landmark: "",
@@ -438,6 +442,15 @@ export default function AddLead() {
   const sources = getSources(masters);
   const locationOptions = getLocations(masters, form.city);
 
+  const { data } = useFetchEmployees(1, 1000); // fetch all employees
+  const employees = data?.employees || [];
+
+  const employeeOptions = employees.map((emp) => ({
+    value: emp._id,
+    label: `${emp.name} (${emp.designation || ""})`
+  }));
+
+
   // ======================
   // React Query Mutation
   // ======================
@@ -449,7 +462,7 @@ export default function AddLead() {
   const validate = () => {
     const e = {};
 
-    if (!form.memberCode.trim()) e.memberCode = "Member code required";
+    // if (!form.memberCode.trim()) e.memberCode = "Member code required";
     if (!/^[0-9]{10}$/.test(form.mobileNumber))
       e.mobileNumber = "Mobile must be 10 digits";
 
@@ -484,7 +497,7 @@ export default function AddLead() {
 
     const payload = {
       customerType,
-      memberCode: form.memberCode,
+      // memberCode: form.memberCode,
       mobileNumber: form.mobileNumber,
       email: form.email || undefined,
       city: form.city,
@@ -492,7 +505,10 @@ export default function AddLead() {
       subPropertyType: form.subPropertyType,
       budget: form.budget || undefined,
       source: form.source,
+      assignedTo:form.assignedTo || undefined,
       requirements: form.requirements || undefined,
+      area: form.area || undefined,
+      landmark: form.area || undefined,
     };
 
     if (customerType === "tenant") {
@@ -517,7 +533,7 @@ export default function AddLead() {
 
   const resetForm = () => {
     setForm({
-      memberCode: "",
+      // memberCode: "",
       customerName: "",
       ownerName: "",
       mobileNumber: "",
@@ -529,6 +545,7 @@ export default function AddLead() {
       subPropertyType: "",
       budget: "",
       source: "",
+      assignedTo: "",
       requirements: "",
       area: "",
       landmark: "",
@@ -572,11 +589,10 @@ export default function AddLead() {
             <button
               type="button"
               onClick={() => setCustomerType("tenant")}
-              className={`px-4 py-2 rounded-lg ${
-                customerType === "tenant"
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-100"
-              }`}
+              className={`px-4 py-2 rounded-lg ${customerType === "tenant"
+                ? "bg-blue-600 text-white"
+                : "bg-gray-100"
+                }`}
             >
               Tenant
             </button>
@@ -584,11 +600,10 @@ export default function AddLead() {
             <button
               type="button"
               onClick={() => setCustomerType("owner")}
-              className={`px-4 py-2 rounded-lg ${
-                customerType === "owner"
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-100"
-              }`}
+              className={`px-4 py-2 rounded-lg ${customerType === "owner"
+                ? "bg-blue-600 text-white"
+                : "bg-gray-100"
+                }`}
             >
               Owner
             </button>
@@ -597,13 +612,13 @@ export default function AddLead() {
           {/* FIELDS GRID */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Member Code */}
-            <InputField
+            {/* <InputField
               label="Member Code *"
               name="memberCode"
               value={form.memberCode}
               onChange={handleChange}
               error={errors.memberCode}
-            />
+            /> */}
 
             {/* TENANT FIELDS */}
             {customerType === "tenant" && (
@@ -778,6 +793,15 @@ export default function AddLead() {
               error={errors.source}
             />
 
+            <SearchableSelect
+              label="Assigned To"
+              value={form.assignedTo}
+              options={employeeOptions}
+              onChange={handleChange}
+              error={errors.assignedTo}
+            />
+
+
             <div className="md:col-span-2">
               <label className="text-sm font-medium text-gray-700 mb-1">
                 Requirements / Notes
@@ -815,9 +839,8 @@ function InputField({ label, error, ...props }) {
       <label className="text-sm font-medium text-gray-700">{label}</label>
       <input
         {...props}
-        className={`w-full px-3 py-2 rounded-lg border ${
-          error ? "border-red-400" : "border-gray-300"
-        }`}
+        className={`w-full px-3 py-2 rounded-lg border ${error ? "border-red-400" : "border-gray-300"
+          }`}
       />
       {error && (
         <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
@@ -837,9 +860,8 @@ function SelectField({ label, options = [], error, ...props }) {
       <label className="text-sm font-medium text-gray-700">{label}</label>
       <select
         {...props}
-        className={`w-full px-3 py-2 rounded-lg border ${
-          error ? "border-red-400" : "border-gray-300"
-        }`}
+        className={`w-full px-3 py-2 rounded-lg border ${error ? "border-red-400" : "border-gray-300"
+          }`}
       >
         <option value="">Select {label}</option>
         {options.map((o) => (

@@ -3,7 +3,7 @@ import React, { act, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Trash2, Plus, Square, MapPin } from "lucide-react";
 import { useFetchMasters, useSaveMasters } from "../../hooks/useMastersQueries.js";
-import {notify} from "../../utils/toast.js";
+import { notify } from "../../utils/toast.js";
 // if notify path differs, adjust or remove notifications
 
 export default function AddDetails() {
@@ -58,7 +58,7 @@ export default function AddDetails() {
     const handleAdd = async () => {
         const trimmedLabel = (label || "").trim();
         if (!trimmedLabel) {
-              notify?.error?.("Label is required");
+            notify?.error?.("Label is required");
             return;
         }
 
@@ -204,13 +204,13 @@ export default function AddDetails() {
                         )}
                         {activeTab === "locations" && (
                             <select
-                                value={selectedCity}   
+                                value={selectedCity}
                                 onChange={(e) => setSelectedCity(e.target.value)}
                                 className="border px-3 py-2 rounded-lg focus:ring-2 focus:ring-slate-900 outline-none"
                             >
                                 <option value="">Select City</option>
                                 {safeMasters.cities.map((city, idx) => (
-                                    <option key={idx} value={city.label}>   
+                                    <option key={idx} value={city.label}>
                                         {city.label}
                                     </option>
                                 ))}
