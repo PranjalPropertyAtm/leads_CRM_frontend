@@ -94,3 +94,123 @@ export default function AddVisitModal({ open, onClose, lead }) {
     </div>
   );
 }
+
+
+// import React, { useState } from "react";
+// import axiosInstance from "../lib/axios";
+// import { notify } from "../utils/toast";
+// import SearchableSelect from "./SearchableSelect";
+// import { useFetchEmployees } from "../hooks/useEmployeeQueries";
+
+// export default function AddVisitModal({ open, onClose, lead }) {
+//   const [propertyLocation, setPropertyLocation] = useState("");
+//   const [propertyDetails, setPropertyDetails] = useState("");
+//   const [tenantFeedback, setTenantFeedback] = useState("");
+//   const [visitedBy, setVisitedBy] = useState("");
+
+//   const { data } = useFetchEmployees(1, 1000);
+//   const employees = data?.employees || [];
+
+//   const employeeOptions = employees.map((emp) => ({
+//     value: emp._id,
+//     label: emp.name, // only name (your requirement)
+//   }));
+
+//   if (!open) return null;
+
+//   const handleSubmit = async () => {
+//     if (!visitedBy) return notify.error("Please select employee");
+//     if (!propertyLocation.trim())
+//       return notify.error("Property location is required");
+//     if (!propertyDetails.trim())
+//       return notify.error("Property details are required");
+
+//     try {
+//       const payload = {
+//         leadId: lead._id,
+//         propertyLocation,
+//         propertyDetails,
+//         tenantFeedback,
+//         visitedBy, // employee id
+//       };
+
+//       const { data } = await axiosInstance.post("/visits/add", payload);
+
+//       notify.success("Visit Added Successfully");
+//       onClose();
+//     } catch (error) {
+//       notify.error(error.response?.data?.message || "Failed to add visit");
+//     }
+//   };
+
+//   return (
+//     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[99999]">
+//       <div className="bg-white p-6 rounded-xl w-full max-w-md shadow-xl animate-fadeIn">
+
+//         <h2 className="text-xl font-semibold mb-4">
+//           Add Visit for {lead?.customerName || lead?.ownerName}
+//         </h2>
+
+//         {/* Employee Select */}
+//         <SearchableSelect
+//           label="Visited By"
+//           value={visitedBy}
+//           options={employeeOptions}
+//           onChange={(e) => setVisitedBy(e.target.value)}
+//         />
+
+//         {/* Property Location */}
+//         <div className="mt-2">
+//           <label className="text-sm">Property Location</label>
+//           <input
+//             className="w-full border rounded-lg px-3 py-2 mt-1"
+//             placeholder="Example: Andheri East"
+//             value={propertyLocation}
+//             onChange={(e) => setPropertyLocation(e.target.value)}
+//           />
+//         </div>
+
+//         {/* Property Details */}
+//         <div className="mt-3">
+//           <label className="text-sm">Property Details</label>
+//           <textarea
+//             className="w-full border rounded-lg px-3 py-2 mt-1"
+//             placeholder="Example: 2BHK, Fully Furnished..."
+//             rows={3}
+//             value={propertyDetails}
+//             onChange={(e) => setPropertyDetails(e.target.value)}
+//           />
+//         </div>
+
+//         {/* Tenant Feedback */}
+//         <div className="mt-3">
+//           <label className="text-sm">Tenant Feedback (Optional)</label>
+//           <textarea
+//             className="w-full border rounded-lg px-3 py-2 mt-1"
+//             placeholder="Example: Liked the property but rent is high..."
+//             rows={2}
+//             value={tenantFeedback}
+//             onChange={(e) => setTenantFeedback(e.target.value)}
+//           />
+//         </div>
+
+//         <div className="flex justify-end gap-3 mt-5">
+//           <button
+//             className="px-4 py-2 border rounded-lg"
+//             onClick={onClose}
+//           >
+//             Cancel
+//           </button>
+
+//           <button
+//             className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+//             onClick={handleSubmit}
+//           >
+//             Add Visit
+//           </button>
+//         </div>
+
+//       </div>
+//     </div>
+//   );
+// }

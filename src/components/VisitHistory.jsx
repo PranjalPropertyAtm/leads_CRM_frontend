@@ -46,6 +46,7 @@ export default function VisitHistory({ open, onClose, leadId }) {
                 <p className="text-gray-700 mt-1">
                   <b>Details:</b> {v.propertyDetails}
                 </p>
+                
 
                 {v.tenantFeedback && (
                   <p className="text-gray-700 mt-1">
