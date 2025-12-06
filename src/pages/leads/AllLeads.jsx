@@ -66,12 +66,12 @@
 
 //     const { data } = useFetchEmployees(1, 1000); // fetch all employees
 //     const employees = data?.employees || [];
-  
+
 //     const employeeOptions = employees.map((emp) => ({
 //       value: emp._id,
 //       label: `${emp.name} (${emp.designation || ""})`
 //     }));
-  
+
 
 //   const deleteLeadMutation = useDeleteLead?.();
 
@@ -402,7 +402,7 @@
 //                             <Eye size={14} /> View Details
 //                           </button>
 
-                         
+
 
 //                           {/* REGISTER - only if lead created by current user */}
 //                           {!lead.isRegistered && lead.createdBy?._id === user?._id && (
@@ -722,7 +722,7 @@
 //                  />
 //                 </div>
 
-                
+
 
 //                 <div>
 //                   <label className="text-sm text-gray-600">
@@ -1347,7 +1347,8 @@ import { useLoadUser } from "../../hooks/useAuthQueries.js";
 
 import AddVisitModal from "../../components/AddVisitModal.jsx";
 import VisitHistory from "../../components/VisitHistory.jsx";
-import SearchableSelect from "../../components/SearchableSelect.jsx";
+// import SearchableSelect from "../../components/SearchableSelect.jsx";
+import RegisterLeadModal from "../../components/RegisterLeadModal.jsx";
 
 export default function AllLeads() {
   const queryClient = useQueryClient();
@@ -1411,22 +1412,7 @@ export default function AllLeads() {
   // delete hook
   const deleteLeadMutation = useDeleteLead();
 
-  // -------------------------
-  // Helpers
-  // -------------------------
-  // Safely return a display name for a value that might be:
-  // - populated user object: { _id, name, email }
-  // - a plain string (name or id)
-  // - null/undefined
-  const getPersonName = (val) => {
-    if (!val) return "N/A";
-    if (typeof val === "string") return val;
-    if (typeof val === "object") {
-      // if populated mongoose doc or plain object
-      return val.name || val._id || "N/A";
-    }
-    return String(val);
-  };
+
 
   // -------------------------
   // Handlers
@@ -1666,9 +1652,8 @@ export default function AllLeads() {
 
                       <td className="px-4 py-3">
                         <span
-                          className={`px-3 py-1 text-xs rounded-full ${
-                            lead.customerType === "tenant" ? "bg-blue-100 text-blue-600" : "bg-green-100 text-green-600"
-                          }`}
+                          className={`px-3 py-1 text-xs rounded-full ${lead.customerType === "tenant" ? "bg-blue-100 text-blue-600" : "bg-green-100 text-green-600"
+                            }`}
                         >
                           {lead.customerType}
                         </span>
@@ -1775,7 +1760,7 @@ export default function AllLeads() {
                       {pageNum}
                     </button>
                   );
-                })}  
+                })}
               </div>
 
               <button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} className="p-2 rounded-lg border border-gray-300 text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition" title="Next page"><ChevronRight size={18} /></button>
@@ -1854,7 +1839,7 @@ export default function AllLeads() {
         )}
 
         {/* Registration Modal */}
-        {showRegModal && (
+        {/* {showRegModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md">
               <h2 className="text-xl font-semibold text-gray-800">Register Lead</h2>
@@ -1888,7 +1873,18 @@ export default function AllLeads() {
               </div>
             </motion.div>
           </div>
-        )}
+        )} */}
+
+        <RegisterLeadModal
+          open={showRegModal}
+          onClose={() => setShowRegModal(false)}
+          employeeOptions={employeeOptions}
+          lead={regLead}
+          onSuccess={() => {
+            queryClient.invalidateQueries(["leads"]);
+          }}
+        />
+
 
         {/* Visits */}
         {visitModal && <AddVisitModal open={visitModal} onClose={() => setVisitModal(false)} lead={visitLead} />}

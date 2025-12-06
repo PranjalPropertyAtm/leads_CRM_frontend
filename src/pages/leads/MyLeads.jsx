@@ -18,6 +18,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { useMyLeads, useDeleteLead } from "../../hooks/useLeadQueries.js";
 import { useLoadUser } from "../../hooks/useAuthQueries.js";
+import { useFetchEmployees } from "../../hooks/useEmployeeQueries.js";
 import { createPortal } from "react-dom";
 import { notify } from "../../utils/toast.js";
 import axiosInstance from "../../lib/axios.js";
@@ -55,6 +56,33 @@ export default function MyLeads() {
   } = useMyLeads(currentPage, pageSize);
 
   const { leads = [], total = 0, totalPages = 0 } = data;
+
+  const {
+      data: employeesData,
+      isLoading: empLoading,
+      isError: empError,
+      error: empErrorObj,
+    } = useFetchEmployees(1, 1000);
+  
+    const employees = employeesData?.employees || [];
+  
+    // map to select options
+    const employeeOptions = employees.map((emp) => ({
+      value: emp._id,
+      label: `${emp.name}${emp.designation ? " — " + emp.designation : ""}`,
+    }));
+  
+    // ensure current user present as fallback option if employees fetch blocked
+    if ((empError || employeeOptions.length === 0) && user) {
+      const exists = employeeOptions.find((o) => o.value === user._id);
+      if (!exists) {
+        employeeOptions.unshift({
+          value: user._id,
+          label: `${user.name} (${user.designation || "You"})`,
+        });
+      }
+    }
+  
 
   const deleteLeadMutation = useDeleteLead?.();
 
@@ -289,7 +317,7 @@ export default function MyLeads() {
                       "S.NO",
                       "Name",
                       "Type",
-                      "Member Code",
+                      // "Member Code",
                       "Date",
                       "Mobile",
                       "City",
@@ -322,7 +350,7 @@ export default function MyLeads() {
                         </span>
                       </td>
 
-                      <td className="px-4 py-3">{lead.memberCode || "N/A"}</td>
+                      {/* <td className="px-4 py-3">{lead.memberCode || "N/A"}</td> */}
                       <td className="px-4 py-3">{new Date(lead.createdAt).toLocaleDateString()}</td>
                       <td className="px-4 py-3">{lead.mobileNumber}</td>
                       <td className="px-4 py-3">{lead.city}</td>
@@ -520,7 +548,7 @@ export default function MyLeads() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                     <InfoRow label="Plan Name" value={selected.registrationDetails?.planName} />
                     <InfoRow label="Registration Date" value={selected.registrationDetails?.registrationDate ? new Date(selected.registrationDetails.registrationDate).toLocaleDateString() : "N/A"} />
-                    <InfoRow label="Registered By" value={selected.registrationDetails?.registeredBy?.name || selected.registrationDetails?.registeredBy || "N/A"} />
+                    <InfoRow label="Registered By" value={selected.registrationDetails?.registeredBy?.name} />
                   </div>
                 ) : (
                   <p className="text-sm text-red-500 font-medium">✖ This lead is not registered yet.</p>
