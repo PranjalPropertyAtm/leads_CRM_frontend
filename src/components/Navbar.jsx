@@ -29,14 +29,14 @@ const Navbar = ({ onLogout }) => {
         </div>
 
         {/* CENTER: Search (Desktop only) */}
-        <div className="hidden md:flex items-center bg-gray-100 px-3 py-2 rounded-full w-1/3">
+        {/* <div className="hidden md:flex items-center bg-gray-100 px-3 py-2 rounded-full w-1/3">
           <FiSearch className="text-gray-500 mr-2" />
           <input
             type="text"
             placeholder="Search here..."
             className="bg-transparent outline-none w-full text-sm text-gray-700"
           />
-        </div>
+        </div> */}
 
         {/* RIGHT: Notification + Profile */}
         <div className="flex items-center gap-4 relative">

@@ -135,6 +135,7 @@ import { motion } from "framer-motion";
 import SearchableSelect from "./SearchableSelect";
 import { notify } from "../utils/toast";
 import { useFetchEmployees } from "../hooks/useEmployeeQueries";
+import { useAddRegistration } from "../hooks/useRegistrationQueries";
 import axiosInstance from "../lib/axios";
 
 export default function RegistrationModal({ open, onClose, lead }) {
@@ -145,6 +146,8 @@ export default function RegistrationModal({ open, onClose, lead }) {
 
   const { data } = useFetchEmployees(1, 1000);
   const employees = data?.employees || [];
+
+  const addRegistrationMutation = useAddRegistration();
 
   const employeeOptions = employees.map((emp) => ({
     value: emp._id,
@@ -166,13 +169,23 @@ export default function RegistrationModal({ open, onClose, lead }) {
       registeredBy, // employee id
     };
 
-    try {
-      const res = await axiosInstance.post("/registrations/add", payload);
-      notify.success("Registration successful!");
-      onClose();
-    } catch (err) {
-      notify.error(err?.response?.data?.message || "Registration failed");
-    }
+    // try {
+    //   const res = await axiosInstance.post("/registrations/add", payload);
+    //   notify.success("Registration successful!");
+    //   onClose();
+    // } catch (err) {
+    //   notify.error(err?.response?.data?.message || "Registration failed");
+    // }
+
+    addRegistrationMutation.mutate(payload, {
+      onSuccess: () => {
+        notify.success("Registration Added Successfully");
+        onClose();
+      },
+      onError : (error) => {
+        notify.error(error?.response?.data?.message || "Failed to add registartion");
+      }
+    })
   };
 
   return (
@@ -214,7 +227,7 @@ export default function RegistrationModal({ open, onClose, lead }) {
             label="Registered By"
             value={registeredBy}
             options={employeeOptions}
-            onChange={(value) => setRegisteredBy(value)} // FIXED
+            onChange={(e) => setRegisteredBy(e.target.value)} // FIXED
           />
         </div>
 

@@ -24,6 +24,7 @@ import { notify } from "../../utils/toast.js";
 import axiosInstance from "../../lib/axios.js";
 import AddVisitModal from "../../components/AddVisitModal.jsx";
 import VisitHistory from "../../components/VisitHistory.jsx";
+import RegisterLeadModal from "../../components/RegisterLeadModal.jsx";
 
 export default function MyLeads() {
   const { data: user } = useLoadUser(); // {data: user}
@@ -559,31 +560,16 @@ export default function MyLeads() {
         )}
 
         {/* Registration Modal */}
-        {showRegModal && regLead && (
-          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-            <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} className="bg-white p-6 rounded-xl max-w-md w-full">
-              <h2 className="text-xl font-semibold">Register Lead</h2>
-              <p className="text-sm text-gray-600 mb-2">Lead: <b>{regLead.customerName || regLead.ownerName}</b></p>
-
-              <div className="mt-4 space-y-4">
-                <div>
-                  <label className="text-sm text-gray-600">Plan Name</label>
-                  <input className="w-full border rounded-lg px-3 py-2 mt-1" placeholder="Premium Plan" value={regPlan} onChange={(e) => setRegPlan(e.target.value)} />
-                </div>
-
-                <div>
-                  <label className="text-sm text-gray-600">Registration Date</label>
-                  <input type="date" className="w-full border rounded-lg px-3 py-2 mt-1" value={regDate} onChange={(e) => setRegDate(e.target.value)} />
-                </div>
-
-                <div className="flex justify-end gap-3 pt-4">
-                  <button onClick={() => { setShowRegModal(false); setRegLead(null); }} className="px-4 py-2 border rounded-lg">Cancel</button>
-                  <button onClick={handleRegisterLead} className="px-4 py-2 bg-green-600 text-white rounded-lg">Confirm Registration</button>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
+         <RegisterLeadModal
+                open={showRegModal}
+                onClose={() => setShowRegModal(false)}
+                employeeOptions={employeeOptions}
+                lead={regLead}
+                onSuccess={() => {
+                  queryClient.invalidateQueries(["leads"]);
+                }}
+              />
+      
 
         {/* Visits */}
         {visitModal && <AddVisitModal open={visitModal} onClose={() => setVisitModal(false)} lead={visitLead} />}

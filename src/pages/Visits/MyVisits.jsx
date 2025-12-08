@@ -41,12 +41,12 @@ export default function MyVisits() {
               />
             </div>
 
-            <button
+            {/* <button
               onClick={() => setAddModalOpen(true)}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
               <PlusCircle size={18} /> Add Visit
-            </button>
+            </button> */}
           </div>
         </div>
 
@@ -108,9 +108,9 @@ export default function MyVisits() {
         />
 
 
-        {addModalOpen && (
+        {/* {addModalOpen && (
           <AddVisitModal open={addModalOpen} onClose={() => setAddModalOpen(false)} />
-        )}
+        )} */}
       </div>
     </div>
   );
