@@ -55,15 +55,11 @@ export const useUpdateEmployee = () => {
         `/employees/update/${employeeId}`,
         updateData
       )
-      return response.data.employee
+      return response.data.employee || response.data
     },
-    onSuccess: (updatedEmployee) => {
-      // Update cache with updated employee
-      queryClient.setQueryData(['employees'], (oldData) => {
-        return oldData?.map((emp) =>
-          emp._id === updatedEmployee._id ? updatedEmployee : emp
-        ) || []
-      })
+    onSuccess: () => {
+      // Invalidate all employee queries to refresh the data
+      queryClient.invalidateQueries({ queryKey: ['employees'] })
     },
   })
 }

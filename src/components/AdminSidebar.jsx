@@ -11,6 +11,7 @@ import {
   FiMenu,
   FiX,
   FiFolder,
+  FiBarChart2,
 } from "react-icons/fi";
 
 const AdminSidebar = () => {
@@ -212,6 +213,16 @@ const AdminSidebar = () => {
               )}
             </>
           )}
+
+          {/* Reports */}
+          <NavLink
+            to="/reports"
+            className="flex items-center gap-4 px-6 py-3 hover:bg-slate-800 transition-colors "
+            onClick={() => setIsOpen(false)}
+          >
+            <FiBarChart2 className="text-lg" />
+            <span>Reports</span>
+          </NavLink>
 
 
 

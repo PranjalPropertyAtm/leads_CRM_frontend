@@ -1334,6 +1334,7 @@ import {
   UserPlus,
   MoreVertical,
   HousePlus,
+  Edit,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
@@ -1341,6 +1342,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import axiosInstance from "../../lib/axios.js";
 import { notify } from "../../utils/toast.js";
 
+import { useNavigate } from "react-router-dom";
 import { useFetchLeads, useDeleteLead } from "../../hooks/useLeadQueries.js";
 import { useFetchEmployees } from "../../hooks/useEmployeeQueries.js";
 import { useLoadUser } from "../../hooks/useAuthQueries.js";
@@ -1352,6 +1354,7 @@ import RegisterLeadModal from "../../components/RegisterLeadModal.jsx";
 
 export default function AllLeads() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const { data: user } = useLoadUser();
 
   // page + filters
@@ -1679,6 +1682,17 @@ export default function AllLeads() {
                           <button onClick={() => setSelected(lead)} className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm transition">
                             <Eye size={14} /> View Details
                           </button>
+
+                          {lead.createdBy?._id === user?._id && (
+                            <button
+                              onClick={() => {
+                                navigate(`/edit-lead/${lead._id}`);
+                              }}
+                              className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-blue-600 transition"
+                            >
+                              <Edit size={14} /> Edit Lead
+                            </button>
+                          )}
 
                           {!lead.isRegistered && lead.createdBy?._id === user?._id && (
                             <button

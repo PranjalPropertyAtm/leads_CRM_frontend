@@ -13,7 +13,8 @@ import {
   MoreVertical,
   ChevronLeft,
   ChevronRight,
-  HousePlus
+  HousePlus,
+  Edit,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMyLeads, useDeleteLead } from "../../hooks/useLeadQueries.js";
@@ -22,11 +23,13 @@ import { useFetchEmployees } from "../../hooks/useEmployeeQueries.js";
 import { createPortal } from "react-dom";
 import { notify } from "../../utils/toast.js";
 import axiosInstance from "../../lib/axios.js";
+import { useNavigate } from "react-router-dom";
 import AddVisitModal from "../../components/AddVisitModal.jsx";
 import VisitHistory from "../../components/VisitHistory.jsx";
 import RegisterLeadModal from "../../components/RegisterLeadModal.jsx";
 
 export default function MyLeads() {
+  const navigate = useNavigate();
   const { data: user } = useLoadUser(); // {data: user}
   const [filter, setFilter] = useState("");
   const [selected, setSelected] = useState(null);
@@ -385,7 +388,17 @@ export default function MyLeads() {
                             <Eye size={14} /> View Details
                           </button>
 
-                         
+                          {/* EDIT - only if lead created by current user */}
+                          {lead.createdBy?._id === user?._id && (
+                            <button
+                              onClick={() => {
+                                navigate(`/edit-lead/${lead._id}`);
+                              }}
+                              className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-blue-600 transition"
+                            >
+                              <Edit size={14} /> Edit Lead
+                            </button>
+                          )}
 
                           {/* REGISTER - only if lead created by current user & not registered */}
                           {!lead.isRegistered && lead.createdBy?._id === user?._id && (

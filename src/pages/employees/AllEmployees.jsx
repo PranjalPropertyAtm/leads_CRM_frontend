@@ -333,9 +333,10 @@
 
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Eye, Trash2, Search, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Eye, Trash2, Search, X, ChevronLeft, ChevronRight, Edit } from "lucide-react";
 import { useFetchEmployees, useDeleteEmployee } from "../../hooks/useEmployeeQueries.js";
 import ConfirmModal from "../../components/ConfirmModal.jsx";
+import EditEmployeeModal from "../../components/EditEmployeeModal.jsx";
 import { notify } from "../../utils/toast.js";
 
 export default function AllEmployees() {
@@ -346,6 +347,8 @@ export default function AllEmployees() {
 
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [toDelete, setToDelete] = useState(null); // will store full employee object
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [employeeToEdit, setEmployeeToEdit] = useState(null);
 
   const { data: paginatedData = { employees: [], total: 0, totalPages: 0, page: 1 }, isLoading } = useFetchEmployees(currentPage, pageSize);
   const { employees = [], total = 0, totalPages = 0 } = paginatedData;
@@ -468,6 +471,16 @@ export default function AllEmployees() {
                             className="px-3 py-1.5 rounded-md bg-blue-100 text-blue-700 text-xs flex items-center gap-1 hover:bg-blue-200 transition"
                           >
                             <Eye size={14} />
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              setEmployeeToEdit(emp);
+                              setEditModalOpen(true);
+                            }}
+                            className="px-3 py-1.5 rounded-md bg-green-100 text-green-700 text-xs flex items-center gap-1 hover:bg-green-200 transition"
+                          >
+                            <Edit size={14} />
                           </button>
 
                           <button
@@ -602,6 +615,16 @@ export default function AllEmployees() {
           cancelLabel="Cancel"
           loading={deleteMutation.isLoading}
           destructive
+        />
+
+        {/* Edit Employee Modal */}
+        <EditEmployeeModal
+          open={editModalOpen}
+          onClose={() => {
+            setEditModalOpen(false);
+            setEmployeeToEdit(null);
+          }}
+          employee={employeeToEdit}
         />
       </motion.div>
     </div>
