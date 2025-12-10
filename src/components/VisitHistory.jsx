@@ -61,8 +61,6 @@
 //     </div>
 //   );
 // }
-
-
 import { motion } from "framer-motion";
 import { X, Calendar, User } from "lucide-react";
 import { useLeadVisits } from "../hooks/useVisitQueries";
@@ -94,14 +92,18 @@ export default function VisitHistory({ open, onClose, leadId }) {
         ) : (
           <div className="mt-5 space-y-4">
             {visits.map((v) => {
-              // ---- SAFE VISITED-BY NAME RESOLUTION ----
               const visitedByName =
                 typeof v.visitedBy === "string"
                   ? "Unknown"
                   : v.visitedBy?.name || "Unknown";
 
+              const leadType = v.lead?.customerType; // 🔥 Important
+              const isTenant = leadType === "tenant";
+              const isOwner = leadType === "owner";
+
               return (
                 <div key={v._id} className="border rounded-lg p-4">
+                  {/* Top Row */}
                   <div className="flex justify-between">
                     <p className="font-semibold">
                       <Calendar size={16} className="inline-block mr-1" />
@@ -113,16 +115,46 @@ export default function VisitHistory({ open, onClose, leadId }) {
                     </p>
                   </div>
 
-                  <p className="text-gray-700 mt-2">
-                    <b>Location:</b> {v.propertyLocation}
-                  </p>
+                  {/* ------------------------------ */}
+                  {/* TENANT LEAD VISITS */}
+                  {/* ------------------------------ */}
+                  {isTenant && (
+                    <>
+                      <p className="text-gray-700 mt-2">
+                        <b>Owner Name:</b> {v.ownerName || "N/A"}
+                      </p>
 
-                  <p className="text-gray-700 mt-1">
-                    <b>Details:</b> {v.propertyDetails}
-                  </p>
+                      <p className="text-gray-700 mt-1">
+                        <b>Property Location:</b>{" "}
+                        {v.propertyLocation || "N/A"}
+                      </p>
 
+                      <p className="text-gray-700 mt-1">
+                        <b>Property Details:</b>{" "}
+                        {v.propertyDetails || "N/A"}
+                      </p>
+                    </>
+                  )}
+
+                  {/* ------------------------------ */}
+                  {/* OWNER LEAD VISITS */}
+                  {/* ------------------------------ */}
+                  {isOwner && (
+                    <>
+                      <p className="text-gray-700 mt-2">
+                        <b>Tenant Name:</b> {v.tenantName || "N/A"}
+                      </p>
+
+                      <p className="text-gray-700 mt-1">
+                        <b>Tenant Requirements:</b>{" "}
+                        {v.tenantRequirements || "N/A"}
+                      </p>
+                    </>
+                  )}
+
+                  {/* COMMON FEEDBACK */}
                   {v.tenantFeedback && (
-                    <p className="text-gray-700 mt-1">
+                    <p className="text-gray-700 mt-2">
                       <b>Feedback:</b> {v.tenantFeedback}
                     </p>
                   )}

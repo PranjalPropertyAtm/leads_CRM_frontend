@@ -3,14 +3,14 @@ import { motion } from "framer-motion";
 import { Search, Eye, PlusCircle } from "lucide-react";
 import { useMyVisits } from "../../hooks/useVisitQueries";
 import VisitDetailsModal from "../../components/VisitDetailsModal";
-import AddVisitModal from "../../components/AddVisitModal";
+// import AddVisitModal from "../../components/AddVisitModal";
 
 export default function MyVisits() {
   const [filter, setFilter] = useState("");
   const [visitDetailsModal, setVisitDetailsModal] = useState(false);
   const [selectedVisit, setSelectedVisit] = useState(null);
 
-  const [addModalOpen, setAddModalOpen] = useState(false);
+  // const [addModalOpen, setAddModalOpen] = useState(false);
 
   const { data = [], isLoading } = useMyVisits();
 

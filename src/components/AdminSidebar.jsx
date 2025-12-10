@@ -188,7 +188,7 @@ const AdminSidebar = () => {
           )}
 
           {/* Customers Menu */}
-          {user?.role !== "employee" && (
+          {/* {user?.role !== "employee" && ( */}
             <>
               <button
                 onClick={() => toggleMenu("customers")}
@@ -212,7 +212,7 @@ const AdminSidebar = () => {
                 </div>
               )}
             </>
-          )}
+          {/* )} */}
 
           {/* Reports */}
           <NavLink
