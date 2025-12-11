@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { useLeadsOverviewReport, useLeadConversionReport, useVisitsSummaryReport } from "../hooks/useReportQueries";
-import { Download, BarChart3, Users, MapPin, ClipboardList, Calendar } from "lucide-react";
+import { Download, BarChart3, Users, MapPin, ClipboardList, Calendar, CheckCircle, TrendingUp } from "lucide-react";
 import { notify } from "../utils/toast";
 
 const today = new Date().toISOString().slice(0, 10);
@@ -13,6 +13,7 @@ export default function Reports() {
     city: "",
     propertyType: "",
     customerType: "",
+    status: "",
   });
 
   const overviewQuery = useLeadsOverviewReport(filters);
@@ -48,7 +49,9 @@ export default function Reports() {
       employeeName: row.employeeName || "N/A",
       total: row.total || 0,
       registered: row.registered || 0,
-      rate: row.total ? `${((row.registered / row.total) * 100).toFixed(2)}%` : "0%",
+      dealClosed: row.dealClosed || 0,
+      registrationRate: row.total ? `${((row.registered / row.total) * 100).toFixed(2)}%` : "0%",
+      dealClosedRate: row.total ? `${((row.dealClosed / row.total) * 100).toFixed(2)}%` : "0%",
     }));
   }, [conversion]);
 
@@ -66,6 +69,18 @@ export default function Reports() {
               className="px-3 py-2 rounded-lg bg-blue-600 text-white text-sm flex items-center gap-2 hover:bg-blue-700"
             >
               <Download size={16} /> Export Conversion
+            </button>
+            <button
+              onClick={() => {
+                const statusRows = (overview.byStatus || []).map((row) => ({
+                  status: row._id || "N/A",
+                  count: row.count || 0,
+                }));
+                exportCsv(statusRows, "leads-by-status.csv");
+              }}
+              className="px-3 py-2 rounded-lg bg-emerald-600 text-white text-sm flex items-center gap-2 hover:bg-emerald-700"
+            >
+              <Download size={16} /> Export Status
             </button>
             <button
               onClick={() => exportCsv(visits, "visits-summary.csv")}
@@ -96,10 +111,29 @@ export default function Reports() {
               <option value="owner">Owner</option>
             </select>
           </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-sm text-gray-600">Status</label>
+            <select
+              name="status"
+              value={filters.status}
+              onChange={handleChange}
+              className="border rounded-lg px-3 py-2"
+            >
+              <option value="">All Statuses</option>
+              <option value="new">New</option>
+              <option value="contacted">Contacted</option>
+              <option value="qualified">Qualified</option>
+              <option value="visit_scheduled">Visit Scheduled</option>
+              <option value="visit_completed">Visit Completed</option>
+              <option value="negotiation">Negotiation</option>
+              <option value="deal_closed">Deal Closed</option>
+              <option value="lost">Lost</option>
+            </select>
+          </div>
         </div>
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <KpiCard
             icon={<BarChart3 className="text-blue-600" size={24} />}
             title="Total Leads"
@@ -113,10 +147,16 @@ export default function Reports() {
             loading={conversionQuery.isLoading}
           />
           <KpiCard
-            icon={<Users className="text-purple-600" size={24} />}
-            title="Registration Rate"
-            value={`${conversion.registrationRate ?? 0}%`}
-            loading={conversionQuery.isLoading}
+            icon={<CheckCircle className="text-emerald-600" size={24} />}
+            title="Deals Closed"
+            value={overview.dealClosed ?? 0}
+            loading={overviewQuery.isLoading}
+          />
+          <KpiCard
+            icon={<TrendingUp className="text-purple-600" size={24} />}
+            title="Deal Closed Rate"
+            value={`${overview.dealClosedRate ?? 0}%`}
+            loading={overviewQuery.isLoading}
           />
         </div>
 
@@ -127,21 +167,29 @@ export default function Reports() {
             <BreakdownTable title="By City" rows={overview.byCity} loading={overviewQuery.isLoading} />
             <BreakdownTable title="By Customer Type" rows={overview.byCustomerType} loading={overviewQuery.isLoading} />
             <BreakdownTable title="By Property Type" rows={overview.byPropertyType} loading={overviewQuery.isLoading} />
+            <BreakdownTable 
+              title="By Status" 
+              rows={overview.byStatus} 
+              loading={overviewQuery.isLoading}
+              formatStatus={true}
+            />
           </div>
         </Section>
 
         {/* Lead Conversion by Employee */}
         <Section title="Lead Conversion by Employee">
           <SimpleTable
-            headers={["Employee Name", "Total", "Registered", "Rate"]}
+            headers={["Employee Name", "Total", "Registered", "Reg. Rate", "Deals Closed", "Close Rate"]}
             rows={conversionRows}
             loading={conversionQuery.isLoading}
             renderRow={(row) => (
               <tr key={row.employeeId}>
-                <td className="px-4 py-2 text-sm text-gray-800">{row.employeeName || "N/A"}</td>
+                <td className="px-4 py-2 text-sm text-gray-800 font-medium">{row.employeeName || "N/A"}</td>
                 <td className="px-4 py-2 text-sm">{row.total}</td>
-                <td className="px-4 py-2 text-sm text-green-700">{row.registered}</td>
-                <td className="px-4 py-2 text-sm">{row.rate}</td>
+                <td className="px-4 py-2 text-sm text-green-700 font-medium">{row.registered}</td>
+                <td className="px-4 py-2 text-sm">{row.registrationRate}</td>
+                <td className="px-4 py-2 text-sm text-emerald-700 font-medium">{row.dealClosed}</td>
+                <td className="px-4 py-2 text-sm">{row.dealClosedRate}</td>
               </tr>
             )}
           />
@@ -179,7 +227,37 @@ function KpiCard({ icon, title, value, loading }) {
   );
 }
 
-function BreakdownTable({ title, rows = [], loading }) {
+function BreakdownTable({ title, rows = [], loading, formatStatus = false }) {
+  const formatStatusLabel = (status) => {
+    if (!formatStatus) return status;
+    const statusMap = {
+      new: "New",
+      contacted: "Contacted",
+      qualified: "Qualified",
+      visit_scheduled: "Visit Scheduled",
+      visit_completed: "Visit Completed",
+      negotiation: "Negotiation",
+      deal_closed: "Deal Closed",
+      lost: "Lost",
+    };
+    return statusMap[status] || status;
+  };
+
+  const getStatusColor = (status) => {
+    if (!formatStatus) return "text-gray-800";
+    const colorMap = {
+      new: "text-gray-600",
+      contacted: "text-orange-600",
+      qualified: "text-indigo-600",
+      visit_scheduled: "text-purple-600",
+      visit_completed: "text-blue-600",
+      negotiation: "text-yellow-600",
+      deal_closed: "text-green-600",
+      lost: "text-red-600",
+    };
+    return colorMap[status] || "text-gray-800";
+  };
+
   return (
     <div className="border rounded-xl bg-white shadow-sm">
       <div className="px-4 py-3 border-b flex items-center gap-2">
@@ -194,7 +272,7 @@ function BreakdownTable({ title, rows = [], loading }) {
         ) : (
           rows.map((row, idx) => (
             <div key={idx} className="px-4 py-3 flex justify-between text-sm">
-              <span className="text-gray-800">{row._id || "N/A"}</span>
+              <span className={getStatusColor(row._id)}>{formatStatusLabel(row._id) || "N/A"}</span>
               <span className="font-semibold text-gray-900">{row.count ?? 0}</span>
             </div>
           ))

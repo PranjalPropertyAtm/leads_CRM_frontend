@@ -1335,6 +1335,7 @@ import {
   MoreVertical,
   HousePlus,
   Edit,
+  CheckCircle,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
@@ -1343,7 +1344,7 @@ import axiosInstance from "../../lib/axios.js";
 import { notify } from "../../utils/toast.js";
 
 import { useNavigate } from "react-router-dom";
-import { useFetchLeads, useDeleteLead } from "../../hooks/useLeadQueries.js";
+import { useFetchLeads, useDeleteLead, useUpdateLeadStatus, useMarkDealClosed } from "../../hooks/useLeadQueries.js";
 import { useFetchEmployees } from "../../hooks/useEmployeeQueries.js";
 import { useLoadUser } from "../../hooks/useAuthQueries.js";
 
@@ -1351,6 +1352,7 @@ import AddVisitModal from "../../components/AddVisitModal.jsx";
 import VisitHistory from "../../components/VisitHistory.jsx";
 // import SearchableSelect from "../../components/SearchableSelect.jsx";
 import RegisterLeadModal from "../../components/RegisterLeadModal.jsx";
+import ConfirmModal from "../../components/ConfirmModal.jsx";
 
 export default function AllLeads() {
   const queryClient = useQueryClient();
@@ -1377,6 +1379,14 @@ export default function AllLeads() {
   const [visitModal, setVisitModal] = useState(false);
   const [visitHistoryOpen, setVisitHistoryOpen] = useState(false);
   const [visitLead, setVisitLead] = useState(null);
+
+  // status change confirmation
+  const [statusChangeModal, setStatusChangeModal] = useState({
+    isOpen: false,
+    leadId: null,
+    newStatus: null,
+    currentStatus: null,
+  });
 
   // leads query
   const {
@@ -1414,6 +1424,8 @@ export default function AllLeads() {
 
   // delete hook
   const deleteLeadMutation = useDeleteLead();
+  const updateStatusMutation = useUpdateLeadStatus();
+  const markDealClosedMutation = useMarkDealClosed();
 
 
 
@@ -1444,6 +1456,46 @@ export default function AllLeads() {
     const newSize = parseInt(e.target.value, 10);
     setPageSize(newSize);
     setCurrentPage(1);
+  };
+
+  // Handle status change confirmation
+  const handleConfirmStatusChange = () => {
+    if (!statusChangeModal.leadId || !statusChangeModal.newStatus) return;
+
+    updateStatusMutation.mutate(
+      { id: statusChangeModal.leadId, status: statusChangeModal.newStatus },
+      {
+        onSuccess: () => {
+          notify.success("Status updated successfully");
+          setStatusChangeModal({ isOpen: false, leadId: null, newStatus: null, currentStatus: null });
+        },
+        onError: (err) => {
+          notify.error(err?.response?.data?.message || "Failed to update status");
+          setStatusChangeModal({ isOpen: false, leadId: null, newStatus: null, currentStatus: null });
+        },
+      }
+    );
+  };
+
+  // Handle mark deal closed confirmation
+  const [dealClosedModal, setDealClosedModal] = useState({
+    isOpen: false,
+    leadId: null,
+  });
+
+  const handleConfirmDealClosed = () => {
+    if (!dealClosedModal.leadId) return;
+
+    markDealClosedMutation.mutate(dealClosedModal.leadId, {
+      onSuccess: () => {
+        notify.success("Lead marked as deal closed");
+        setDealClosedModal({ isOpen: false, leadId: null });
+      },
+      onError: (err) => {
+        notify.error(err?.response?.data?.message || "Failed to mark as deal closed");
+        setDealClosedModal({ isOpen: false, leadId: null });
+      },
+    });
   };
 
   // filter leads locally
@@ -1632,6 +1684,7 @@ export default function AllLeads() {
                       "Property",
                       "Budget",
                       "Source",
+                      "Status",
                       "Registered",
                       "Visits",
                       "",
@@ -1663,11 +1716,87 @@ export default function AllLeads() {
                       </td>
 
                       <td className="px-4 py-3">{new Date(lead.createdAt).toLocaleDateString()}</td>
-                      <td className="px-4 py-3">{lead.mobileNumber}</td>
-                      <td className="px-4 py-3">{lead.city}</td>
-                      <td className="px-4 py-3">{lead.propertyType}</td>
+                      <td className="px-4 py-3">{lead.mobileNumber || "N/A"}</td>
+                      <td className="px-4 py-3">{lead.city || "N/A"}</td>
+                      <td className="px-4 py-3">{lead.propertyType || "N/A"}</td>
                       <td className="px-4 py-3">{lead.budget ? `₹${lead.budget}` : "N/A"}</td>
-                      <td className="px-4 py-3">{lead.source}</td>
+                      <td className="px-4 py-3">{lead.source || "N/A"}</td>
+
+                      <td className="px-4 py-3">
+                        <select
+                          value={lead.status || "new"}
+                          onChange={(e) => {
+                            const newStatus = e.target.value;
+                            const currentStatus = lead.status || "new";
+                            
+                            // Ask for confirmation if changing to deal_closed
+                            if (newStatus === "deal_closed") {
+                              setStatusChangeModal({
+                                isOpen: true,
+                                leadId: lead._id,
+                                newStatus: newStatus,
+                                currentStatus: currentStatus,
+                              });
+                              // Reset select to current value temporarily
+                              e.target.value = currentStatus;
+                              return;
+                            }
+                            
+                            updateStatusMutation.mutate(
+                              { id: lead._id, status: newStatus },
+                              {
+                                onSuccess: () => {
+                                  notify.success("Status updated successfully");
+                                },
+                                onError: (err) => {
+                                  notify.error(err?.response?.data?.message || "Failed to update status");
+                                  // Reset to previous value on error
+                                  e.target.value = currentStatus;
+                                },
+                              }
+                            );
+                          }}
+                          className={`text-xs px-2 py-1 rounded-full border-0 font-medium ${
+                            lead.status === "deal_closed"
+                              ? "bg-green-100 text-green-700"
+                              : lead.status === "lost"
+                              ? "bg-red-100 text-red-700"
+                              : lead.status === "negotiation"
+                              ? "bg-yellow-100 text-yellow-700"
+                              : lead.status === "visit_completed"
+                              ? "bg-blue-100 text-blue-700"
+                              : lead.status === "visit_scheduled"
+                              ? "bg-purple-100 text-purple-700"
+                              : lead.status === "qualified"
+                              ? "bg-indigo-100 text-indigo-700"
+                              : lead.status === "contacted"
+                              ? "bg-orange-100 text-orange-700"
+                              : "bg-gray-100 text-gray-700"
+                          }`}
+                          disabled={
+                            updateStatusMutation.isPending || 
+                            lead.dealClosed || 
+                            lead.status === "deal_closed" ||
+                            lead.createdBy?._id !== user?._id
+                          }
+                          title={
+                            lead.dealClosed || lead.status === "deal_closed"
+                              ? "Deal is closed. Cannot modify status."
+                              : lead.createdBy?._id !== user?._id
+                              ? "Only the creator can change status"
+                              : ""
+                          }
+                        >
+                          <option value="new">New</option>
+                          <option value="contacted">Contacted</option>
+                          <option value="qualified">Qualified</option>
+                          <option value="visit_scheduled">Visit Scheduled</option>
+                          <option value="visit_completed">Visit Completed</option>
+                          <option value="negotiation">Negotiation</option>
+                          <option value="deal_closed">Deal Closed</option>
+                          <option value="lost">Lost</option>
+                        </select>
+                      </td>
 
                       <td className="px-4 py-3">
                         {lead.isRegistered ? <span className="text-green-600 font-medium">Yes</span> : <span className="text-red-500 font-medium">No</span>}
@@ -1683,7 +1812,7 @@ export default function AllLeads() {
                             <Eye size={14} /> View Details
                           </button>
 
-                          {lead.createdBy?._id === user?._id && (
+                          {lead.createdBy?._id === user?._id && !lead.dealClosed && lead.status !== "deal_closed" && (
                             <button
                               onClick={() => {
                                 navigate(`/edit-lead/${lead._id}`);
@@ -1694,7 +1823,7 @@ export default function AllLeads() {
                             </button>
                           )}
 
-                          {!lead.isRegistered && lead.createdBy?._id === user?._id && (
+                          {!lead.isRegistered && lead.createdBy?._id === user?._id && !lead.dealClosed && lead.status !== "deal_closed" && (
                             <button
                               onClick={() => {
                                 setRegLead(lead);
@@ -1716,7 +1845,7 @@ export default function AllLeads() {
                             <Eye size={14} /> View Visits
                           </button>
 
-                          {lead.createdBy?._id === user?._id && (
+                          {lead.createdBy?._id === user?._id && !lead.dealClosed && lead.status !== "deal_closed" && (
                             <button
                               onClick={() => {
                                 setVisitModal(true);
@@ -1728,9 +1857,25 @@ export default function AllLeads() {
                             </button>
                           )}
 
-                          <button onClick={() => handleDelete(lead._id)} className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-red-600 transition">
-                            <Trash2 size={14} /> Delete
-                          </button>
+                          {!lead.dealClosed && lead.status !== "deal_closed" && lead.createdBy?._id === user?._id && (
+                            <button
+                              onClick={() => {
+                                setDealClosedModal({
+                                  isOpen: true,
+                                  leadId: lead._id,
+                                });
+                              }}
+                              className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-green-700 font-medium transition"
+                            >
+                              <CheckCircle size={14} /> Mark Deal Closed
+                            </button>
+                          )}
+
+                          {!lead.dealClosed && lead.status !== "deal_closed" && (
+                            <button onClick={() => handleDelete(lead._id)} className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-red-600 transition">
+                              <Trash2 size={14} /> Delete
+                            </button>
+                          )}
                         </ActionMenu>
                       </td>
                     </tr>
@@ -1903,6 +2048,34 @@ export default function AllLeads() {
         {/* Visits */}
         {visitModal && <AddVisitModal open={visitModal} onClose={() => setVisitModal(false)} lead={visitLead} />}
         {visitHistoryOpen && <VisitHistory open={visitHistoryOpen} onClose={() => setVisitHistoryOpen(false)} leadId={visitLead?._id} />}
+
+        {/* Status Change Confirmation Modal */}
+        <ConfirmModal
+          isOpen={statusChangeModal.isOpen}
+          title="Mark Lead as Deal Closed"
+          description="Are you sure you want to mark this lead as deal closed? This action cannot be undone and the lead will become read-only. You will no longer be able to edit, delete, or modify this lead."
+          onCancel={() => {
+            setStatusChangeModal({ isOpen: false, leadId: null, newStatus: null, currentStatus: null });
+          }}
+          onConfirm={handleConfirmStatusChange}
+          confirmLabel="Yes, Mark as Closed"
+          cancelLabel="Cancel"
+          loading={updateStatusMutation.isPending}
+        />
+
+        {/* Mark Deal Closed Confirmation Modal */}
+        <ConfirmModal
+          isOpen={dealClosedModal.isOpen}
+          title="Mark Lead as Deal Closed"
+          description="Are you sure you want to mark this lead as deal closed? This action cannot be undone and the lead will become read-only. You will no longer be able to edit, delete, or modify this lead."
+          onCancel={() => {
+            setDealClosedModal({ isOpen: false, leadId: null });
+          }}
+          onConfirm={handleConfirmDealClosed}
+          confirmLabel="Yes, Mark as Closed"
+          cancelLabel="Cancel"
+          loading={markDealClosedMutation.isPending}
+        />
       </motion.div>
     </div>
   );

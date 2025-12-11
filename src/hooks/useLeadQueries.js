@@ -107,3 +107,37 @@ export const useMyLeads = (page = 1, limit = 10) => {
     },
   });
 };
+
+// Update lead status
+export const useUpdateLeadStatus = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, status }) => {
+      const response = await axios.put(`/leads/${id}/status`, { status });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      // Invalidate all lead queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      queryClient.invalidateQueries({ queryKey: ['leads', 'my'] });
+    },
+  });
+};
+
+// Mark lead as deal closed
+export const useMarkDealClosed = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id) => {
+      const response = await axios.put(`/leads/${id}/mark-deal-closed`);
+      return response.data;
+    },
+    onSuccess: (data) => {
+      // Invalidate all lead queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      queryClient.invalidateQueries({ queryKey: ['leads', 'my'] });
+    },
+  });
+};
