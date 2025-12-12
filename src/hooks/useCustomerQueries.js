@@ -25,6 +25,7 @@ export const useCustomerById = (id) =>
     queryKey: ["customer", id],
     queryFn: async () => {
       const { data } = await axios.get(`/customers/${id}`);
-      return data.customer; // FIX based on backend response
+      // backend returns { success, data: customer }
+      return data.data || data.customer || data;
     },
   });

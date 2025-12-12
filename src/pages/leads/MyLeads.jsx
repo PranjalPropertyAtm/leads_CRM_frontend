@@ -456,13 +456,11 @@ export default function MyLeads() {
                               ? "bg-green-100 text-green-700"
                               : lead.status === "lost"
                               ? "bg-red-100 text-red-700"
-                              : lead.status === "negotiation"
-                              ? "bg-yellow-100 text-yellow-700"
                               : lead.status === "visit_completed"
                               ? "bg-blue-100 text-blue-700"
                               : lead.status === "visit_scheduled"
                               ? "bg-purple-100 text-purple-700"
-                              : lead.status === "qualified"
+                              : lead.status === "registered"
                               ? "bg-indigo-100 text-indigo-700"
                               : lead.status === "contacted"
                               ? "bg-orange-100 text-orange-700"
@@ -484,10 +482,9 @@ export default function MyLeads() {
                         >
                           <option value="new">New</option>
                           <option value="contacted">Contacted</option>
-                          <option value="qualified">Qualified</option>
+                          <option value="registered">Registered</option>
                           <option value="visit_scheduled">Visit Scheduled</option>
                           <option value="visit_completed">Visit Completed</option>
-                          <option value="negotiation">Negotiation</option>
                           <option value="deal_closed">Deal Closed</option>
                           <option value="lost">Lost</option>
                         </select>

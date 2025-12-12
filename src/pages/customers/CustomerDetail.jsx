@@ -5,14 +5,32 @@ import { useCustomerById } from "../../hooks/useCustomerQueries.js";
 import VisitHistory from "../../components/VisitHistory";
 import { Card } from "../../components/ui/Card";
 
+const buildLeadArray = (cust) => {
+  const list = [cust?.leadId, ...(cust?.leadHistory || [])].filter(Boolean);
+  const map = new Map();
+  list.forEach((item) => {
+    const key = item?._id?.toString() || Math.random().toString();
+    if (!map.has(key)) map.set(key, item);
+  });
+  return Array.from(map.values());
+};
+
+const formatDate = (value) => {
+  if (!value) return "";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleDateString();
+};
+
 export default function CustomerDetail() {
   const { id } = useParams();
   const { data, isLoading } = useCustomerById(id);
 
   if (isLoading) return <div className="p-10 text-center">Loading...</div>;
 
-  const customer = data.customer;
-  const lead = data.lead;
+  const customer = data;
+  const lead = customer?.leadId;
+  const leadHistory = buildLeadArray(customer);
 
   return (
     <div className="p-6 font-[Inter]">
@@ -35,19 +53,20 @@ export default function CustomerDetail() {
           </Card>
 
           {/* LEAD CARD */}
-          <Card title="Lead Information">
-            <Info label="Property Type" value={lead.propertyType} />
-            <Info label="Sub Type" value={lead.subPropertyType} />
-            <Info label="Source" value={lead.source} />
+          <Card title="Latest Lead">
+            <Info label="Property Type" value={lead?.propertyType} />
+            <Info label="Sub Type" value={lead?.subPropertyType} />
+            <Info label="Source" value={lead?.source} />
+            <Info label="Created On" value={formatDate(lead?.createdAt)} />
 
-            {lead.customerType === "tenant" && (
-              <Info label="Preferred Location" value={lead.preferredLocation} />
+            {lead?.customerType === "tenant" && (
+              <Info label="Preferred Location" value={lead?.preferredLocation} />
             )}
 
-            {lead.customerType === "owner" && (
+            {lead?.customerType === "owner" && (
               <>
-                <Info label="Property Location" value={lead.propertyLocation} />
-                <Info label="Area" value={lead.area} />
+                <Info label="Property Location" value={lead?.propertyLocation} />
+                <Info label="Area" value={lead?.area} />
               </>
             )}
           </Card>
@@ -55,8 +74,40 @@ export default function CustomerDetail() {
         </div>
 
         {/* VISIT HISTORY */}
+        {lead && (
+          <div className="mt-8">
+            <VisitHistory leadId={lead._id} />
+          </div>
+        )}
+
+        {/* LEAD HISTORY LIST */}
         <div className="mt-8">
-          <VisitHistory leadId={lead._id} />
+          <Card title="Lead History">
+            {leadHistory.length === 0 ? (
+              <p className="text-sm text-gray-500">No leads yet.</p>
+            ) : (
+              <div className="divide-y">
+                {leadHistory.map((lh, idx) => (
+                  <div key={lh?._id || idx} className="py-3 flex items-center justify-between">
+                    <div className="flex flex-col">
+                      <span className="font-medium text-gray-900">
+                        {lh?.customerName || lh?.ownerName || "Lead"}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        {lh?.propertyType || "-"} · {lh?.customerType || "-"}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-700">
+                        {lh?.status || "Lead"}
+                      </span>
+                      <span className="text-xs text-gray-400">{formatDate(lh?.createdAt)}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
         </div>
 
       </motion.div>

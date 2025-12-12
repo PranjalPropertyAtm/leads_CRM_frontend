@@ -122,10 +122,9 @@ export default function Reports() {
               <option value="">All Statuses</option>
               <option value="new">New</option>
               <option value="contacted">Contacted</option>
-              <option value="qualified">Qualified</option>
+              <option value="registered">Registered</option>
               <option value="visit_scheduled">Visit Scheduled</option>
               <option value="visit_completed">Visit Completed</option>
-              <option value="negotiation">Negotiation</option>
               <option value="deal_closed">Deal Closed</option>
               <option value="lost">Lost</option>
             </select>
@@ -233,10 +232,9 @@ function BreakdownTable({ title, rows = [], loading, formatStatus = false }) {
     const statusMap = {
       new: "New",
       contacted: "Contacted",
-      qualified: "Qualified",
+      registered: "Registered",
       visit_scheduled: "Visit Scheduled",
       visit_completed: "Visit Completed",
-      negotiation: "Negotiation",
       deal_closed: "Deal Closed",
       lost: "Lost",
     };
@@ -248,10 +246,9 @@ function BreakdownTable({ title, rows = [], loading, formatStatus = false }) {
     const colorMap = {
       new: "text-gray-600",
       contacted: "text-orange-600",
-      qualified: "text-indigo-600",
+      registered: "text-indigo-600",
       visit_scheduled: "text-purple-600",
       visit_completed: "text-blue-600",
-      negotiation: "text-yellow-600",
       deal_closed: "text-green-600",
       lost: "text-red-600",
     };

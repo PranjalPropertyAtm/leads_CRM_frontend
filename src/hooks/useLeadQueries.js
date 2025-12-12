@@ -54,10 +54,18 @@ export const useUpdateLead = () => {
       const response = await axios.put(`/leads/update/${id}`, updateData)
       return response.data
     },
-    onSuccess: (data) => {
-      // Invalidate leads so updated data refreshes
+    // onSuccess: (data) => {
+    //   // Invalidate leads so updated data refreshes
+    //   queryClient.invalidateQueries({ queryKey: ['leads'] })
+    //   queryClient.invalidateQueries({ queryKey: ['leads', 'my'] })
+
+     onSuccess: (_, { id }) => {
+      // Refresh lead list
       queryClient.invalidateQueries({ queryKey: ['leads'] })
       queryClient.invalidateQueries({ queryKey: ['leads', 'my'] })
+
+      // 🔥 MOST IMPORTANT – refresh single lead
+      queryClient.invalidateQueries({ queryKey: ['lead', id] })
     },
   })
 }

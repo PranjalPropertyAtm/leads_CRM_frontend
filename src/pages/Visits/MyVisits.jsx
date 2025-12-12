@@ -14,13 +14,14 @@ export default function MyVisits() {
 
   const { data = [], isLoading } = useMyVisits();
 
-  const filtered = data.filter((visit) => {
-    const q = filter.toLowerCase();
-    return (
-      visit.lead?.customerName?.toLowerCase().includes(q) ||
-      visit.propertyLocation.toLowerCase().includes(q)
-    );
-  });
+const filtered = data.filter((visit) => {
+  const q = filter.toLowerCase();
+
+  const name = visit.lead?.customerName?.toLowerCase?.() || "";
+  const location = visit.propertyLocation?.toLowerCase?.() || "";
+
+  return name.includes(q) || location.includes(q);
+});
 
   return (
     <div className="p-4 min-h-screen bg-gray-50 font-[Inter]">
@@ -74,9 +75,9 @@ export default function MyVisits() {
                     <tr key={visit._id} className="border-t hover:bg-gray-50">
                       <td className="px-4 py-3">{i + 1}</td>
                       <td className="px-4 py-3">
-                        {visit.lead?.customerName || visit.lead?.name}
+                         {visit?.lead?.customerName || visit?.lead?.ownerName || "Lead"}
                       </td>
-                      <td className="px-4 py-3">{visit.propertyLocation}</td>
+                      <td className="px-4 py-3">{visit?.propertyLocation}</td>
                       <td className="px-4 py-3">
                         {new Date(visit.visitDate).toLocaleDateString()}
                       </td>

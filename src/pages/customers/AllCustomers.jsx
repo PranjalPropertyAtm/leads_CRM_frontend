@@ -1,12 +1,30 @@
-import React, { useState } from "react";
+const formatDate = (value) => {
+  if (!value) return "";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleDateString();
+};
+
+import React, { useMemo, useState } from "react";
 import { Search, Eye, Users, ChevronLeft, ChevronRight, Trash2, X } from "lucide-react";
 import { motion } from "framer-motion";
 import { useFetchCustomers } from "../../hooks/useCustomerQueries.js";
 import { notify } from "../../utils/toast.js"
 
+const buildLeadArray = (cust) => {
+  const list = [cust.leadId, ...(cust.leadHistory || [])].filter(Boolean);
+  // dedupe by _id to avoid double counting latest lead
+  const map = new Map();
+  list.forEach((item) => {
+    const key = item?._id?.toString() || Math.random().toString();
+    if (!map.has(key)) map.set(key, item);
+  });
+  return Array.from(map.values());
+};
+
 export default function AllCustomers() {
   const [search, setSearch] = useState("");
-  const [selected,setSelected ] = useState("");
+  const [selected, setSelected] = useState(null);
   const [filter, setFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -26,15 +44,17 @@ export default function AllCustomers() {
     setCurrentPage(1);
   };
 
-  const filtered = customers.filter((c) => {
+  const filtered = useMemo(() => {
     const q = filter.trim().toLowerCase();
-    if (!q) return true;
-    return (
-      c.name.toLowerCase().includes(q) ||
-      c.mobileNumber?.includes(q) ||
-      c.city?.toLowerCase().includes(q)
-    );
-  });
+    return customers.filter((c) => {
+      if (!q) return true;
+      return (
+        c.name?.toLowerCase().includes(q) ||
+        c.mobileNumber?.includes(q) ||
+        c.city?.toLowerCase().includes(q)
+      );
+    });
+  }, [customers, filter]);
 
   return (
     <div className="min-h-screen  bg-slate-50 p-4 font-[Inter] ">
@@ -75,7 +95,7 @@ export default function AllCustomers() {
                 <table className="w-full border-separate border-spacing-0 text-sm">
                   <thead>
                     <tr className="bg-gray-50 text-gray-600 text-xs uppercase tracking-wide border-b">
-                      {["S.NO", "Name", "Type", "Phone", "City", "Actions"].map((h) => (
+                      {["S.NO", "Name", "Type", "Phone", "City", "Leads", "Actions"].map((h) => (
                         <th key={h} className="px-5 py-4 font-semibold text-left border-b border-gray-200">
                           {h}
                         </th>
@@ -84,7 +104,9 @@ export default function AllCustomers() {
                   </thead>
 
                   <tbody>
-                    {filtered.map((cust, idx) => (
+                    {filtered.map((cust, idx) => {
+                      const leadEntries = buildLeadArray(cust);
+                      return (
                       <tr
                         key={cust._id}
                         className={`${idx % 2 === 0 ? "bg-white" : "bg-gray-50"
@@ -102,7 +124,14 @@ export default function AllCustomers() {
                         </td>
 
                         {/* TYPE */}
-                        <td className="px-5 py-4 text-gray-700">{cust.customerType}</td>
+                        <td className="px-5 py-4 text-gray-700"><span
+                          className={`px-3 py-1 text-xs rounded-full font-medium 
+              ${cust.customerType === "tenant"
+                              ? "bg-blue-100 text-blue-700"
+                              : "bg-green-100 text-green-700"}`}
+                        >
+                          {cust.customerType}
+                        </span></td>
 
 
 
@@ -112,19 +141,10 @@ export default function AllCustomers() {
                         {/* DESIGNATION */}
                         <td className="px-5 py-4 text-gray-700">{cust.city}</td>
 
-                        {/* ROLE */}
-                        {/* <td className="px-3 py-4 ">
-                          <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-600 text-xs font-medium">
-                            {emp.role || "employee"}
-                          </span>
-                        </td> */}
-
-                        {/* PERMISSIONS */}
-                        {/* <td className="px-5 py-4">
-                          <span className="px-3 py-1 rounded-full bg-purple-100 text-purple-700 text-xs font-medium">
-                            {(emp.permissions || []).length}
-                          </span>
-                        </td> */}
+                        {/* LEADS COUNT */}
+                        <td className="px-5 py-4 text-gray-700">
+                          {leadEntries.length}
+                        </td>
 
                         {/* ACTION BUTTONS */}
                         <td className="px-5 py-4 flex items-center gap-3">
@@ -135,15 +155,15 @@ export default function AllCustomers() {
                             <Eye size={14} />
                           </button>
 
-                          <button
+                          {/* <button
                             onClick={() => handleDelete(cust._id)}
                             className="px-3 py-1.5 rounded-md bg-red-100 text-red-700 text-xs flex items-center gap-1 hover:bg-red-200 transition"
                           >
                             <Trash2 size={14} />
-                          </button>
+                          </button> */}
                         </td>
                       </tr>
-                    ))}
+                    )})}
                   </tbody>
                 </table>
               </div>
@@ -331,6 +351,31 @@ export default function AllCustomers() {
                     <p className="font-medium">{selected.requirements}</p>
                   </div>
                 )}
+
+                {/* LEAD HISTORY */}
+                <div className="md:col-span-2 mt-2">
+                  <p className="text-gray-500 mb-2">Lead History</p>
+                  <div className="border rounded-lg divide-y">
+                    {buildLeadArray(selected).map((lead, idx) => (
+                      <div key={lead?._id || idx} className="flex items-center justify-between px-3 py-2">
+                        <div className="flex flex-col">
+                          <span className="font-medium text-gray-800">
+                            {lead?.customerName || lead?.ownerName || "Lead"}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            {lead?.propertyType || "-"} · {lead?.customerType || "-"}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-700">
+                            {lead?.status || "Lead"}
+                          </span>
+                          <span className="text-xs text-gray-400">{formatDate(lead?.createdAt)}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
 
                 {/* CUSTOMER ID */}
                 <div className="md:col-span-2">
