@@ -56,12 +56,12 @@ export default function Reports() {
   }, [conversion]);
 
   return (
-    <div className="min-h-screen bg-slate-50 p-4">
-      <div className="max-w-6xl mx-auto space-y-6">
+    <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-4">
+      <div className="max-w-7xl mx-auto space-y-6">
         <header className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-semibold text-gray-900">Reports</h1>
-            <p className="text-sm text-gray-500">Insights across leads and visits</p>
+            <h1 className="text-3xl font-bold text-gray-900 mb-1">Reports</h1>
+            <p className="text-sm text-gray-600 font-medium">Insights across leads and visits</p>
           </div>
           <div className="flex gap-2">
             <button
@@ -92,7 +92,7 @@ export default function Reports() {
         </header>
 
         {/* Filters */}
-        <div className="bg-white rounded-xl shadow-sm border p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 grid grid-cols-1 md:grid-cols-3 gap-4">
           <FilterField label="Start Date" name="startDate" value={filters.startDate} onChange={handleChange} type="date" max={filters.endDate || today} />
           <FilterField label="End Date" name="endDate" value={filters.endDate} onChange={handleChange} type="date" min={filters.startDate} max={today} />
           <FilterField label="Source" name="source" value={filters.source} onChange={handleChange} placeholder="e.g. Referal" />
@@ -182,14 +182,14 @@ export default function Reports() {
             rows={conversionRows}
             loading={conversionQuery.isLoading}
             renderRow={(row) => (
-              <tr key={row.employeeId}>
-                <td className="px-4 py-2 text-sm text-gray-800 font-medium">{row.employeeName || "N/A"}</td>
-                <td className="px-4 py-2 text-sm">{row.total}</td>
-                <td className="px-4 py-2 text-sm text-green-700 font-medium">{row.registered}</td>
-                <td className="px-4 py-2 text-sm">{row.registrationRate}</td>
-                <td className="px-4 py-2 text-sm text-emerald-700 font-medium">{row.dealClosed}</td>
-                <td className="px-4 py-2 text-sm">{row.dealClosedRate}</td>
-              </tr>
+              <>
+                <td className="px-6 py-4 text-sm text-gray-900 font-semibold">{row.employeeName || "N/A"}</td>
+                <td className="px-6 py-4 text-sm text-gray-700 font-medium">{row.total}</td>
+                <td className="px-6 py-4 text-sm text-green-700 font-semibold">{row.registered}</td>
+                <td className="px-6 py-4 text-sm text-gray-700 font-medium">{row.registrationRate}</td>
+                <td className="px-6 py-4 text-sm text-emerald-700 font-semibold">{row.dealClosed}</td>
+                <td className="px-6 py-4 text-sm text-gray-700 font-medium">{row.dealClosedRate}</td>
+              </>
             )}
           />
         </Section>
@@ -201,11 +201,11 @@ export default function Reports() {
             rows={visits || []}
             loading={visitsQuery.isLoading}
             renderRow={(row, idx) => (
-              <tr key={idx}>
-                <td className="px-4 py-2 text-sm text-gray-800">{row.employeeName || "N/A"}</td>
-                <td className="px-4 py-2 text-sm">{row.employeeEmail || "N/A"}</td>
-                <td className="px-4 py-2 text-sm text-purple-700">{row.totalVisits || 0}</td>
-              </tr>
+              <>
+                <td className="px-6 py-4 text-sm text-gray-900 font-semibold">{row.employeeName || "N/A"}</td>
+                <td className="px-6 py-4 text-sm text-gray-600">{row.employeeEmail || "N/A"}</td>
+                <td className="px-6 py-4 text-sm text-purple-700 font-semibold">{row.totalVisits || 0}</td>
+              </>
             )}
           />
         </Section>
@@ -216,11 +216,11 @@ export default function Reports() {
 
 function KpiCard({ icon, title, value, loading }) {
   return (
-    <div className="bg-white border rounded-xl p-4 shadow-sm flex items-center gap-3">
-      <div className="p-3 bg-slate-100 rounded-lg">{icon}</div>
+    <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-lg flex items-center gap-4 hover:shadow-xl transition-shadow">
+      <div className="p-3 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg shadow-sm">{icon}</div>
       <div>
-        <p className="text-sm text-gray-500">{title}</p>
-        <p className="text-2xl font-semibold text-gray-900">{loading ? "..." : value}</p>
+        <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">{title}</p>
+        <p className="text-2xl font-bold text-gray-900">{loading ? "..." : value}</p>
       </div>
     </div>
   );
@@ -256,21 +256,24 @@ function BreakdownTable({ title, rows = [], loading, formatStatus = false }) {
   };
 
   return (
-    <div className="border rounded-xl bg-white shadow-sm">
-      <div className="px-4 py-3 border-b flex items-center gap-2">
-        <MapPin size={16} className="text-gray-500" />
-        <p className="text-sm font-semibold text-gray-800">{title}</p>
+    <div className="border border-gray-200 rounded-xl bg-white shadow-lg overflow-hidden">
+      <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100/50 flex items-center gap-2">
+        <MapPin size={18} className="text-gray-600" />
+        <p className="text-sm font-bold text-gray-900 uppercase tracking-wide">{title}</p>
       </div>
-      <div className="divide-y">
+      <div className="divide-y divide-gray-100">
         {loading ? (
-          <p className="px-4 py-3 text-sm text-gray-500">Loading...</p>
+          <div className="px-6 py-8 text-center">
+            <div className="inline-block animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 mb-2"></div>
+            <p className="text-sm text-gray-500 font-medium">Loading...</p>
+          </div>
         ) : rows.length === 0 ? (
-          <p className="px-4 py-3 text-sm text-gray-500">No data</p>
+          <p className="px-6 py-8 text-sm text-gray-500 font-medium text-center">No data available</p>
         ) : (
           rows.map((row, idx) => (
-            <div key={idx} className="px-4 py-3 flex justify-between text-sm">
-              <span className={getStatusColor(row._id)}>{formatStatusLabel(row._id) || "N/A"}</span>
-              <span className="font-semibold text-gray-900">{row.count ?? 0}</span>
+            <div key={idx} className="px-6 py-4 flex justify-between items-center hover:bg-gray-50 transition-colors">
+              <span className={`text-sm font-medium ${getStatusColor(row._id)}`}>{formatStatusLabel(row._id) || "N/A"}</span>
+              <span className="font-bold text-gray-900 text-sm">{row.count ?? 0}</span>
             </div>
           ))
         )}
@@ -281,32 +284,37 @@ function BreakdownTable({ title, rows = [], loading, formatStatus = false }) {
 
 function SimpleTable({ headers, rows, loading, renderRow }) {
   return (
-    <div className="border rounded-xl bg-white shadow-sm overflow-x-auto">
+    <div className="border border-gray-200 rounded-xl bg-white shadow-lg overflow-x-auto">
       <table className="w-full text-sm">
-        <thead className="bg-slate-50 text-gray-600 uppercase text-xs">
-          <tr>
+        <thead>
+          <tr className="bg-gradient-to-r from-gray-50 to-gray-100/50 border-b border-gray-200">
             {headers.map((h) => (
-              <th key={h} className="px-4 py-3 text-left font-semibold">
+              <th key={h} className="px-6 py-4 text-left font-bold text-xs uppercase tracking-wider text-gray-700">
                 {h}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody>
+        <tbody className="divide-y divide-gray-100">
           {loading ? (
             <tr>
-              <td colSpan={headers.length} className="px-4 py-4 text-center text-gray-500">
-                Loading...
+              <td colSpan={headers.length} className="px-6 py-8 text-center">
+                <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mb-2"></div>
+                <p className="text-gray-500 font-medium">Loading...</p>
               </td>
             </tr>
           ) : rows.length === 0 ? (
             <tr>
-              <td colSpan={headers.length} className="px-4 py-4 text-center text-gray-500">
-                No data
+              <td colSpan={headers.length} className="px-6 py-8 text-center text-gray-500 font-medium">
+                No data available
               </td>
             </tr>
           ) : (
-            rows.map((row, idx) => renderRow(row, idx))
+            rows.map((row, idx) => (
+              <tr key={idx} className="hover:bg-blue-50/50 transition-colors">
+                {renderRow(row, idx)}
+              </tr>
+            ))
           )}
         </tbody>
       </table>
@@ -328,14 +336,16 @@ function Section({ title, children }) {
 
 function FilterField({ label, name, value, onChange, type = "text", ...rest }) {
   return (
-    <div className="flex flex-col gap-1">
-      <label className="text-sm text-gray-600">{label}</label>
+    <div className="flex flex-col gap-2">
+      <label className="text-sm font-semibold text-gray-700">{label}</label>
       <input
         name={name}
         value={value}
         onChange={onChange}
         type={type}
-        className="border rounded-lg px-3 py-2"
+        className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm font-medium 
+                   focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all
+                   placeholder:text-gray-400"
         {...rest}
       />
     </div>

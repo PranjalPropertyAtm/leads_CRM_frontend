@@ -80,7 +80,7 @@ export default function AddEmployee() {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100 p-6">
+    <div className="bg-gradient-to-br from-slate-50 to-slate-100 p-6">
       <motion.div
         variants={containerVariants}
         initial="hidden"

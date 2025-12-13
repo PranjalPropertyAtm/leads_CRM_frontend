@@ -162,7 +162,7 @@ export default function AddDetails() {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 p-4 font-[Inter]">
+        <div className="bg-slate-50 p-4 font-[Inter]">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
                 <h1 className="text-2xl font-semibold text-slate-800 flex items-center gap-2">Masters — Add / Edit</h1>
             </div>

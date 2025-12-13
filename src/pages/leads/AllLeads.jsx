@@ -41,7 +41,7 @@ export default function AllLeads() {
   // page + filters
   const [filter, setFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(5);
 
   const [selected, setSelected] = useState(null);
 
@@ -356,20 +356,22 @@ export default function AllLeads() {
   // Render
   // -------------------------
   return (
-    <div className="min-h-screen bg-slate-50 p-4 font-[Inter]">
+    <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-4">
       <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-semibold text-gray-900">Leads</h1>
-            <p className="text-sm text-gray-500">View and manage all leads</p>
+            <h1 className="text-3xl font-bold text-gray-900 mb-1">Leads</h1>
+            <p className="text-sm text-gray-600 font-medium">View and manage all leads</p>
           </div>
 
           <div className="relative">
-            <Search className="absolute left-3 top-3 text-gray-400" size={16} />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
             <input
               placeholder="Search leads..."
-              className="pl-10 pr-4 py-2 rounded-lg border border-gray-300 bg-white shadow-sm w-80 focus:ring-2 focus:ring-blue-500 transition-all"
+              className="pl-11 pr-4 py-2.5 rounded-lg border border-gray-300 bg-white shadow-sm w-80 
+                         focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all
+                         text-sm font-medium placeholder:text-gray-400"
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
             />
@@ -377,16 +379,21 @@ export default function AllLeads() {
         </div>
 
         {/* Table */}
-        <div className="bg-white rounded-xl shadow-md border overflow-hidden">
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
           {isLoading ? (
-            <div className="py-10 text-center text-gray-500">Loading...</div>
+            <div className="py-16 text-center">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-3"></div>
+              <p className="text-gray-500 font-medium">Loading leads...</p>
+            </div>
           ) : filtered.length === 0 ? (
-            <div className="py-10 text-center text-gray-500">No leads found</div>
+            <div className="py-16 text-center">
+              <p className="text-gray-500 font-medium">No leads found</p>
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm border-separate border-spacing-0">
                 <thead>
-                  <tr className="bg-gray-50 text-gray-600 text-xs uppercase tracking-wide border-b">
+                  <tr className="bg-gradient-to-r from-gray-50 to-gray-100/50 border-b border-gray-200">
                     {[
                       "S.NO",
                       "Name",
@@ -402,38 +409,40 @@ export default function AllLeads() {
                       "Visits",
                       "",
                     ].map((h) => (
-                      <th key={h} className="px-3 py-4 font-semibold text-left">
+                      <th key={h} className="px-6 py-4 font-bold text-xs uppercase tracking-wider text-gray-700 text-left">
                         {h}
                       </th>
                     ))}
                   </tr>
                 </thead>
 
-                <tbody>
+                <tbody className="divide-y divide-gray-100">
                   {filtered.map((lead, idx) => (
                     <tr
                       key={lead._id}
-                      className={`${idx % 2 === 0 ? "bg-white" : "bg-gray-50"} hover:bg-blue-50/40 transition`}
+                      className="hover:bg-blue-50/50 transition-colors group"
                     >
-                      <td className="px-4 py-3">{(currentPage - 1) * pageSize + idx + 1}</td>
+                      <td className="px-6 py-4 text-gray-600 font-semibold">{(currentPage - 1) * pageSize + idx + 1}</td>
 
-                      <td className="px-4 py-3 font-medium text-gray-900">{lead.customerName || lead.ownerName}</td>
+                      <td className="px-6 py-4">
+                        <span className="font-semibold text-gray-900">{lead.customerName || lead.ownerName}</span>
+                      </td>
 
-                      <td className="px-4 py-3">
+                      <td className="px-6 py-4">
                         <span
-                          className={`px-3 py-1 text-xs rounded-full ${lead.customerType === "tenant" ? "bg-blue-100 text-blue-600" : "bg-green-100 text-green-600"
+                          className={`px-3 py-1.5 text-xs rounded-full font-semibold ${lead.customerType === "tenant" ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"
                             }`}
                         >
                           {lead.customerType}
                         </span>
                       </td>
 
-                      <td className="px-4 py-3">{new Date(lead.createdAt).toLocaleDateString()}</td>
-                      <td className="px-4 py-3">{lead.mobileNumber || "N/A"}</td>
-                      <td className="px-4 py-3">{lead.city || "N/A"}</td>
-                      <td className="px-4 py-3">{lead.propertyType || "N/A"}</td>
-                      <td className="px-4 py-3">{lead.budget ? `₹${lead.budget}` : "N/A"}</td>
-                      <td className="px-4 py-3">{lead.source || "N/A"}</td>
+                      <td className="px-6 py-4 text-gray-700 font-medium">{new Date(lead.createdAt).toLocaleDateString()}</td>
+                      <td className="px-6 py-4 text-gray-700 font-medium">{lead.mobileNumber || "N/A"}</td>
+                      <td className="px-6 py-4 text-gray-700 font-medium">{lead.city || "N/A"}</td>
+                      <td className="px-6 py-4 text-gray-700 font-medium">{lead.propertyType || "N/A"}</td>
+                      <td className="px-6 py-4 text-gray-700 font-medium">{lead.budget ? `₹${lead.budget}` : "N/A"}</td>
+                      <td className="px-6 py-4 text-gray-700 font-medium">{lead.source || "N/A"}</td>
 
                       <td className="px-4 py-3">
                         <select
@@ -507,15 +516,19 @@ export default function AllLeads() {
                         </select>
                       </td>
 
-                      <td className="px-4 py-3">
-                        {lead.isRegistered ? <span className="text-green-600 font-medium">Yes</span> : <span className="text-red-500 font-medium">No</span>}
+                      <td className="px-6 py-4">
+                        {lead.isRegistered ? (
+                          <span className="px-3 py-1.5 bg-green-100 text-green-700 text-xs rounded-full font-semibold">Yes</span>
+                        ) : (
+                          <span className="px-3 py-1.5 bg-red-100 text-red-700 text-xs rounded-full font-semibold">No</span>
+                        )}
                       </td>
 
-                      <td className="px-4 py-3">
-                        <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full">{lead.totalVisits || 0} Visits</span>
+                      <td className="px-6 py-4">
+                        <span className="px-3 py-1.5 bg-purple-100 text-purple-700 text-xs rounded-full font-semibold">{lead.totalVisits || 0} Visits</span>
                       </td>
 
-                      <td className="px-5 py-4 text-right">
+                      <td className="px-6 py-4 text-right">
                         <ActionMenu>
                           <button 
                             onClick={(e) => {

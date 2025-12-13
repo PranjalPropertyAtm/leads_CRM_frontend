@@ -17,22 +17,38 @@ export const useAddVisit = () => {
   });
 };
 
-export const useMyVisits = () => {
+export const useMyVisits = (page = 1, limit = 10) => {
   return useQuery({
-    queryKey: ["visits", "my"],
+    queryKey: ["visits", "my", page, limit],
     queryFn: async () => {
-      const res = await axios.get("/visits/my");
-      return res.data.data;
+      const res = await axios.get("/visits/my", {
+        params: { page, limit }
+      });
+      return {
+        visits: res.data.data || [],
+        total: res.data.total || 0,
+        page: res.data.page || page,
+        limit: res.data.limit || limit,
+        totalPages: res.data.totalPages || Math.ceil((res.data.total || 0) / limit),
+      };
     }
   });
 };
 
-export const useAllVisits = () => {
+export const useAllVisits = (page = 1, limit = 10) => {
   return useQuery({
-    queryKey: ["visits", "all"],
+    queryKey: ["visits", "all", page, limit],
     queryFn: async () => {
-      const res = await axios.get("/visits/all");
-      return res.data.data;
+      const res = await axios.get("/visits/all", {
+        params: { page, limit }
+      });
+      return {
+        visits: res.data.data || [],
+        total: res.data.total || 0,
+        page: res.data.page || page,
+        limit: res.data.limit || limit,
+        totalPages: res.data.totalPages || Math.ceil((res.data.total || 0) / limit),
+      };
     }
   });
 };

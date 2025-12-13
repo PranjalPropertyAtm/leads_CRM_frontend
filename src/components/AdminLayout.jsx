@@ -12,17 +12,19 @@ const AdminLayout = () => {
   };
 
   return (
-    <div className="flex bg-gray-50 min-h-screen">
+    <div className="flex bg-gray-50 h-screen overflow-hidden">
       {/* Sidebar */}
       <Sidebar />
 
       {/* Main Area */}
-      <div className="flex-1 flex flex-col md:ml-64">
-        {/* Navbar */}
-        <Navbar onLogout={handleLogout} />
+      <div className="flex-1 flex flex-col md:ml-64 h-screen overflow-hidden">
+        {/* Navbar - Fixed height */}
+        <div className="flex-shrink-0">
+          <Navbar onLogout={handleLogout} />
+        </div>
 
-        {/* Page Content */}
-        <main className="flex-1 p-6 pt-16 md:pt-0 overflow-y-auto">
+        {/* Page Content - Scrollable */}
+        <main className="flex-1 overflow-y-auto overflow-x-hidden">
           <Outlet />
         </main>
       </div>

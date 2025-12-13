@@ -13,19 +13,20 @@ const Navbar = ({ onLogout }) => {
 
 
   return (
-    <nav className="bg-white shadow-sm sticky top-0 z-40">
-      <div className="flex items-center justify-between px-4 md:px-8 py-3">
+    <nav className="bg-white border-b border-gray-200/80 shadow-sm sticky top-0 z-40 backdrop-blur-sm bg-white/95">
+      <div className="flex items-center justify-between px-4 md:px-8 py-4">
 
         {/* LEFT: Logo */}
-        <div className="flex items-center gap-2">
-          {/* <img
-            src="/logo.png"
-            alt="Logo"
-            className="w-9 h-9 rounded-md object-cover shadow-sm"
-          /> */}
-          <h1 className="text-lg md:text-xl font-semibold text-gray-800 tracking-wide">
-            Property ATM
-          </h1>
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-blue-500 flex items-center justify-center shadow-md">
+            <span className="text-white font-bold text-sm">PA</span>
+          </div>
+          <div>
+            <h1 className="text-lg md:text-xl font-bold text-gray-900 tracking-tight">
+              Property ATM
+            </h1>
+            <p className="text-xs text-gray-500 font-medium hidden md:block">CRM Dashboard</p>
+          </div>
         </div>
 
         {/* CENTER: Search (Desktop only) */}
@@ -42,33 +43,49 @@ const Navbar = ({ onLogout }) => {
         <div className="flex items-center gap-4 relative">
 
           {/* Bell Icon */}
-          <FiBell className="text-gray-700 text-xl cursor-pointer hover:text-black transition" />
+          <button className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors group">
+            <FiBell className="text-gray-600 text-xl group-hover:text-gray-900 transition-colors" />
+            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+          </button>
 
           {/* Profile + Menu (Desktop) */}
           <div className="relative hidden md:block">
             <button
               onClick={() => setShowMenu(!showMenu)}
-              className="flex items-center gap-2"
+              className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 transition-all border border-transparent hover:border-gray-200"
             >
-              <img
-                src="https://api.dicebear.com/8.x/avataaars/svg?seed=admin"
-                alt="Admin"
-                className="w-9 h-9 rounded-full border border-gray-300"
-              />
-              <span className="text-gray-700 font-medium">
-                {user?.role === "employee" ? "Employee" : "Admin"}
-              </span>
-              <FiChevronDown className="text-gray-500" />
+              <div className="relative">
+                <img
+                  src="https://api.dicebear.com/8.x/avataaars/svg?seed=admin"
+                  alt="Admin"
+                  className="w-9 h-9 rounded-full border-2 border-gray-200 shadow-sm"
+                />
+                <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></span>
+              </div>
+              <div className="flex flex-col items-start">
+                <span className="text-gray-900 font-semibold text-sm">
+                  {user?.name || (user?.role === "employee" ? "Employee" : "Admin")}
+                </span>
+                <span className="text-xs text-gray-500 font-medium">
+                  {user?.role === "employee" ? "Employee" : "Administrator"}
+                </span>
+              </div>
+              <FiChevronDown className={`text-gray-500 transition-transform ${showMenu ? 'rotate-180' : ''}`} />
             </button>
 
             {showMenu && (
-              <div className="absolute right-0 mt-3 bg-white shadow-xl rounded-xl w-48 border border-gray-100 p-2">
-                <ul className="text-gray-700 text-sm font-medium">
+              <div className="absolute right-0 mt-2 bg-white shadow-xl rounded-xl w-56 border border-gray-200/80 overflow-hidden">
+                <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
+                  <p className="text-sm font-semibold text-gray-900">{user?.name || "User"}</p>
+                  <p className="text-xs text-gray-500">{user?.email || "No email"}</p>
+                </div>
+                <ul className="py-1">
                   <li
                     onClick={onLogout}
-                    className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 rounded-lg cursor-pointer text-red-500"
+                    className="flex items-center gap-3 px-4 py-2.5 hover:bg-red-50 text-red-600 cursor-pointer transition-colors font-medium text-sm"
                   >
-                    <FiLogOut /> Logout
+                    <FiLogOut className="text-base" /> 
+                    <span>Logout</span>
                   </li>
                 </ul>
               </div>
@@ -79,32 +96,30 @@ const Navbar = ({ onLogout }) => {
       </div>
 
       {/* MOBILE: Search + Compact Admin */}
-      <div className="px-4 pb-3 md:hidden flex items-center justify-between gap-3">
+      <div className="px-4 pb-3 md:hidden flex items-center justify-between gap-3 border-t border-gray-100 pt-3">
 
         {/* Search */}
-        <div className="flex items-center bg-gray-100 px-3 py-2 rounded-full flex-1">
-          <FiSearch className="text-gray-500 mr-2" />
+        <div className="flex items-center bg-gray-50 border border-gray-200 px-3 py-2.5 rounded-lg flex-1 shadow-sm">
+          <FiSearch className="text-gray-400 mr-2" size={16} />
           <input
             type="text"
             placeholder="Search..."
-            className="bg-transparent outline-none w-full text-sm text-gray-700"
+            className="bg-transparent outline-none w-full text-sm text-gray-700 font-medium placeholder:text-gray-400"
           />
         </div>
 
         {/* Avatar + Logout */}
-        <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-full px-3 py-1 shrink-0">
+        <button
+          onClick={onLogout}
+          className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2 shrink-0 hover:bg-red-100 transition-colors"
+        >
           <img
             src="https://api.dicebear.com/8.x/avataaars/svg?seed=admin"
             alt="Admin"
-            className="w-7 h-7 rounded-full border border-gray-300"
+            className="w-7 h-7 rounded-full border-2 border-red-200"
           />
-          <button
-            onClick={onLogout}
-            className="text-red-500 text-sm flex items-center gap-1 hover:text-red-600 transition"
-          >
-            <FiLogOut />
-          </button>
-        </div>
+          <FiLogOut className="text-red-600" size={16} />
+        </button>
       </div>
     </nav>
   );

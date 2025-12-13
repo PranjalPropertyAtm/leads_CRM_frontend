@@ -75,34 +75,40 @@ const AdminSidebar = () => {
       {/* 🧭 Sidebar */}
       <div
         className={`
-          bg-slate-900 text-white h-screen flex flex-col fixed md:fixed top-0 left-0 z-50 
-          transition-all duration-300 ease-in-out
+          bg-gradient-to-b from-slate-900 to-slate-800 text-white h-screen flex flex-col fixed md:fixed top-0 left-0 z-50 
+          transition-all duration-300 ease-in-out shadow-2xl
           ${isOpen ? "w-64 translate-x-0" : "-translate-x-full md:translate-x-0 md:w-64"}
         `}
       >
         {/* Logo Section */}
-        <div className="relative w-16 h-16 overflow-hidden shadow-2xl transition-transform duration-300 active:scale-95 m-24 mt-4 mb-0">
-          <img
-            src="/Property ATM Logo.png"
-            alt="Property ATM Logo"
-            className="object-cover w-full h-full"
-          />
-        </div>
-
-        <div className="p-5 flex items-center justify-center border-b border-slate-700">
-          <h2 className="text-xl font-bold tracking-wide text-gray-100">
-            Property ATM
-          </h2>
+        <div className="px-6 py-6 border-b border-slate-700/50">
+          <div className="flex items-center gap-3">
+            <div className="relative w-10 h-10 overflow-hidden rounded-lg shadow-lg bg-white/10 backdrop-blur-sm">
+              <img
+                src="/Property ATM Logo.png"
+                alt="Property ATM Logo"
+                className="object-cover w-full h-full p-1"
+              />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold tracking-tight text-white">
+                Property ATM
+              </h2>
+              <p className="text-xs text-slate-400 font-medium">CRM System</p>
+            </div>
+          </div>
         </div>
 
         {/* MENU LIST */}
-        <nav className="mt-6 text-sm font-medium flex-1 overflow-y-auto">
+        <nav className="mt-2 px-3 py-4 text-sm font-medium flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
           {/* Dashboard */}
           <NavLink
             to="/dashboard"
             className={({ isActive }) =>
-              `flex items-center gap-4 px-6 py-3 transition-colors duration-200 hover:bg-slate-800 
-               ${isActive ? "bg-slate-800 border-l-4 border-yellow-400" : ""}`
+              `flex items-center gap-3 px-4 py-3 mb-1 rounded-lg transition-all duration-200 font-medium
+               ${isActive 
+                 ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-500/30" 
+                 : "text-slate-300 hover:bg-slate-800/50 hover:text-white"}`
             }
             onClick={() => {
               setIsOpen(false);
@@ -110,39 +116,55 @@ const AdminSidebar = () => {
             }}
           >
             <FiHome className="text-lg" />
-            Dashboard
+            <span>Dashboard</span>
           </NavLink>
 
           {/* Leads Dropdown */}
           <button
             onClick={() => toggleMenu("leads")}
-            className="flex w-full items-center justify-between px-6 py-3 hover:bg-slate-800 transition-colors"
+            className="flex w-full items-center justify-between px-4 py-3 mb-1 rounded-lg text-slate-300 hover:bg-slate-800/50 hover:text-white transition-all duration-200 font-medium"
           >
-            <span className="flex items-center gap-4">
-              <FiList className="text-lg" /> Leads
+            <span className="flex items-center gap-3">
+              <FiList className="text-lg" /> 
+              <span>Leads</span>
             </span>
-            {openMenus.leads ? <FiChevronDown /> : <FiChevronRight />}
+            {openMenus.leads ? <FiChevronDown className="text-sm" /> : <FiChevronRight className="text-sm" />}
           </button>
 
           {openMenus.leads && (
-            <div className="ml-12 mt-1 space-y-1 text-gray-300">
+            <div className="ml-4 mt-1 mb-2 space-y-1 border-l-2 border-slate-700/50 pl-4">
               <NavLink
                 to="/add-lead"
-                className="block px-3 py-2 rounded hover:bg-slate-800"
+                className={({ isActive }) =>
+                  `block px-3 py-2 rounded-md text-sm transition-all duration-200
+                   ${isActive 
+                     ? "bg-slate-800/70 text-white font-medium" 
+                     : "text-slate-400 hover:bg-slate-800/30 hover:text-slate-200"}`
+                }
                 onClick={() => setIsOpen(false)}
               >
                 Add Lead
               </NavLink>
               <NavLink
                 to="/all-leads"
-                className="block px-3 py-2 rounded hover:bg-slate-800"
+                className={({ isActive }) =>
+                  `block px-3 py-2 rounded-md text-sm transition-all duration-200
+                   ${isActive 
+                     ? "bg-slate-800/70 text-white font-medium" 
+                     : "text-slate-400 hover:bg-slate-800/30 hover:text-slate-200"}`
+                }
                 onClick={() => setIsOpen(false)}
               >
                 All Leads
               </NavLink>
               <NavLink
                 to="/my-leads"
-                className="block px-3 py-2 rounded hover:bg-slate-800"
+                className={({ isActive }) =>
+                  `block px-3 py-2 rounded-md text-sm transition-all duration-200
+                   ${isActive 
+                     ? "bg-slate-800/70 text-white font-medium" 
+                     : "text-slate-400 hover:bg-slate-800/30 hover:text-slate-200"}`
+                }
                 onClick={() => setIsOpen(false)}
               >
                 My Leads
@@ -153,22 +175,27 @@ const AdminSidebar = () => {
           {/* Visits Dropdown */}
           <button
             onClick={() => toggleMenu("visits")}
-            className="flex w-full items-center justify-between px-6 py-3 hover:bg-slate-800 transition-colors"
+            className="flex w-full items-center justify-between px-4 py-3 mb-1 rounded-lg text-slate-300 hover:bg-slate-800/50 hover:text-white transition-all duration-200 font-medium"
           >
-            <span className="flex items-center gap-4">
-              <FiFolder className="text-lg" /> Visits
+            <span className="flex items-center gap-3">
+              <FiFolder className="text-lg" /> 
+              <span>Visits</span>
             </span>
-            {openMenus.visits ? <FiChevronDown /> : <FiChevronRight />}
+            {openMenus.visits ? <FiChevronDown className="text-sm" /> : <FiChevronRight className="text-sm" />}
           </button>
 
           {openMenus.visits && (
-            <div className="ml-12 mt-1 space-y-1 text-gray-300">
-
+            <div className="ml-4 mt-1 mb-2 space-y-1 border-l-2 border-slate-700/50 pl-4">
               {/* Admin sees both All + My visits */}
               {user?.role !== "employee" && (
                 <NavLink
                   to="/all-visits"
-                  className="block px-3 py-2 rounded hover:bg-slate-800"
+                  className={({ isActive }) =>
+                    `block px-3 py-2 rounded-md text-sm transition-all duration-200
+                     ${isActive 
+                       ? "bg-slate-800/70 text-white font-medium" 
+                       : "text-slate-400 hover:bg-slate-800/30 hover:text-slate-200"}`
+                  }
                   onClick={() => setIsOpen(false)}
                 >
                   All Visits
@@ -178,12 +205,16 @@ const AdminSidebar = () => {
               {/* All users see My Visits */}
               <NavLink
                 to="/my-visits"
-                className="block px-3 py-2 rounded hover:bg-slate-800"
+                className={({ isActive }) =>
+                  `block px-3 py-2 rounded-md text-sm transition-all duration-200
+                   ${isActive 
+                     ? "bg-slate-800/70 text-white font-medium" 
+                     : "text-slate-400 hover:bg-slate-800/30 hover:text-slate-200"}`
+                }
                 onClick={() => setIsOpen(false)}
               >
                 My Visits
               </NavLink>
-
             </div>
           )}
 
@@ -192,19 +223,25 @@ const AdminSidebar = () => {
             <>
               <button
                 onClick={() => toggleMenu("customers")}
-                className="flex w-full items-center justify-between px-6 py-3 hover:bg-slate-800 transition-colors"
+                className="flex w-full items-center justify-between px-4 py-3 mb-1 rounded-lg text-slate-300 hover:bg-slate-800/50 hover:text-white transition-all duration-200 font-medium"
               >
-                <span className="flex items-center gap-4">
-                  <FiUsers className="text-lg" /> Customers
+                <span className="flex items-center gap-3">
+                  <FiUsers className="text-lg" /> 
+                  <span>Customers</span>
                 </span>
-                {openMenus.customers ? <FiChevronDown /> : <FiChevronRight />}
+                {openMenus.customers ? <FiChevronDown className="text-sm" /> : <FiChevronRight className="text-sm" />}
               </button>
 
               {openMenus.customers && (
-                <div className="ml-12 mt-1 space-y-1 text-gray-300">
+                <div className="ml-4 mt-1 mb-2 space-y-1 border-l-2 border-slate-700/50 pl-4">
                   <NavLink
                     to="/all-customers"
-                    className="block px-3 py-2 rounded hover:bg-slate-800"
+                    className={({ isActive }) =>
+                      `block px-3 py-2 rounded-md text-sm transition-all duration-200
+                       ${isActive 
+                         ? "bg-slate-800/70 text-white font-medium" 
+                         : "text-slate-400 hover:bg-slate-800/30 hover:text-slate-200"}`
+                    }
                     onClick={() => setIsOpen(false)}
                   >
                     All Customers
@@ -217,7 +254,12 @@ const AdminSidebar = () => {
           {/* Reports */}
           <NavLink
             to="/reports"
-            className="flex items-center gap-4 px-6 py-3 hover:bg-slate-800 transition-colors "
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-4 py-3 mb-1 rounded-lg transition-all duration-200 font-medium
+               ${isActive 
+                 ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-500/30" 
+                 : "text-slate-300 hover:bg-slate-800/50 hover:text-white"}`
+            }
             onClick={() => setIsOpen(false)}
           >
             <FiBarChart2 className="text-lg" />
@@ -231,33 +273,49 @@ const AdminSidebar = () => {
             <>
               <button
                 onClick={() => toggleMenu("employee")}
-                className="flex w-full items-center justify-between px-6 py-3 hover:bg-slate-800 transition-colors"
+                className="flex w-full items-center justify-between px-4 py-3 mb-1 rounded-lg text-slate-300 hover:bg-slate-800/50 hover:text-white transition-all duration-200 font-medium"
               >
-                <span className="flex items-center gap-4">
-                  <FiUsers className="text-lg" /> Employees
+                <span className="flex items-center gap-3">
+                  <FiUsers className="text-lg" /> 
+                  <span>Employees</span>
                 </span>
-                {openMenus.employee ? <FiChevronDown /> : <FiChevronRight />}
+                {openMenus.employee ? <FiChevronDown className="text-sm" /> : <FiChevronRight className="text-sm" />}
               </button>
 
               {openMenus.employee && (
-                <div className="ml-12 mt-1 space-y-1 text-gray-300">
+                <div className="ml-4 mt-1 mb-2 space-y-1 border-l-2 border-slate-700/50 pl-4">
                   <NavLink
                     to="/add-employee"
-                    className="block px-3 py-2 rounded hover:bg-slate-800"
+                    className={({ isActive }) =>
+                      `block px-3 py-2 rounded-md text-sm transition-all duration-200
+                       ${isActive 
+                         ? "bg-slate-800/70 text-white font-medium" 
+                         : "text-slate-400 hover:bg-slate-800/30 hover:text-slate-200"}`
+                    }
                     onClick={() => setIsOpen(false)}
                   >
                     Add Employee
                   </NavLink>
                   <NavLink
                     to="/all-employee"
-                    className="block px-3 py-2 rounded hover:bg-slate-800"
+                    className={({ isActive }) =>
+                      `block px-3 py-2 rounded-md text-sm transition-all duration-200
+                       ${isActive 
+                         ? "bg-slate-800/70 text-white font-medium" 
+                         : "text-slate-400 hover:bg-slate-800/30 hover:text-slate-200"}`
+                    }
                     onClick={() => setIsOpen(false)}
                   >
                     All Employees
                   </NavLink>
                   <NavLink
                     to="/permissions"
-                    className="block px-3 py-2 rounded hover:bg-slate-800"
+                    className={({ isActive }) =>
+                      `block px-3 py-2 rounded-md text-sm transition-all duration-200
+                       ${isActive 
+                         ? "bg-slate-800/70 text-white font-medium" 
+                         : "text-slate-400 hover:bg-slate-800/30 hover:text-slate-200"}`
+                    }
                     onClick={() => setIsOpen(false)}
                   >
                     Add Permissions
@@ -272,19 +330,25 @@ const AdminSidebar = () => {
             <>
               <button
                 onClick={() => toggleMenu("masters")}
-                className="flex w-full items-center justify-between px-6 py-3 hover:bg-slate-800 transition-colors"
+                className="flex w-full items-center justify-between px-4 py-3 mb-1 rounded-lg text-slate-300 hover:bg-slate-800/50 hover:text-white transition-all duration-200 font-medium"
               >
-                <span className="flex items-center gap-4">
-                  <FiFolder className="text-lg" /> Masters
+                <span className="flex items-center gap-3">
+                  <FiFolder className="text-lg" /> 
+                  <span>Masters</span>
                 </span>
-                {openMenus.masters ? <FiChevronDown /> : <FiChevronRight />}
+                {openMenus.masters ? <FiChevronDown className="text-sm" /> : <FiChevronRight className="text-sm" />}
               </button>
 
               {openMenus.masters && (
-                <div className="ml-12 mt-1 space-y-1 text-gray-300">
+                <div className="ml-4 mt-1 mb-2 space-y-1 border-l-2 border-slate-700/50 pl-4">
                   <NavLink
                     to="/add"
-                    className="block px-3 py-2 rounded hover:bg-slate-800"
+                    className={({ isActive }) =>
+                      `block px-3 py-2 rounded-md text-sm transition-all duration-200
+                       ${isActive 
+                         ? "bg-slate-800/70 text-white font-medium" 
+                         : "text-slate-400 hover:bg-slate-800/30 hover:text-slate-200"}`
+                    }
                     onClick={() => setIsOpen(false)}
                   >
                     Add Property Details
@@ -298,8 +362,10 @@ const AdminSidebar = () => {
           <NavLink
             to="/settings"
             className={({ isActive }) =>
-              `flex items-center gap-4 px-6 py-3 transition-colors duration-200 hover:bg-slate-800 
-               ${isActive ? "bg-slate-800 border-l-4 border-yellow-400" : ""}`
+              `flex items-center gap-3 px-4 py-3 mb-1 rounded-lg transition-all duration-200 font-medium
+               ${isActive 
+                 ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-500/30" 
+                 : "text-slate-300 hover:bg-slate-800/50 hover:text-white"}`
             }
             onClick={() => {
               setIsOpen(false);
@@ -307,7 +373,7 @@ const AdminSidebar = () => {
             }}
           >
             <FiSettings className="text-lg" />
-            Settings
+            <span>Settings</span>
           </NavLink>
         </nav>
       </div>

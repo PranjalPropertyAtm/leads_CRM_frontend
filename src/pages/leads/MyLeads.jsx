@@ -52,7 +52,7 @@ export default function MyLeads() {
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(5);
 
 
   // NOTE: make sure your useMyLeads accepts (page, limit) and uses them in queryKey & request params:
@@ -341,7 +341,7 @@ export default function MyLeads() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 p-4 font-[Inter]">
+    <div className="bg-slate-50 p-4 font-[Inter]">
       <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="max-w-7xl mx-auto">
         {/* HEADER */}
         <div className="flex items-center justify-between mb-8">

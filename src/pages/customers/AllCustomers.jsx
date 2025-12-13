@@ -57,7 +57,7 @@ export default function AllCustomers() {
   }, [customers, filter]);
 
   return (
-    <div className="min-h-screen  bg-slate-50 p-4 font-[Inter] ">
+    <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-4">
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
@@ -67,16 +67,17 @@ export default function AllCustomers() {
         {/* HEADER */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-semibold text-gray-900">Customers</h1>
-            {/* <p className="text-sm text-gray-500">Manage your internal team</p> */}
+            <h1 className="text-3xl font-bold text-gray-900 mb-1">Customers</h1>
+            <p className="text-sm text-gray-600 font-medium">Manage and view all registered customers</p>
           </div>
 
           <div className="relative">
-            <Search className="absolute left-3 top-3 text-gray-400" size={16} />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
             <input
               placeholder="Search customers..."
-              className="pl-10 pr-4 py-2 rounded-lg border border-gray-300 bg-white shadow-sm w-80 
-                         focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              className="pl-11 pr-4 py-2.5 rounded-lg border border-gray-300 bg-white shadow-sm w-80 
+                         focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all
+                         text-sm font-medium placeholder:text-gray-400"
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
             />
@@ -84,83 +85,85 @@ export default function AllCustomers() {
         </div>
 
         {/* TABLE CONTAINER */}
-        <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-          <div >
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+          <div>
             {isLoading ? (
-              <div className="py-10 text-center text-gray-500">Loading...</div>
+              <div className="py-16 text-center">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-3"></div>
+                <p className="text-gray-500 font-medium">Loading customers...</p>
+              </div>
             ) : filtered.length === 0 ? (
-              <div className="py-10 text-center text-gray-500">No customers found</div>
+              <div className="py-16 text-center">
+                <p className="text-gray-500 font-medium">No customers found</p>
+              </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full border-separate border-spacing-0 text-sm">
                   <thead>
-                    <tr className="bg-gray-50 text-gray-600 text-xs uppercase tracking-wide border-b">
+                    <tr className="bg-gradient-to-r from-gray-50 to-gray-100/50 border-b border-gray-200">
                       {["S.NO", "Name", "Type", "Phone", "City", "Leads", "Actions"].map((h) => (
-                        <th key={h} className="px-5 py-4 font-semibold text-left border-b border-gray-200">
+                        <th key={h} className="px-6 py-4 font-bold text-xs uppercase tracking-wider text-gray-700 text-left">
                           {h}
                         </th>
                       ))}
                     </tr>
                   </thead>
 
-                  <tbody>
+                  <tbody className="divide-y divide-gray-100">
                     {filtered.map((cust, idx) => {
                       const leadEntries = buildLeadArray(cust);
                       return (
                       <tr
                         key={cust._id}
-                        className={`${idx % 2 === 0 ? "bg-white" : "bg-gray-50"
-                          } hover:bg-blue-50/40 transition-colors`}
+                        className="hover:bg-blue-50/50 transition-colors group"
                       >
-                        <td className="px-4 py-3 font-medium text-gray-900">
+                        <td className="px-6 py-4 text-gray-600 font-semibold">
                           {(currentPage - 1) * pageSize + idx + 1}
                         </td>
                         {/* NAME */}
-                        <td className="px-4 py-3 font-medium text-gray-900">
+                        <td className="px-6 py-4">
                           <div className="flex flex-col">
-                            {cust.name}
-                            <span className="text-xs text-gray-400">{cust._id}</span>
+                            <span className="font-semibold text-gray-900">{cust.name}</span>
+                            <span className="text-xs text-gray-400 font-mono mt-0.5">{cust._id.slice(0, 8)}...</span>
                           </div>
                         </td>
 
                         {/* TYPE */}
-                        <td className="px-5 py-4 text-gray-700"><span
-                          className={`px-3 py-1 text-xs rounded-full font-medium 
-              ${cust.customerType === "tenant"
-                              ? "bg-blue-100 text-blue-700"
-                              : "bg-green-100 text-green-700"}`}
-                        >
-                          {cust.customerType}
-                        </span></td>
-
-
+                        <td className="px-6 py-4">
+                          <span
+                            className={`px-3 py-1.5 text-xs rounded-full font-semibold 
+                            ${cust.customerType === "tenant"
+                                ? "bg-blue-100 text-blue-700"
+                                : "bg-green-100 text-green-700"}`}
+                          >
+                            {cust.customerType}
+                          </span>
+                        </td>
 
                         {/* PHONE */}
-                        <td className="px-5 py-4 text-gray-700">{cust.mobileNumber}</td>
+                        <td className="px-6 py-4 text-gray-700 font-medium">{cust.mobileNumber || "N/A"}</td>
 
-                        {/* DESIGNATION */}
-                        <td className="px-5 py-4 text-gray-700">{cust.city}</td>
+                        {/* CITY */}
+                        <td className="px-6 py-4 text-gray-700 font-medium">{cust.city || "N/A"}</td>
 
                         {/* LEADS COUNT */}
-                        <td className="px-5 py-4 text-gray-700">
-                          {leadEntries.length}
+                        <td className="px-6 py-4">
+                          <span className="px-3 py-1.5 bg-purple-100 text-purple-700 rounded-full text-xs font-semibold">
+                            {leadEntries.length} {leadEntries.length === 1 ? 'Lead' : 'Leads'}
+                          </span>
                         </td>
 
                         {/* ACTION BUTTONS */}
-                        <td className="px-5 py-4 flex items-center gap-3">
+                        <td className="px-6 py-4">
                           <button
                             onClick={() => setSelected(cust)}
-                            className="px-3 py-1.5 rounded-md bg-blue-100 text-blue-700 text-xs flex items-center gap-1 hover:bg-blue-200 transition"
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-semibold 
+                                     hover:bg-blue-700 active:scale-95 transition-all shadow-sm hover:shadow-md
+                                     flex items-center gap-2"
                           >
                             <Eye size={14} />
+                            View
                           </button>
-
-                          {/* <button
-                            onClick={() => handleDelete(cust._id)}
-                            className="px-3 py-1.5 rounded-md bg-red-100 text-red-700 text-xs flex items-center gap-1 hover:bg-red-200 transition"
-                          >
-                            <Trash2 size={14} />
-                          </button> */}
                         </td>
                       </tr>
                     )})}
