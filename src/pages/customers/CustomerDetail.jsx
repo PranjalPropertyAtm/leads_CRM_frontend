@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useCustomerById } from "../../hooks/useCustomerQueries.js";
 import VisitHistory from "../../components/VisitHistory";
-import { Card } from "../../components/ui/Card";
+// import { Card } from "../../components/ui/Card";
 
 const buildLeadArray = (cust) => {
   const list = [cust?.leadId, ...(cust?.leadHistory || [])].filter(Boolean);
