@@ -1,7 +1,4 @@
 
-
-
-
 import React, { useState, useRef, useEffect } from "react";
 import {
   Eye,
@@ -759,43 +756,6 @@ export default function AllLeads() {
             </motion.div>
           </div>
         )}
-
-        {/* Registration Modal */}
-        {/* {showRegModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md">
-              <h2 className="text-xl font-semibold text-gray-800">Register Lead</h2>
-
-              <div className="mt-4 space-y-4">
-                <div>
-                  <label className="text-sm text-gray-600">Plan Name</label>
-                  <input className="w-full border rounded-lg px-3 py-2 mt-1" placeholder="Example: Premium Plan" value={regPlan} onChange={(e) => setRegPlan(e.target.value)} />
-                </div>
-
-                <div>
-                  <label className="text-sm text-gray-600">Member Code</label>
-                  <input className="w-full border rounded-lg px-3 py-2 mt-1" placeholder="Enter Member Code" value={memberCode} onChange={(e) => setMemberCode(e.target.value)} />
-                </div>
-
-                <div>
-                  <SearchableSelect label="Registered By" name="registeredBy" value={regBy} options={employeeOptions} onChange={(e) => setRegBy(e.target.value)} />
-                </div>
-
-                <div>
-                  <label className="text-sm text-gray-600">Registration Date</label>
-                  <input type="date" className="w-full border rounded-lg px-3 py-2 mt-1" value={regDate} onChange={(e) => setRegDate(e.target.value)} />
-                </div>
-
-                <div className="flex justify-end gap-3 pt-4">
-                  <button onClick={() => setShowRegModal(false)} className="px-4 py-2 border rounded-lg">Cancel</button>
-                  <button onClick={handleRegisterLead} disabled={regLoading} className={`px-4 py-2 ${regLoading ? "bg-green-400 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"} text-white rounded-lg`}>
-                    {regLoading ? "Registering..." : "Confirm Registration"}
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )} */}
 
         <RegisterLeadModal
           open={showRegModal}

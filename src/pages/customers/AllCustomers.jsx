@@ -124,7 +124,7 @@ export default function AllCustomers() {
                         <td className="px-6 py-4">
                           <div className="flex flex-col">
                             <span className="font-semibold text-gray-900">{cust.name}</span>
-                            <span className="text-xs text-gray-400 font-mono mt-0.5">{cust._id.slice(0, 8)}...</span>
+                            {/* <span className="text-xs text-gray-400 font-mono mt-0.5">{cust._id.slice(0, 8)}...</span> */}
                           </div>
                         </td>
 

@@ -1,8 +1,4 @@
 
-
-
-
-
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Eye, Trash2, Search, X, ChevronLeft, ChevronRight, Edit } from "lucide-react";
@@ -256,13 +252,14 @@ export default function AllEmployees() {
                   <p className="font-medium">{selected.role}</p>
                 </div>
 
+             
+
                 <div>
-                  <p className="text-gray-500">Permissions</p>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {selected.permissions?.map((p) => (
-                      <span key={p} className="px-3 py-1 bg-purple-200 text-purple-700 rounded-lg text-xs font-medium">{p}</span>
-                    ))}
-                  </div>
+                  <p className="text-gray-500">Total Leads</p>
+                 <div className= "flex flex-wrap gap-2 mt-2">
+                  
+                  <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-600 text-xs font-medium">{selected.totalLeads}</span>
+                 </div>
                 </div>
 
                 <div className="md:col-span-2">

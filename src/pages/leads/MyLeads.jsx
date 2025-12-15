@@ -400,7 +400,7 @@ export default function MyLeads() {
                       <td className="px-4 py-3 font-medium">
                         <div className="flex flex-col">
                           <span>{lead.customerName || lead.ownerName || "N/A"}</span>
-                          <span className="text-xs text-gray-400">{lead._id}</span>
+                          {/* <span className="text-xs text-gray-400">{lead._id}</span> */}
                         </div>
                       </td>
 

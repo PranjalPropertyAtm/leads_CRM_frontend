@@ -308,7 +308,7 @@ const AdminSidebar = () => {
                   >
                     All Employees
                   </NavLink>
-                  <NavLink
+                  {/* <NavLink
                     to="/permissions"
                     className={({ isActive }) =>
                       `block px-3 py-2 rounded-md text-sm transition-all duration-200
@@ -319,7 +319,7 @@ const AdminSidebar = () => {
                     onClick={() => setIsOpen(false)}
                   >
                     Add Permissions
-                  </NavLink>
+                  </NavLink> */}
                 </div>
               )}
             </>

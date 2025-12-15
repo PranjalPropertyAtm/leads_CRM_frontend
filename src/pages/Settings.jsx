@@ -6,7 +6,7 @@ import { User, Mail, Phone, Lock, Save, Eye, EyeOff } from 'lucide-react';
 export default function Settings() {
   const { data: profile, isLoading: profileLoading } = useGetProfile();
   const updateProfileMutation = useUpdateProfile();
-  const changePasswordMutation = useChangePassword();
+  // const changePasswordMutation = useChangePassword();
 
   // Profile form state
   const [profileForm, setProfileForm] = useState({
@@ -44,10 +44,10 @@ export default function Settings() {
     setProfileForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handlePasswordChange = (e) => {
-    const { name, value } = e.target;
-    setPasswordForm((prev) => ({ ...prev, [name]: value }));
-  };
+  // const handlePasswordChange = (e) => {
+  //   const { name, value } = e.target;
+  //   setPasswordForm((prev) => ({ ...prev, [name]: value }));
+  // };
 
   const handleProfileSubmit = async (e) => {
     e.preventDefault();
@@ -63,34 +63,34 @@ export default function Settings() {
     updateProfileMutation.mutate(dataToUpdate);
   };
 
-  const handlePasswordSubmit = async (e) => {
-    e.preventDefault();
+  // const handlePasswordSubmit = async (e) => {
+  //   e.preventDefault();
 
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      return;
-    }
+  //   if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+  //     return;
+  //   }
 
-    if (passwordForm.newPassword.length < 6) {
-      return;
-    }
+  //   if (passwordForm.newPassword.length < 6) {
+  //     return;
+  //   }
 
-    changePasswordMutation.mutate({
-      currentPassword: passwordForm.currentPassword,
-      newPassword: passwordForm.newPassword,
-    }, {
-      onSuccess: () => {
-        setPasswordForm({
-          currentPassword: '',
-          newPassword: '',
-          confirmPassword: '',
-        });
-      },
-    });
-  };
+  //   changePasswordMutation.mutate({
+  //     currentPassword: passwordForm.currentPassword,
+  //     newPassword: passwordForm.newPassword,
+  //   }, {
+  //     onSuccess: () => {
+  //       setPasswordForm({
+  //         currentPassword: '',
+  //         newPassword: '',
+  //         confirmPassword: '',
+  //       });
+  //     },
+  //   });
+  // };
 
-  const togglePasswordVisibility = (field) => {
-    setShowPasswords((prev) => ({ ...prev, [field]: !prev[field] }));
-  };
+  // const togglePasswordVisibility = (field) => {
+  //   setShowPasswords((prev) => ({ ...prev, [field]: !prev[field] }));
+  // };
 
   if (profileLoading) {
     return (
@@ -194,7 +194,7 @@ export default function Settings() {
         </div>
 
         {/* Password Section */}
-        <div className="bg-white rounded-xl shadow-sm border p-6">
+        {/* <div className="bg-white rounded-xl shadow-sm border p-6">
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-red-100 rounded-lg">
               <Lock className="text-red-600" size={20} />
@@ -297,7 +297,7 @@ export default function Settings() {
               </button>
             </div>
           </form>
-        </div>
+        </div> */}
 
         {/* Account Info Section */}
         <div className="bg-white rounded-xl shadow-sm border p-6">
