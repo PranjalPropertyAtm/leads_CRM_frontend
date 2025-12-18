@@ -201,7 +201,7 @@ export default function AddVisitModal({ open, onClose, lead }) {
             onClick={handleSubmit}
             disabled={addVisitMutation.isLoading}
           >
-            {addVisitMutation.isLoading ? (
+            {/* {addVisitMutation.isLoading ? (
               <>
                 <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -211,7 +211,9 @@ export default function AddVisitModal({ open, onClose, lead }) {
               </>
             ) : (
               'Add Visit'
-            )}
+            )} */}
+
+            {addVisitMutation.isLoading ? 'Adding...' : 'Add Visit'}
           </button>
         </div>
       </div>
