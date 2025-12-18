@@ -20,7 +20,7 @@ const AllLeads = lazy(() => import("./pages/leads/AllLeads.jsx"));
 const MyLeads = lazy(() => import("./pages/leads/MyLeads.jsx"));
 const MyVisits = lazy(() => import("./pages/Visits/MyVisits.jsx"));
 const AllVisits = lazy(() => import("./pages/Visits/AllVisits.jsx"));
-const CustomerDetail = lazy(() => import("./pages/customers/CustomerDetail.jsx"));
+// const CustomerDetail = lazy(() => import("./pages/customers/CustomerDetail.jsx"));
 const AllCustomers = lazy(() => import("./pages/customers/AllCustomers.jsx"));
 const Settings = lazy(() => import("./pages/Settings.jsx"));
 

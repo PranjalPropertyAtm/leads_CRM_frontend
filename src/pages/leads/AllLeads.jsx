@@ -185,7 +185,9 @@ export default function AllLeads() {
       lead.mobileNumber?.toLowerCase().includes(q) ||
       lead.city?.toLowerCase().includes(q) ||
       lead.propertyType?.toLowerCase().includes(q) ||
-      lead.source?.toLowerCase().includes(q)
+      lead.source?.toLowerCase().includes(q) ||
+      lead.budget?.toLowerCase().includes(q)
+     
     );
   });
 
@@ -577,8 +579,8 @@ export default function AllLeads() {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setVisitModal(true);
                                 setVisitLead(lead);
+                                setVisitModal(true);
                               }}
                               className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-green-600 transition"
                             >

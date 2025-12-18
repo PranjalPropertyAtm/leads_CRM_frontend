@@ -557,8 +557,8 @@ export default function MyLeads() {
                           {lead.createdBy?._id === user?._id && !lead.dealClosed && lead.status !== "deal_closed" && (
                             <button
                               onClick={() => {
-                                setVisitModal(true);
                                 setVisitLead(lead);
+                                setVisitModal(true);
                               }}
                                className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-green-600 transition"
                             >
