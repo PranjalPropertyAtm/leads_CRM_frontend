@@ -43,7 +43,7 @@ export default function SearchableSelect({
       >
         {value
           ? options.find((opt) => opt.value === value)?.label
-          : <span className="text-gray-400">Select Employee...</span>}
+          : <span className="text-gray-400">Select...</span>}
       </div>
 
       {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
