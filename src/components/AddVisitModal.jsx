@@ -36,22 +36,65 @@ export default function AddVisitModal({ open, onClose, lead }) {
   }));
 
   // don't render until modal is open and lead is available
-  if (!open || !lead) return null; 
+  if (!open || !lead) return null;
+
+  // const handleSubmit = () => {
+  //   // prevent duplicate submissions while the previous request is still pending
+  //   // if (addVisitMutation.isLoading) return;
+
+  //   if (!visitedBy) return notify.error("Please select employee");
+
+  //   // TENANT LEAD VALIDATION
+  //   if (isTenant) {
+  //     if (!ownerName.trim()) return notify.error("Owner name is required");
+  //     if (!propertyLocation.trim()) return notify.error("Property location is required");
+  //     if (!propertyDetails.trim()) return notify.error("Property details are required");
+  //   }
+
+  //   // OWNER LEAD VALIDATION
+  //   if (isOwner) {
+  //     if (!tenantName.trim()) return notify.error("Tenant name is required");
+  //     if (!tenantRequirements.trim())
+  //       return notify.error("Tenant requirements are required");
+  //   }
+
+  //   const payload = {
+  //     leadId: lead._id,
+  //     visitedBy,
+
+  //     // TENANT-only
+  //     ownerName: isTenant ? ownerName : undefined,
+  //     propertyLocation: isTenant ? propertyLocation : undefined,
+  //     propertyDetails: isTenant ? propertyDetails : undefined,
+
+  //     // OWNER-only
+  //     tenantName: isOwner ? tenantName : undefined,
+  //     tenantRequirements: isOwner ? tenantRequirements : undefined,
+
+  //     // Common field
+  //     tenantFeedback,
+  //   };
+
+  //   addVisitMutation.mutate(payload, {
+  //     onSuccess: () => {
+  //       notify.success("Visit Added Successfully");
+  //       onClose();
+  //     },
+  //     onError: (error) => {
+  //       notify.error(error?.response?.data?.message || "Failed to add visit");
+  //     },
+  //   });
+  // };
 
   const handleSubmit = () => {
-    // prevent duplicate submissions while the previous request is still pending
-    // if (addVisitMutation.isLoading) return;
-
     if (!visitedBy) return notify.error("Please select employee");
 
-    // TENANT LEAD VALIDATION
     if (isTenant) {
       if (!ownerName.trim()) return notify.error("Owner name is required");
       if (!propertyLocation.trim()) return notify.error("Property location is required");
       if (!propertyDetails.trim()) return notify.error("Property details are required");
     }
 
-    // OWNER LEAD VALIDATION
     if (isOwner) {
       if (!tenantName.trim()) return notify.error("Tenant name is required");
       if (!tenantRequirements.trim())
@@ -62,16 +105,13 @@ export default function AddVisitModal({ open, onClose, lead }) {
       leadId: lead._id,
       visitedBy,
 
-      // TENANT-only
       ownerName: isTenant ? ownerName : undefined,
       propertyLocation: isTenant ? propertyLocation : undefined,
       propertyDetails: isTenant ? propertyDetails : undefined,
 
-      // OWNER-only
       tenantName: isOwner ? tenantName : undefined,
       tenantRequirements: isOwner ? tenantRequirements : undefined,
 
-      // Common field
       tenantFeedback,
     };
 
@@ -86,13 +126,14 @@ export default function AddVisitModal({ open, onClose, lead }) {
     });
   };
 
+
   console.log("LEAD PASSED:", lead);
 
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[99999]">
       <div className="bg-white p-6 rounded-xl w-full max-w-md shadow-xl animate-fadeIn">
-        
+
         <h2 className="text-xl font-semibold mb-4">
           Add Visit for {lead?.customerName || lead?.ownerName}
           <span className="text-gray-500 text-sm">
@@ -195,13 +236,13 @@ export default function AddVisitModal({ open, onClose, lead }) {
           <button className="px-4 py-2 border rounded-lg" onClick={onClose}>
             Cancel
           </button>
-
+          {/* 
           <button
             className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             onClick={handleSubmit}
             disabled={addVisitMutation.isLoading}
-          >
-            {/* {addVisitMutation.isLoading ? (
+          > */}
+          {/* {addVisitMutation.isLoading ? (
               <>
                 <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -213,8 +254,47 @@ export default function AddVisitModal({ open, onClose, lead }) {
               'Add Visit'
             )} */}
 
-            {addVisitMutation.isLoading ? 'Adding...' : 'Add Visit'}
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={addVisitMutation.isLoading}
+            className={`px-4 py-2 rounded-lg text-white flex items-center justify-center gap-2
+    ${addVisitMutation.isLoading
+                ? "bg-green-400 cursor-not-allowed"
+                : "bg-green-600 hover:bg-green-700"
+              }`}
+          >
+            {addVisitMutation.isLoading ? (
+              <>
+                <svg
+                  className="animate-spin h-4 w-4 text-white"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                  />
+                </svg>
+                <span>Adding...</span>
+              </>
+            ) : (
+              "Add Visit"
+            )}
           </button>
+
+
+          {/* {addVisitMutation.isLoading ? 'Adding...' : 'Add Visit'}
+          </button> */}
         </div>
       </div>
     </div>
