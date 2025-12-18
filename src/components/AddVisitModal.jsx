@@ -1,3 +1,6 @@
+
+
+
 import React, { useState } from "react";
 import { notify } from "../utils/toast";
 import SearchableSelect from "./SearchableSelect";
@@ -7,15 +10,16 @@ import { useAddVisit } from "../hooks/useVisitQueries";
 export default function AddVisitModal({ open, onClose, lead }) {
   const [visitedBy, setVisitedBy] = useState("");
 
-  // TENANT-only
+  // TENANT-only fields
   const [ownerName, setOwnerName] = useState("");
   const [propertyLocation, setPropertyLocation] = useState("");
   const [propertyDetails, setPropertyDetails] = useState("");
 
-  // OWNER-only
+  // OWNER-only fields
   const [tenantName, setTenantName] = useState("");
   const [tenantRequirements, setTenantRequirements] = useState("");
 
+  // Common optional field
   const [tenantFeedback, setTenantFeedback] = useState("");
 
   const isTenant = lead?.customerType === "tenant";
@@ -24,14 +28,15 @@ export default function AddVisitModal({ open, onClose, lead }) {
   const { data } = useFetchEmployees(1, 1000);
   const employees = data?.employees || [];
 
-  const addVisitMutation = useAddVisit(); // ✅ React Query v5
+  const addVisitMutation = useAddVisit();
 
-  if (!open || !lead) return null;
-
-  const employeeOptions = employees.map((e) => ({
-    value: e._id,
-    label: e.name,
+  const employeeOptions = employees.map((emp) => ({
+    value: emp._id,
+    label: emp.name,
   }));
+
+  // don't render until modal is open and lead is available
+  if (!open || !lead) return null; 
 
   const handleSubmit = () => {
     if (addVisitMutation.isPending) return; // 🔒 HARD LOCK
@@ -74,16 +79,22 @@ export default function AddVisitModal({ open, onClose, lead }) {
     );
   };
 
+  console.log("LEAD PASSED:", lead);
+
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[99999]">
-      <div className="bg-white p-6 rounded-xl w-full max-w-md shadow-xl">
+      <div className="bg-white p-6 rounded-xl w-full max-w-md shadow-xl animate-fadeIn">
+        
         <h2 className="text-xl font-semibold mb-4">
-          Add Visit for {lead.customerName || lead.ownerName}{" "}
+          Add Visit for {lead?.customerName || lead?.ownerName}
           <span className="text-gray-500 text-sm">
-            ({lead.customerType.toUpperCase()})
+            {" "}
+            ({(lead?.customerType || "").toUpperCase()})
           </span>
         </h2>
 
+        {/* Employee Select */}
         <SearchableSelect
           label="Visited By"
           value={visitedBy}
@@ -91,59 +102,94 @@ export default function AddVisitModal({ open, onClose, lead }) {
           onChange={(e) => setVisitedBy(e.target.value)}
         />
 
+        {/* -------------------------------------- */}
+        {/* TENANT LEAD FIELDS */}
+        {/* -------------------------------------- */}
         {isTenant && (
           <>
-            <input
-              className="w-full border px-3 py-2 mt-2"
-              placeholder="Owner Name"
-              value={ownerName}
-              onChange={(e) => setOwnerName(e.target.value)}
-            />
-            <input
-              className="w-full border px-3 py-2 mt-2"
-              placeholder="Property Location"
-              value={propertyLocation}
-              onChange={(e) => setPropertyLocation(e.target.value)}
-            />
-            <textarea
-              className="w-full border px-3 py-2 mt-2"
-              placeholder="Property Details"
-              value={propertyDetails}
-              onChange={(e) => setPropertyDetails(e.target.value)}
-            />
+            {/* Owner Name */}
+            <div className="mt-2">
+              <label className="text-sm">Owner Name (Required)</label>
+              <input
+                className="w-full border rounded-lg px-3 py-2 mt-1"
+                value={ownerName}
+                onChange={(e) => setOwnerName(e.target.value)}
+                placeholder="Example: Mr. Sharma"
+              />
+            </div>
+
+            {/* Property Location */}
+            <div className="mt-2">
+              <label className="text-sm">Property Location (Required)</label>
+              <input
+                className="w-full border rounded-lg px-3 py-2 mt-1"
+                value={propertyLocation}
+                onChange={(e) => setPropertyLocation(e.target.value)}
+                placeholder="Example: Andheri East"
+              />
+            </div>
+
+            {/* Property Details */}
+            <div className="mt-3">
+              <label className="text-sm">Property Details (Required)</label>
+              <textarea
+                className="w-full border rounded-lg px-3 py-2 mt-1"
+                rows={3}
+                value={propertyDetails}
+                onChange={(e) => setPropertyDetails(e.target.value)}
+                placeholder="Example: 2BHK, Fully Furnished..."
+              />
+            </div>
           </>
         )}
 
+        {/* -------------------------------------- */}
+        {/* OWNER LEAD FIELDS */}
+        {/* -------------------------------------- */}
         {isOwner && (
           <>
-            <input
-              className="w-full border px-3 py-2 mt-2"
-              placeholder="Tenant Name"
-              value={tenantName}
-              onChange={(e) => setTenantName(e.target.value)}
-            />
-            <textarea
-              className="w-full border px-3 py-2 mt-2"
-              placeholder="Tenant Requirements"
-              value={tenantRequirements}
-              onChange={(e) => setTenantRequirements(e.target.value)}
-            />
+            <div className="mt-2">
+              <label className="text-sm">Tenant Name (Required)</label>
+              <input
+                className="w-full border rounded-lg px-3 py-2 mt-1"
+                value={tenantName}
+                onChange={(e) => setTenantName(e.target.value)}
+                placeholder="Example: Rohit Kumar"
+              />
+            </div>
+
+            <div className="mt-3">
+              <label className="text-sm">Tenant Requirements (Required)</label>
+              <textarea
+                className="w-full border rounded-lg px-3 py-2 mt-1"
+                rows={2}
+                value={tenantRequirements}
+                onChange={(e) => setTenantRequirements(e.target.value)}
+                placeholder="Example: Needs 2BHK near school"
+              />
+            </div>
           </>
         )}
 
-        <textarea
-          className="w-full border px-3 py-2 mt-2"
-          placeholder="Tenant Feedback (optional)"
-          value={tenantFeedback}
-          onChange={(e) => setTenantFeedback(e.target.value)}
-        />
+        {/* COMMON: Tenant Feedback */}
+        <div className="mt-3">
+          <label className="text-sm">Tenant Feedback (Optional)</label>
+          <textarea
+            className="w-full border rounded-lg px-3 py-2 mt-1"
+            rows={2}
+            value={tenantFeedback}
+            onChange={(e) => setTenantFeedback(e.target.value)}
+            placeholder="Example: Liked the property..."
+          />
+        </div>
 
+        {/* Buttons */}
         <div className="flex justify-end gap-3 mt-5">
-          <button onClick={onClose} disabled={addVisitMutation.isPending}>
+          <button className="px-4 py-2 border rounded-lg" onClick={onClose}>
             Cancel
           </button>
 
-          <button
+         <button
             onClick={handleSubmit}
             disabled={addVisitMutation.isPending}
             className={`px-4 py-2 rounded-lg text-white flex items-center gap-2
