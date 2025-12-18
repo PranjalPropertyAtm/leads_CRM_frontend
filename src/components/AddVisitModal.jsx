@@ -40,7 +40,7 @@ export default function AddVisitModal({ open, onClose, lead }) {
 
   const handleSubmit = () => {
     // prevent duplicate submissions while the previous request is still pending
-    if (addVisitMutation.isLoading) return;
+    // if (addVisitMutation.isLoading) return;
 
     if (!visitedBy) return notify.error("Please select employee");
 
