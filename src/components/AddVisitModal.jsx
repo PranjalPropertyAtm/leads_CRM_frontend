@@ -1,6 +1,3 @@
-
-
-
 import React, { useState } from "react";
 import { notify } from "../utils/toast";
 import SearchableSelect from "./SearchableSelect";
@@ -10,16 +7,15 @@ import { useAddVisit } from "../hooks/useVisitQueries";
 export default function AddVisitModal({ open, onClose, lead }) {
   const [visitedBy, setVisitedBy] = useState("");
 
-  // TENANT-only fields
+  // TENANT-only
   const [ownerName, setOwnerName] = useState("");
   const [propertyLocation, setPropertyLocation] = useState("");
   const [propertyDetails, setPropertyDetails] = useState("");
 
-  // OWNER-only fields
+  // OWNER-only
   const [tenantName, setTenantName] = useState("");
   const [tenantRequirements, setTenantRequirements] = useState("");
 
-  // Common optional field
   const [tenantFeedback, setTenantFeedback] = useState("");
 
   const isTenant = lead?.customerType === "tenant";
@@ -28,121 +24,66 @@ export default function AddVisitModal({ open, onClose, lead }) {
   const { data } = useFetchEmployees(1, 1000);
   const employees = data?.employees || [];
 
-  const addVisitMutation = useAddVisit();
+  const addVisitMutation = useAddVisit(); // ✅ React Query v5
 
-  const employeeOptions = employees.map((emp) => ({
-    value: emp._id,
-    label: emp.name,
-  }));
-
-  // don't render until modal is open and lead is available
   if (!open || !lead) return null;
 
-  // const handleSubmit = () => {
-  //   // prevent duplicate submissions while the previous request is still pending
-  //   // if (addVisitMutation.isLoading) return;
-
-  //   if (!visitedBy) return notify.error("Please select employee");
-
-  //   // TENANT LEAD VALIDATION
-  //   if (isTenant) {
-  //     if (!ownerName.trim()) return notify.error("Owner name is required");
-  //     if (!propertyLocation.trim()) return notify.error("Property location is required");
-  //     if (!propertyDetails.trim()) return notify.error("Property details are required");
-  //   }
-
-  //   // OWNER LEAD VALIDATION
-  //   if (isOwner) {
-  //     if (!tenantName.trim()) return notify.error("Tenant name is required");
-  //     if (!tenantRequirements.trim())
-  //       return notify.error("Tenant requirements are required");
-  //   }
-
-  //   const payload = {
-  //     leadId: lead._id,
-  //     visitedBy,
-
-  //     // TENANT-only
-  //     ownerName: isTenant ? ownerName : undefined,
-  //     propertyLocation: isTenant ? propertyLocation : undefined,
-  //     propertyDetails: isTenant ? propertyDetails : undefined,
-
-  //     // OWNER-only
-  //     tenantName: isOwner ? tenantName : undefined,
-  //     tenantRequirements: isOwner ? tenantRequirements : undefined,
-
-  //     // Common field
-  //     tenantFeedback,
-  //   };
-
-  //   addVisitMutation.mutate(payload, {
-  //     onSuccess: () => {
-  //       notify.success("Visit Added Successfully");
-  //       onClose();
-  //     },
-  //     onError: (error) => {
-  //       notify.error(error?.response?.data?.message || "Failed to add visit");
-  //     },
-  //   });
-  // };
+  const employeeOptions = employees.map((e) => ({
+    value: e._id,
+    label: e.name,
+  }));
 
   const handleSubmit = () => {
+    if (addVisitMutation.isPending) return; // 🔒 HARD LOCK
+
     if (!visitedBy) return notify.error("Please select employee");
 
     if (isTenant) {
-      if (!ownerName.trim()) return notify.error("Owner name is required");
-      if (!propertyLocation.trim()) return notify.error("Property location is required");
-      if (!propertyDetails.trim()) return notify.error("Property details are required");
+      if (!ownerName.trim()) return notify.error("Owner name required");
+      if (!propertyLocation.trim())
+        return notify.error("Property location required");
+      if (!propertyDetails.trim())
+        return notify.error("Property details required");
     }
 
     if (isOwner) {
-      if (!tenantName.trim()) return notify.error("Tenant name is required");
+      if (!tenantName.trim()) return notify.error("Tenant name required");
       if (!tenantRequirements.trim())
-        return notify.error("Tenant requirements are required");
+        return notify.error("Tenant requirements required");
     }
 
-    const payload = {
-      leadId: lead._id,
-      visitedBy,
-
-      ownerName: isTenant ? ownerName : undefined,
-      propertyLocation: isTenant ? propertyLocation : undefined,
-      propertyDetails: isTenant ? propertyDetails : undefined,
-
-      tenantName: isOwner ? tenantName : undefined,
-      tenantRequirements: isOwner ? tenantRequirements : undefined,
-
-      tenantFeedback,
-    };
-
-    addVisitMutation.mutate(payload, {
-      onSuccess: () => {
-        notify.success("Visit Added Successfully");
-        onClose();
+    addVisitMutation.mutate(
+      {
+        leadId: lead._id,
+        visitedBy,
+        ownerName: isTenant ? ownerName : undefined,
+        propertyLocation: isTenant ? propertyLocation : undefined,
+        propertyDetails: isTenant ? propertyDetails : undefined,
+        tenantName: isOwner ? tenantName : undefined,
+        tenantRequirements: isOwner ? tenantRequirements : undefined,
+        tenantFeedback,
       },
-      onError: (error) => {
-        notify.error(error?.response?.data?.message || "Failed to add visit");
-      },
-    });
+      {
+        onSuccess: () => {
+          notify.success("Visit Added Successfully");
+          onClose();
+        },
+        onError: (err) =>
+          notify.error(err?.response?.data?.message || "Failed to add visit"),
+      }
+    );
   };
-
-
-  console.log("LEAD PASSED:", lead);
-
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[99999]">
-      <div className="bg-white p-6 rounded-xl w-full max-w-md shadow-xl animate-fadeIn">
-
+      <div className="bg-white p-6 rounded-xl w-full max-w-md shadow-xl">
         <h2 className="text-xl font-semibold mb-4">
-          Add Visit for {lead?.customerName || lead?.ownerName}
+          Add Visit for {lead.customerName || lead.ownerName}{" "}
           <span className="text-gray-500 text-sm">
-            {" "}
-            ({(lead?.customerType || "").toUpperCase()})
+            ({lead.customerType.toUpperCase()})
           </span>
         </h2>
 
-        {/* Employee Select */}
         <SearchableSelect
           label="Visited By"
           value={visitedBy}
@@ -150,151 +91,70 @@ export default function AddVisitModal({ open, onClose, lead }) {
           onChange={(e) => setVisitedBy(e.target.value)}
         />
 
-        {/* -------------------------------------- */}
-        {/* TENANT LEAD FIELDS */}
-        {/* -------------------------------------- */}
         {isTenant && (
           <>
-            {/* Owner Name */}
-            <div className="mt-2">
-              <label className="text-sm">Owner Name (Required)</label>
-              <input
-                className="w-full border rounded-lg px-3 py-2 mt-1"
-                value={ownerName}
-                onChange={(e) => setOwnerName(e.target.value)}
-                placeholder="Example: Mr. Sharma"
-              />
-            </div>
-
-            {/* Property Location */}
-            <div className="mt-2">
-              <label className="text-sm">Property Location (Required)</label>
-              <input
-                className="w-full border rounded-lg px-3 py-2 mt-1"
-                value={propertyLocation}
-                onChange={(e) => setPropertyLocation(e.target.value)}
-                placeholder="Example: Andheri East"
-              />
-            </div>
-
-            {/* Property Details */}
-            <div className="mt-3">
-              <label className="text-sm">Property Details (Required)</label>
-              <textarea
-                className="w-full border rounded-lg px-3 py-2 mt-1"
-                rows={3}
-                value={propertyDetails}
-                onChange={(e) => setPropertyDetails(e.target.value)}
-                placeholder="Example: 2BHK, Fully Furnished..."
-              />
-            </div>
+            <input
+              className="w-full border px-3 py-2 mt-2"
+              placeholder="Owner Name"
+              value={ownerName}
+              onChange={(e) => setOwnerName(e.target.value)}
+            />
+            <input
+              className="w-full border px-3 py-2 mt-2"
+              placeholder="Property Location"
+              value={propertyLocation}
+              onChange={(e) => setPropertyLocation(e.target.value)}
+            />
+            <textarea
+              className="w-full border px-3 py-2 mt-2"
+              placeholder="Property Details"
+              value={propertyDetails}
+              onChange={(e) => setPropertyDetails(e.target.value)}
+            />
           </>
         )}
 
-        {/* -------------------------------------- */}
-        {/* OWNER LEAD FIELDS */}
-        {/* -------------------------------------- */}
         {isOwner && (
           <>
-            <div className="mt-2">
-              <label className="text-sm">Tenant Name (Required)</label>
-              <input
-                className="w-full border rounded-lg px-3 py-2 mt-1"
-                value={tenantName}
-                onChange={(e) => setTenantName(e.target.value)}
-                placeholder="Example: Rohit Kumar"
-              />
-            </div>
-
-            <div className="mt-3">
-              <label className="text-sm">Tenant Requirements (Required)</label>
-              <textarea
-                className="w-full border rounded-lg px-3 py-2 mt-1"
-                rows={2}
-                value={tenantRequirements}
-                onChange={(e) => setTenantRequirements(e.target.value)}
-                placeholder="Example: Needs 2BHK near school"
-              />
-            </div>
+            <input
+              className="w-full border px-3 py-2 mt-2"
+              placeholder="Tenant Name"
+              value={tenantName}
+              onChange={(e) => setTenantName(e.target.value)}
+            />
+            <textarea
+              className="w-full border px-3 py-2 mt-2"
+              placeholder="Tenant Requirements"
+              value={tenantRequirements}
+              onChange={(e) => setTenantRequirements(e.target.value)}
+            />
           </>
         )}
 
-        {/* COMMON: Tenant Feedback */}
-        <div className="mt-3">
-          <label className="text-sm">Tenant Feedback (Optional)</label>
-          <textarea
-            className="w-full border rounded-lg px-3 py-2 mt-1"
-            rows={2}
-            value={tenantFeedback}
-            onChange={(e) => setTenantFeedback(e.target.value)}
-            placeholder="Example: Liked the property..."
-          />
-        </div>
+        <textarea
+          className="w-full border px-3 py-2 mt-2"
+          placeholder="Tenant Feedback (optional)"
+          value={tenantFeedback}
+          onChange={(e) => setTenantFeedback(e.target.value)}
+        />
 
-        {/* Buttons */}
         <div className="flex justify-end gap-3 mt-5">
-          <button className="px-4 py-2 border rounded-lg" onClick={onClose}>
+          <button onClick={onClose} disabled={addVisitMutation.isPending}>
             Cancel
           </button>
-          {/* 
-          <button
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-            onClick={handleSubmit}
-            disabled={addVisitMutation.isLoading}
-          > */}
-          {/* {addVisitMutation.isLoading ? (
-              <>
-                <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-                </svg>
-                <span>Adding...</span>
-              </>
-            ) : (
-              'Add Visit'
-            )} */}
 
           <button
-            type="button"
             onClick={handleSubmit}
-            disabled={addVisitMutation.isLoading}
-            className={`px-4 py-2 rounded-lg text-white flex items-center justify-center gap-2
-    ${addVisitMutation.isLoading
-                ? "bg-green-400 cursor-not-allowed"
-                : "bg-green-600 hover:bg-green-700"
+            disabled={addVisitMutation.isPending}
+            className={`px-4 py-2 rounded-lg text-white flex items-center gap-2
+              ${
+                addVisitMutation.isPending
+                  ? "bg-green-400 cursor-not-allowed"
+                  : "bg-green-600 hover:bg-green-700"
               }`}
           >
-            {addVisitMutation.isLoading ? (
-              <>
-                <svg
-                  className="animate-spin h-4 w-4 text-white"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                  />
-                </svg>
-                <span>Adding...</span>
-              </>
-            ) : (
-              "Add Visit"
-            )}
+            {addVisitMutation.isPending ? "Adding..." : "Add Visit"}
           </button>
-
-
-          {/* {addVisitMutation.isLoading ? 'Adding...' : 'Add Visit'}
-          </button> */}
         </div>
       </div>
     </div>
