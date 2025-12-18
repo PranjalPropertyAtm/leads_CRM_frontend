@@ -6,7 +6,7 @@ export default function SearchableSelect({
   onChange,
   options = [],
   error,
-  placeholder = "Search employee...",
+  placeholder = "Search...",
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
