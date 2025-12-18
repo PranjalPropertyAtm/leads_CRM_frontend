@@ -222,14 +222,15 @@ export default function EditLeadModal({ open, onClose, lead }) {
                   }}
                   error={errors.city}
                 />
-                <SelectField
+                <SearchableSelect
                   label="Preferred Location *"
                   name="preferredLocation"
                   value={form.preferredLocation}
-                  options={locationOptions}
+                  options={locationOptions.map((l) => ({ value: l, label: l }))}
                   disabled={!form.city}
-                  onChange={handleChange}
+                  onChange={(e) => handleChange({ target: { name: e.target.name, value: e.target.value } })}
                   error={errors.preferredLocation}
+                  placeholder="Search location..."
                 />
                 <SelectField
                   label="Property Type *"
