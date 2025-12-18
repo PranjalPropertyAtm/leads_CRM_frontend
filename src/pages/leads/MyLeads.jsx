@@ -254,15 +254,37 @@ export default function MyLeads() {
     const updatePosition = () => {
       if (!btnRef.current) return;
       const rect = btnRef.current.getBoundingClientRect();
-      const top = rect.top + rect.height + window.scrollY + 6;
-      const leftRaw = rect.left + window.scrollX - MENU_WIDTH + rect.width; // prefer right-aligned under button
-      // clamp horizontally so it doesn't go off-screen
-      const left = Math.min(
-        Math.max(leftRaw, 8 + window.scrollX),
-        window.innerWidth - MENU_WIDTH - 8 + window.scrollX
-      );
+
+      // Measure menu (if available) to decide whether to place above or below
+      const menuHeight = menuRef.current ? menuRef.current.offsetHeight : 0;
+      const spaceBelow = window.innerHeight - rect.bottom - 6;
+      let top;
+      if (menuHeight && menuHeight > spaceBelow && rect.top > menuHeight + 12) {
+        top = rect.top - menuHeight - 6;
+      } else {
+        top = rect.top + rect.height + 6;
+      }
+
+      const maxTop = menuHeight ? Math.max(window.innerHeight - menuHeight - 8, 8) : Math.max(window.innerHeight - 200, 8);
+      top = Math.min(Math.max(top, 8), maxTop);
+
+      const leftRaw = rect.left + rect.width - MENU_WIDTH; // prefer right-aligned under button
+      const left = Math.min(Math.max(leftRaw, 8), window.innerWidth - MENU_WIDTH - 8);
       setCoords({ top, left });
+
+      // Close if the button is no longer visible in the viewport
+      if (rect.bottom < 0 || rect.top > window.innerHeight) {
+        setOpen(false);
+      }
     };
+
+    // Recalc after opening so we can measure the rendered menu and flip if necessary
+    useEffect(() => {
+      if (!open) return;
+      const id = setTimeout(() => updatePosition(), 0);
+      return () => clearTimeout(id);
+    }, [open]);
+
 
     const toggleMenu = () => {
       updatePosition();
@@ -313,12 +335,13 @@ export default function MyLeads() {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: -6 }}
                 transition={{ duration: 0.12 }}
-                className="absolute bg-white shadow-xl border rounded-lg z-9999"
+                className="bg-white shadow-xl border rounded-lg max-h-[60vh] overflow-y-auto"
                 style={{
-                  position: "absolute",
+                  position: "fixed",
                   top: coords.top,
                   left: coords.left,
                   width: MENU_WIDTH,
+                  zIndex: 99999,
                 }}
               >
                 {children}
@@ -557,8 +580,8 @@ export default function MyLeads() {
                           {lead.createdBy?._id === user?._id && !lead.dealClosed && lead.status !== "deal_closed" && (
                             <button
                               onClick={() => {
-                                setVisitLead(lead);
                                 setVisitModal(true);
+                                setVisitLead(lead);
                               }}
                                className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-green-600 transition"
                             >

@@ -243,15 +243,46 @@ export default function AllLeads() {
     const [coords, setCoords] = useState({ top: 0, left: 0 });
     const btnRef = useRef(null);
     const menuRef = useRef(null);
+    const MENU_WIDTH = 176; // w-44 ~ 176px
 
     const updatePosition = () => {
       if (!btnRef.current) return;
       const rect = btnRef.current.getBoundingClientRect();
-      setCoords({
-        top: rect.top + rect.height + window.scrollY + 6,
-        left: rect.left + window.scrollX - 120,
-      });
+
+      // Measure menu (if available) to decide whether to place above or below
+      const menuHeight = menuRef.current ? menuRef.current.offsetHeight : 0;
+
+      const spaceBelow = window.innerHeight - rect.bottom - 6; // px available below button
+      let top;
+      if (menuHeight && menuHeight > spaceBelow && rect.top > menuHeight + 12) {
+        // place above the button if not enough space below and there is room above
+        top = rect.top - menuHeight - 6;
+      } else {
+        // place below
+        top = rect.top + rect.height + 6;
+      }
+
+      // Clamp vertically so menu stays in viewport (uses menuHeight if known)
+      const maxTop = menuHeight ? Math.max(window.innerHeight - menuHeight - 8, 8) : Math.max(window.innerHeight - 200, 8);
+      top = Math.min(Math.max(top, 8), maxTop);
+
+      const leftRaw = rect.left + rect.width - MENU_WIDTH; // align right edge of menu with button
+      const left = Math.min(Math.max(leftRaw, 8), window.innerWidth - MENU_WIDTH - 8);
+
+      setCoords({ top, left });
+
+      // If button scrolls out of view, close the menu
+      if (rect.bottom < 0 || rect.top > window.innerHeight) {
+        setOpen(false);
+      }
     };
+
+    // Recalc after opening so we can measure the rendered menu and flip if necessary
+    useEffect(() => {
+      if (!open) return;
+      const id = setTimeout(() => updatePosition(), 0);
+      return () => clearTimeout(id);
+    }, [open]);
 
     const toggleMenu = (e) => {
       e.stopPropagation();
@@ -285,10 +316,11 @@ export default function AllLeads() {
       if (!open) return;
       const onScroll = () => updatePosition();
       const onResize = () => updatePosition();
-      window.addEventListener("scroll", onScroll);
+      // use capture so updates run early during scroll
+      window.addEventListener("scroll", onScroll, true);
       window.addEventListener("resize", onResize);
       return () => {
-        window.removeEventListener("scroll", onScroll);
+        window.removeEventListener("scroll", onScroll, true);
         window.removeEventListener("resize", onResize);
       };
     }, [open]);
@@ -325,10 +357,11 @@ export default function AllLeads() {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.98, y: -5 }}
                 transition={{ duration: 0.12 }}
-                className="absolute bg-white shadow-xl border rounded-lg w-44 z-[9999]"
-                style={{ position: "absolute", top: coords.top, left: coords.left }}
+                className="bg-white shadow-xl border rounded-lg w-44 max-h-[60vh] overflow-y-auto z-[9999]"
+                style={{ position: "fixed", top: coords.top, left: coords.left }}
                 onClick={(e) => e.stopPropagation()}
               >
+
                 {childrenWithClose}
               </motion.div>
             )}
@@ -579,8 +612,8 @@ export default function AllLeads() {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setVisitLead(lead);
                                 setVisitModal(true);
+                                setVisitLead(lead);
                               }}
                               className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-green-600 transition"
                             >
