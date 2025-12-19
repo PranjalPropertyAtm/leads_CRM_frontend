@@ -2,11 +2,13 @@ import { useState, useEffect, useRef } from "react";
 
 export default function SearchableSelect({
   label,
+  name,
   value,
   onChange,
   options = [],
   error,
   placeholder = "Search...",
+  disabled = false,
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -36,10 +38,10 @@ export default function SearchableSelect({
       )}
 
       <div
-        className={`border rounded-lg px-3 py-2 bg-white cursor-pointer ${
+        className={`border rounded-lg px-3 py-2 ${disabled ? 'bg-gray-100 cursor-not-allowed opacity-70' : 'bg-white cursor-pointer'} ${
           error ? "border-red-500" : "border-gray-300"
         }`}
-        onClick={() => setOpen(!open)}
+        onClick={() => !disabled && setOpen(!open)}
       >
         {value
           ? options.find((opt) => opt.value === value)?.label
@@ -66,7 +68,8 @@ export default function SearchableSelect({
                 <div
                   key={opt.value}
                   onClick={() => {
-                    onChange({ target: { name: "assignedTo", value: opt.value } });
+                    const targetName = name || "assignedTo";
+                    onChange({ target: { name: targetName, value: opt.value } });
                     setOpen(false);
                   }}
                   className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm"
