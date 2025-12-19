@@ -428,6 +428,11 @@ export default function EditLead() {
                   name="area"
                   value={form.area}
                   onChange={handleChange}
+                  type="number"
+                  min="0"
+                  step="any"
+                  suffix="sq ft"
+                  placeholder="e.g., 1200"
                 />
 
                 <InputField
@@ -504,16 +509,21 @@ export default function EditLead() {
 /* -------------------------------------
    REUSABLE INPUT COMPONENT
 --------------------------------------*/
-function InputField({ label, error, ...props }) {
+function InputField({ label, error, suffix, ...props }) {
   return (
     <div>
       <label className="text-sm font-medium text-gray-700">{label}</label>
-      <input
-        {...props}
-        className={`w-full px-3 py-2 rounded-lg border ${
-          error ? "border-red-400" : "border-gray-300"
-        }`}
-      />
+      <div className="relative">
+        <input
+          {...props}
+          className={`w-full ${suffix ? 'pr-14' : ''} px-3 py-2 rounded-lg border ${
+            error ? "border-red-400" : "border-gray-300"
+          }`}
+        />
+        {suffix && (
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">{suffix}</div>
+        )}
+      </div>
       {error && (
         <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
           <AlertCircle size={14} /> {error}

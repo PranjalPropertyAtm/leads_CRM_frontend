@@ -37,8 +37,25 @@ export default function AllLeads() {
 
   // page + filters
   const [filter, setFilter] = useState("");
+  const isSearching = Boolean(filter.trim());
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
+  const prevPageSizeRef = useRef(null);
+
+  useEffect(() => {
+    // When searching, fetch all leads by setting a large page size; restore when cleared
+    if (filter.trim()) {
+      // capture original pageSize only on the first entry to searching
+      if (prevPageSizeRef.current == null) prevPageSizeRef.current = pageSize;
+      setCurrentPage(1);
+      setPageSize(100000); // fetch all
+    } else if (prevPageSizeRef.current != null) {
+      // restore only when previously changed
+      setPageSize(prevPageSizeRef.current);
+      prevPageSizeRef.current = null;
+      setCurrentPage(1);
+    }
+  }, [filter]);
 
   const [selected, setSelected] = useState(null);
 
@@ -68,7 +85,7 @@ export default function AllLeads() {
   const {
     data: paginatedData = { leads: [], total: 0, totalPages: 0, page: 1 },
     isLoading,
-  } = useFetchLeads(currentPage, pageSize);
+  } = useFetchLeads(isSearching ? 1 : currentPage, pageSize);
   const { leads = [], total = 0, totalPages = 0 } = paginatedData;
 
   // employees query (fetch many for select)
@@ -125,10 +142,13 @@ export default function AllLeads() {
   };
 
   const handlePageChange = (newPage) => {
-    if (newPage >= 1 && newPage <= totalPages) setCurrentPage(newPage);
+    const maxPages = filter.trim() ? totalPagesForPagination : totalPages;
+    if (newPage >= 1 && newPage <= maxPages) setCurrentPage(newPage);
   };
 
   const handlePageSizeChange = (e) => {
+    // ignore changes while searching (client-side pagination used)
+    if (filter.trim()) return;
     const newSize = parseInt(e.target.value, 10);
     setPageSize(newSize);
     setCurrentPage(1);
@@ -186,10 +206,28 @@ export default function AllLeads() {
       lead.city?.toLowerCase().includes(q) ||
       lead.propertyType?.toLowerCase().includes(q) ||
       lead.source?.toLowerCase().includes(q) ||
-      lead.budget?.toLowerCase().includes(q)
-     
+      lead.budget?.toLowerCase().includes(q) ||
+      lead.customerType?.toLowerCase().includes(q)
     );
   });
+
+  // DISPLAY LOGIC: when searching, paginate client-side at 5 per page; otherwise rely on server pagination
+  const displayPageSize = isSearching ? 5 : pageSize;
+  const totalFiltered = filtered.length;
+  const totalForPagination = isSearching ? totalFiltered : total;
+  const totalPagesForPagination = isSearching ? Math.max(1, Math.ceil(totalFiltered / displayPageSize)) : totalPages;
+
+  // Ensure currentPage stays within bounds for filtered results
+  // useEffect(() => {
+  //   if (currentPage > totalPagesForPagination) setCurrentPage(1);
+  // }, [totalPagesForPagination]);
+
+const displayLeads = isSearching
+  ? filtered.slice(
+      (currentPage - 1) * displayPageSize,
+      currentPage * displayPageSize
+    )
+  : leads; // 🔥 IMPORTANT
 
   // -------------------------
   // Registration
@@ -388,7 +426,7 @@ export default function AllLeads() {
   // Render
   // -------------------------
   return (
-    <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-4">
+    <div className="bg-slate-50 p-4 font-[Inter]">
       <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
@@ -398,12 +436,10 @@ export default function AllLeads() {
           </div>
 
           <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <Search className="absolute left-3 top-3 text-gray-400" size={16} />
             <input
               placeholder="Search leads..."
-              className="pl-11 pr-4 py-2.5 rounded-lg border border-gray-300 bg-white shadow-sm w-80 
-                         focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all
-                         text-sm font-medium placeholder:text-gray-400"
+                className="pl-11 pr-4 py-2.5 rounded-lg border border-gray-300 bg-white shadow-sm w-80 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm font-medium placeholder:text-gray-400"
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
             />
@@ -411,21 +447,17 @@ export default function AllLeads() {
         </div>
 
         {/* Table */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-md border overflow-hidden">
           {isLoading ? (
-            <div className="py-16 text-center">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-3"></div>
-              <p className="text-gray-500 font-medium">Loading leads...</p>
-            </div>
-          ) : filtered.length === 0 ? (
-            <div className="py-16 text-center">
-              <p className="text-gray-500 font-medium">No leads found</p>
-            </div>
+            <div className="py-10 text-center text-gray-500">Loading...</div>
+          ) :displayLeads.length === 0
+ ? (
+            <div className="py-10 text-center text-gray-500">No leads found</div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-sm border-separate border-spacing-0">
+              <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-gradient-to-r from-gray-50 to-gray-100/50 border-b border-gray-200">
+                  <tr className="bg-gray-50 text-gray-600 text-xs uppercase tracking-wide">
                     {[
                       "S.NO",
                       "Name",
@@ -441,26 +473,24 @@ export default function AllLeads() {
                       "Visits",
                       "",
                     ].map((h) => (
-                      <th key={h} className="px-6 py-4 font-bold text-xs uppercase tracking-wider text-gray-700 text-left">
-                        {h}
-                      </th>
+                      <th key={h} className="px-3 py-4 font-semibold text-left">{h}</th>
                     ))}
                   </tr>
                 </thead>
 
-                <tbody className="divide-y divide-gray-100">
-                  {filtered.map((lead, idx) => (
+                <tbody> 
+                  {displayLeads.map((lead, idx) => (
                     <tr
                       key={lead._id}
                       className="hover:bg-blue-50/50 transition-colors group"
                     >
-                      <td className="px-6 py-4 text-gray-600 font-semibold">{(currentPage - 1) * pageSize + idx + 1}</td>
+                      <td className="px-4 py-3 text-gray-600 font-semibold">{(currentPage - 1) * displayPageSize + idx + 1}</td>
 
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-3">
                         <span className="font-semibold text-gray-900">{lead.customerName || lead.ownerName}</span>
                       </td>
 
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-3">
                         <span
                           className={`px-3 py-1.5 text-xs rounded-full font-semibold ${lead.customerType === "tenant" ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"
                             }`}
@@ -469,12 +499,12 @@ export default function AllLeads() {
                         </span>
                       </td>
 
-                      <td className="px-6 py-4 text-gray-700 font-medium">{new Date(lead.createdAt).toLocaleDateString()}</td>
-                      <td className="px-6 py-4 text-gray-700 font-medium">{lead.mobileNumber || "N/A"}</td>
-                      <td className="px-6 py-4 text-gray-700 font-medium">{lead.city || "N/A"}</td>
-                      <td className="px-6 py-4 text-gray-700 font-medium">{lead.propertyType || "N/A"}</td>
-                      <td className="px-6 py-4 text-gray-700 font-medium">{lead.budget ? `₹${lead.budget}` : "N/A"}</td>
-                      <td className="px-6 py-4 text-gray-700 font-medium">{lead.source || "N/A"}</td>
+                      <td className="px-4 py-3">{new Date(lead.createdAt).toLocaleDateString()}</td>
+                      <td className="px-4 py-3">{lead.mobileNumber || "N/A"}</td>
+                      <td className="px-4 py-3">{lead.city || "N/A"}</td>
+                      <td className="px-4 py-3">{lead.propertyType || "N/A"}</td>
+                      <td className="px-4 py-3">{lead.budget ? `₹${lead.budget}` : "N/A"}</td>
+                      <td className="px-4 py-3">{lead.source || "N/A"}</td>
 
                       <td className="px-4 py-3">
                         <select
@@ -548,7 +578,7 @@ export default function AllLeads() {
                         </select>
                       </td>
 
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-3">
                         {lead.isRegistered ? (
                           <span className="px-3 py-1.5 bg-green-100 text-green-700 text-xs rounded-full font-semibold">Yes</span>
                         ) : (
@@ -556,18 +586,18 @@ export default function AllLeads() {
                         )}
                       </td>
 
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-3">
                         <span className="px-3 py-1.5 bg-purple-100 text-purple-700 text-xs rounded-full font-semibold">{lead.totalVisits || 0} Visits</span>
                       </td>
 
-                      <td className="px-6 py-4 text-right">
+                      <td className="px-4 py-3 text-right">
                         <ActionMenu>
                           <button 
                             onClick={(e) => {
                               e.stopPropagation();
                               setSelected(lead);
                             }} 
-                            className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm transition"
+                            className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-blue-600 transition"
                           >
                             <Eye size={14} /> View Details
                           </button>
@@ -636,7 +666,7 @@ export default function AllLeads() {
                             </button>
                           )}
 
-                          {!lead.dealClosed && lead.status !== "deal_closed" && (
+                          {/* {!lead.dealClosed && lead.status !== "deal_closed" && (
                             <button 
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -646,7 +676,7 @@ export default function AllLeads() {
                             >
                               <Trash2 size={14} /> Delete
                             </button>
-                          )}
+                          )} */}
                         </ActionMenu>
                       </td>
                     </tr>
@@ -658,15 +688,15 @@ export default function AllLeads() {
         </div>
 
         {/* Pagination */}
-        {!isLoading && total > 0 && (
+        {!isLoading && totalForPagination > 0 && (
           <div className="mt-6 flex flex-col md:flex-row items-center justify-between bg-white rounded-xl shadow-md border border-gray-200 p-4 gap-4">
             <div className="flex items-center gap-4">
               <span className="text-sm text-gray-600">
-                Showing {Math.min((currentPage - 1) * pageSize + 1, total)} to {Math.min(currentPage * pageSize, total)} of {total} leads
+                Showing {Math.min((currentPage - 1) * displayPageSize + 1, totalForPagination)} to {Math.min(currentPage * displayPageSize, totalForPagination)} of {totalForPagination} leads
               </span>
               <div className="flex items-center gap-2">
                 <label htmlFor="pageSize" className="text-sm text-gray-600">Items per page:</label>
-                <select id="pageSize" value={pageSize} onChange={handlePageSizeChange} className="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                <select id="pageSize" value={isSearching ? 5 : pageSize} onChange={handlePageSizeChange} className="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" disabled={isSearching}>
                   <option value="5">5</option>
                   <option value="10">10</option>
                   <option value="20">20</option>
@@ -676,24 +706,24 @@ export default function AllLeads() {
             </div>
 
             <div className="flex items-center gap-2">
-              <button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} className="p-2 rounded-lg border border-gray-300 text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition" title="Previous page"><ChevronLeft size={18} /></button>
+              <button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1 || (isSearching && isLoading)} className="p-2 rounded-lg border border-gray-300 text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition" title="Previous page"><ChevronLeft size={18} /></button>
 
               <div className="flex items-center gap-1">
-                {Array.from({ length: Math.min(totalPages, 5) }).map((_, i) => {
+                {Array.from({ length: Math.min(totalPagesForPagination, 5) }).map((_, i) => {
                   let pageNum;
-                  if (totalPages <= 5) pageNum = i + 1;
+                  if (totalPagesForPagination <= 5) pageNum = i + 1;
                   else if (currentPage <= 3) pageNum = i + 1;
-                  else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
+                  else if (currentPage >= totalPagesForPagination - 2) pageNum = totalPagesForPagination - 4 + i;
                   else pageNum = currentPage - 2 + i;
                   return (
-                    <button key={pageNum} onClick={() => handlePageChange(pageNum)} className={`px-3 py-1 rounded-lg text-sm transition ${currentPage === pageNum ? "bg-blue-600 text-white" : "border border-gray-300 text-gray-600 hover:bg-gray-50"}`}>
+                    <button key={pageNum} onClick={() => handlePageChange(pageNum)} disabled={isSearching && isLoading} className={`px-3 py-1 rounded-lg text-sm transition disabled:opacity-50 disabled:cursor-not-allowed ${currentPage === pageNum ? "bg-blue-600 text-white" : "border border-gray-300 text-gray-600 hover:bg-gray-50"}`}>
                       {pageNum}
                     </button>
                   );
                 })}
               </div>
 
-              <button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} className="p-2 rounded-lg border border-gray-300 text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition" title="Next page"><ChevronRight size={18} /></button>
+              <button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPagesForPagination || (isSearching && isLoading)} className="p-2 rounded-lg border border-gray-300 text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition" title="Next page"><ChevronRight size={18} /></button>
             </div>
           </div>
         )}
@@ -752,7 +782,7 @@ export default function AllLeads() {
                   {selected.customerType === "owner" && (
                     <>
                       <InfoRow label="Property Location" value={selected.propertyLocation || "N/A"} />
-                      <InfoRow label="Area" value={selected.area || "N/A"} />
+                      <InfoRow label="Area" value={selected.area ? `${selected.area} sq ft` : "N/A"} />
                       <InfoRow label="Landmark" value={selected.landmark || "N/A"} />
                     </>
                   )}
@@ -780,6 +810,7 @@ export default function AllLeads() {
                 {selected?.isRegistered ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                     <InfoRow label="Plan Name" value={selected.registrationDetails?.planName} />
+                    <InfoRow label="Member Code" value={selected.registrationDetails?.memberCode || "N/A"} />
                     <InfoRow label="Registration Date" value={selected.registrationDetails?.registrationDate ? new Date(selected.registrationDetails.registrationDate).toLocaleDateString() : "N/A"} />
                     {/* SAFELY render registeredBy: either populated object or a string */}
                     <InfoRow label="Registered By" value={selected.registrationDetails?.registeredBy?.name || "NA"} />

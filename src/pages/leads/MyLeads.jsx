@@ -35,9 +35,23 @@ export default function MyLeads() {
   const navigate = useNavigate();
   const { data: user } = useLoadUser(); // {data: user}
   const [filter, setFilter] = useState("");
+  const isSearching = Boolean(filter.trim());
   const [selected, setSelected] = useState(null);
 
   const queryClient = useQueryClient();
+  const prevPageSizeRef = useRef(null);
+
+  useEffect(() => {
+    if (filter.trim()) {
+      if (prevPageSizeRef.current == null) prevPageSizeRef.current = pageSize;
+      setCurrentPage(1);
+      setPageSize(100000);
+    } else if (prevPageSizeRef.current != null) {
+      setPageSize(prevPageSizeRef.current);
+      prevPageSizeRef.current = null;
+      setCurrentPage(1);
+    }
+  }, [filter]);
 
   // Registration Modal
   const [showRegModal, setShowRegModal] = useState(false);
@@ -61,7 +75,7 @@ export default function MyLeads() {
   const {
     data = { leads: [], total: 0, totalPages: 0, page: 1 },
     isLoading,
-  } = useMyLeads(currentPage, pageSize);
+  } = useMyLeads(isSearching ? 1 : currentPage, pageSize);
 
   const { leads = [], total = 0, totalPages = 0 } = data;
 
@@ -225,19 +239,38 @@ export default function MyLeads() {
       (lead.mobileNumber || "").toLowerCase().includes(q) ||
       (lead.city || "").toLowerCase().includes(q) ||
       (lead.propertyType || "").toLowerCase().includes(q) ||
-      (lead.source || "").toLowerCase().includes(q)
+      (lead.source || "").toLowerCase().includes(q) ||
+      (lead.customerType || "").toLowerCase().includes(q)||
+      (lead.budget ? lead.budget.toString().toLowerCase().includes(q) : false)
     );
   });
 
+  // DISPLAY LOGIC: when searching, paginate client-side at 5 per page; otherwise rely on server pagination
+  const displayPageSize = isSearching ? 5 : pageSize;
+  const totalFiltered = filtered.length;
+  const totalForPagination = isSearching ? totalFiltered : total;
+  const totalPagesForPagination = isSearching ? Math.max(1, Math.ceil(totalFiltered / displayPageSize)) : totalPages;
+
+  // Ensure currentPage stays within bounds for filtered results
+  // useEffect(() => {
+  //   if (currentPage > totalPagesForPagination) setCurrentPage(1);
+  // }, [totalPagesForPagination]);
+
+  const displayLeads = isSearching
+    ? filtered.slice((currentPage - 1) * displayPageSize, currentPage * displayPageSize)
+    : filtered;
+
   // ------------- Pagination handlers -------------
   const handlePageChange = (newPage) => {
-    if (newPage >= 1 && newPage <= totalPages) {
+    const maxPages = filter.trim() ? totalPagesForPagination : totalPages;
+    if (newPage >= 1 && newPage <= maxPages) {
       setCurrentPage(newPage);
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
   const handlePageSizeChange = (e) => {
+    if (filter.trim()) return; // ignore while searching (client-side pagination)
     const newSize = parseInt(e.target.value, 10);
     setPageSize(newSize);
     setCurrentPage(1);
@@ -365,19 +398,19 @@ export default function MyLeads() {
 
   return (
     <div className="bg-slate-50 p-4 font-[Inter]">
-      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="max-w-7xl mx-auto">
+      <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="max-w-7xl mx-auto">
         {/* HEADER */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-semibold text-gray-900">My Leads</h1>
-            <p className="text-sm text-gray-500">Leads assigned to you</p>
+            <h1 className="text-3xl font-bold text-gray-900 mb-1">My Leads</h1>
+            <p className="text-sm text-gray-600 font-medium">Leads assigned to you</p>
           </div>
 
           <div className="relative">
-            <Search className="absolute left-3 top-3 text-gray-400" size={16} />
+            <Search className="absolute left-3 top-3  text-gray-400" size={16} />
             <input
               placeholder="Search my leads..."
-              className="pl-10 pr-4 py-2 rounded-lg border w-80 shadow-sm"
+              className="pl-11 pr-4 py-2.5 rounded-lg border border-gray-300 bg-white shadow-sm w-80 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm font-medium placeholder:text-gray-400"
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
             />
@@ -404,6 +437,7 @@ export default function MyLeads() {
                       "Mobile",
                       "City",
                       "Property",
+                      "Budget",
                       "Source",
                       "Status",
                       "Registered",
@@ -416,19 +450,22 @@ export default function MyLeads() {
                 </thead>
 
                 <tbody>
-                  {filtered.map((lead, idx) => (
-                    <tr key={lead._id} className="hover:bg-blue-50/40 transition">
-                      <td className="px-4 py-3">{(currentPage - 1) * pageSize + idx + 1}</td>
+                  {displayLeads.map((lead, idx) => (
+                    <tr key={lead._id} className="hover:bg-blue-50/50 transition-colors group">
+                      <td className="px-4 py-3">{(currentPage - 1) * displayPageSize + idx + 1}</td>
 
-                      <td className="px-4 py-3 font-medium">
+                      <td className="px-4 py-3">
                         <div className="flex flex-col">
-                          <span>{lead.customerName || lead.ownerName || "N/A"}</span>
+                          <span className="font-semibold text-gray-900">{lead.customerName || lead.ownerName || "N/A"}</span>
                           {/* <span className="text-xs text-gray-400">{lead._id}</span> */}
                         </div>
                       </td>
 
                       <td className="px-4 py-3">
-                        <span className={`px-3 py-1 text-xs rounded-full ${lead.customerType === "tenant" ? "bg-blue-100 text-blue-600" : "bg-green-100 text-green-600"}`}>
+                        <span
+                          className={`px-3 py-1.5 text-xs rounded-full font-semibold ${lead.customerType === "tenant" ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"
+                            }`}
+                        >
                           {lead.customerType}
                         </span>
                       </td>
@@ -438,6 +475,7 @@ export default function MyLeads() {
                       <td className="px-4 py-3">{lead.mobileNumber || "N/A"}</td>
                       <td className="px-4 py-3">{lead.city || "N/A"}</td>
                       <td className="px-4 py-3">{lead.propertyType || "N/A"}</td>
+                      <td className="px-4 py-3">{lead.budget ? `₹${lead.budget}` : "N/A"}</td>
                       <td className="px-4 py-3">{lead.source || "N/A"}</td>
 
                       <td className="px-4 py-3">
@@ -515,20 +553,18 @@ export default function MyLeads() {
 
                       <td className="px-4 py-3">
                         {lead.isRegistered ? (
-                          <span className="text-green-600 font-medium">Yes</span>
+                          <span className="px-3 py-1.5 bg-green-100 text-green-700 text-xs rounded-full font-semibold">Yes</span>
                         ) : (
-                          <span className="text-red-500 font-medium">No</span>
+                          <span className="px-3 py-1.5 bg-red-100 text-red-700 text-xs rounded-full font-semibold">No</span>
                         )}
                       </td>
 
                       <td className="px-4 py-3">
-                        <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full">
-                          {lead.totalVisits || 0} Visits
-                        </span>
+                        <span className="px-3 py-1.5 bg-purple-100 text-purple-700 text-xs rounded-full font-semibold">{lead.totalVisits || 0} Visits</span>
                       </td>
 
                       {/* ACTIONS */}
-                      <td className="px-5 py-4 text-right">
+                      <td className="px-4 py-3 text-right">
                         <ActionMenu>
                           {/* VIEW */}
                           <button
@@ -604,14 +640,14 @@ export default function MyLeads() {
                           )}
 
                            {/* DELETE - only if not closed */}
-                          {!lead.dealClosed && lead.status !== "deal_closed" && (
+                          {/* {!lead.dealClosed && lead.status !== "deal_closed" && (
                           <button
                             onClick={() => handleDelete(lead._id)}
                             className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-red-600 transition"
                           >
                             <Trash2 size={14} /> Delete
                           </button>
-                          )}
+                          )} */}
                         </ActionMenu>
                       </td>
                     </tr>
@@ -623,15 +659,15 @@ export default function MyLeads() {
         </div>
 
         {/* PAGINATION */}
-        {isLoading ? null : total > 0 && (
+        {isLoading ? null : totalForPagination > 0 && (
           <div className="mt-6 flex flex-col md:flex-row items-center justify-between bg-white rounded-xl shadow-md border border-gray-200 p-4 gap-4">
             <div className="flex items-center gap-4">
               <span className="text-sm text-gray-600">
-                Showing {Math.min((currentPage - 1) * pageSize + 1, total)} to {Math.min(currentPage * pageSize, total)} of {total} leads
+                Showing {Math.min((currentPage - 1) * displayPageSize + 1, totalForPagination)} to {Math.min(currentPage * displayPageSize, totalForPagination)} of {totalForPagination} leads
               </span>
               <div className="flex items-center gap-2">
                 <label htmlFor="pageSize" className="text-sm text-gray-600">Items per page:</label>
-                <select id="pageSize" value={pageSize} onChange={handlePageSizeChange} className="px-3 py-1 border border-gray-300 rounded-lg text-sm">
+                <select id="pageSize" value={isSearching ? 5 : pageSize} onChange={handlePageSizeChange} className="px-3 py-1 border border-gray-300 rounded-lg text-sm" disabled={isSearching}>
                   <option value="5">5</option>
                   <option value="10">10</option>
                   <option value="20">20</option>
@@ -641,33 +677,24 @@ export default function MyLeads() {
             </div>
 
             <div className="flex items-center gap-2">
-              <button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} className="p-2 rounded-lg border border-gray-300 text-gray-600 disabled:opacity-50">
-                <ChevronLeft size={18} />
-              </button>
+              <button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1 || (isSearching && isLoading)} className="p-2 rounded-lg border border-gray-300 text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition" title="Previous page"><ChevronLeft size={18} /></button>
 
               <div className="flex items-center gap-1">
-                {Array.from({ length: Math.min(totalPages || 1, 5) }).map((_, i) => {
+                {Array.from({ length: Math.min(totalPagesForPagination, 5) }).map((_, i) => {
                   let pageNum;
-                  if (totalPages <= 5) pageNum = i + 1;
+                  if (totalPagesForPagination <= 5) pageNum = i + 1;
                   else if (currentPage <= 3) pageNum = i + 1;
-                  else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
+                  else if (currentPage >= totalPagesForPagination - 2) pageNum = totalPagesForPagination - 4 + i;
                   else pageNum = currentPage - 2 + i;
-
                   return (
-                    <button
-                      key={pageNum}
-                      onClick={() => handlePageChange(pageNum)}
-                      className={`px-3 py-1 rounded-lg text-sm ${currentPage === pageNum ? "bg-blue-600 text-white" : "border border-gray-300 text-gray-600"}`}
-                    >
+                    <button key={pageNum} onClick={() => handlePageChange(pageNum)} disabled={isSearching && isLoading} className={`px-3 py-1 rounded-lg text-sm transition disabled:opacity-50 disabled:cursor-not-allowed ${currentPage === pageNum ? "bg-blue-600 text-white" : "border border-gray-300 text-gray-600 hover:bg-gray-50"}`}>
                       {pageNum}
                     </button>
                   );
                 })}
               </div>
 
-              <button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} className="p-2 rounded-lg border border-gray-300 text-gray-600 disabled:opacity-50">
-                <ChevronRight size={18} />
-              </button>
+              <button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPagesForPagination || (isSearching && isLoading)} className="p-2 rounded-lg border border-gray-300 text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition" title="Next page"><ChevronRight size={18} /></button>
             </div>
           </div>
         )}
@@ -701,7 +728,7 @@ export default function MyLeads() {
                   ) : (
                     <>
                       <InfoRow label="Property Location" value={selected.propertyLocation || "N/A"} />
-                      <InfoRow label="Area" value={selected.area || "N/A"} />
+                      <InfoRow label="Area" value={selected.area ? `${selected.area} sq ft` : "N/A"} />
                       <InfoRow label="Landmark" value={selected.landmark || "N/A"} />
                     </>
                   )}
@@ -729,6 +756,7 @@ export default function MyLeads() {
                 {selected?.isRegistered ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                     <InfoRow label="Plan Name" value={selected.registrationDetails?.planName} />
+                    <InfoRow label="Member Code" value={selected.registrationDetails?.memberCode || "N/A"} />
                     <InfoRow label="Registration Date" value={selected.registrationDetails?.registrationDate ? new Date(selected.registrationDetails.registrationDate).toLocaleDateString() : "N/A"} />
                     <InfoRow label="Registered By" value={selected.registrationDetails?.registeredBy?.name} />
                   </div>
