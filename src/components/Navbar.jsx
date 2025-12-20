@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   FiBell,
   FiChevronDown,
@@ -10,6 +10,31 @@ import { useLoadUser } from "../hooks/useAuthQueries.js";
 const Navbar = ({ onLogout }) => {
   const [showMenu, setShowMenu] = useState(false);
   const { data: user } = useLoadUser();
+
+  const menuRef = useRef(null);
+
+  // Close profile menu when clicking outside or pressing Escape
+  useEffect(() => {
+    if (!showMenu) return;
+
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setShowMenu(false);
+      }
+    };
+
+    const handleEsc = (e) => {
+      if (e.key === "Escape") setShowMenu(false);
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    window.addEventListener("keydown", handleEsc);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("keydown", handleEsc);
+    };
+  }, [showMenu]);
 
 
   return (
@@ -49,7 +74,7 @@ const Navbar = ({ onLogout }) => {
           </button>
 
           {/* Profile + Menu (Desktop) */}
-          <div className="relative hidden md:block">
+          <div className="relative hidden md:block" ref={menuRef}>
             <button
               onClick={() => setShowMenu(!showMenu)}
               className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 transition-all border border-transparent hover:border-gray-200"
