@@ -509,7 +509,7 @@ const displayLeads = isSearching
 
                       <td className="px-4 py-3">{new Date(lead.createdAt).toLocaleDateString()}</td>
                       <td className="px-4 py-3">{lead.mobileNumber || "N/A"}</td>
-                      <td className="px-4 py-3">{lead.preferredLocation || "N/A"}</td>
+                     <td className="px-4 py-3">{lead.customerType ==="tenant" ? lead.preferredLocation : lead.propertyLocation}</td>
                       <td className="px-4 py-3">{lead.propertyType || "N/A"}</td>
                       <td className="px-4 py-3">{lead.budget ? `₹${lead.budget}` : "N/A"}</td>
                       <td className="px-4 py-3">{lead.source || "N/A"}</td>
