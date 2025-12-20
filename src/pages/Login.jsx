@@ -146,11 +146,11 @@ const Login = () => {
           </button>
         </form>
 
-        <div className="mt-4 text-center">
+        {/* <div className="mt-4 text-center">
           <a className="text-sm text-orange-400 hover:underline transition" href="#">
             Forgot Password?
           </a>
-        </div>
+        </div> */}
       </div>
     </div>
   );
