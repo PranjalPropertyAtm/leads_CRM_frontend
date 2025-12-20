@@ -81,6 +81,14 @@ export default function AllLeads() {
     currentStatus: null,
   });
 
+  // when changing status to 'contacted', capture customer remark
+  const [contactedModal, setContactedModal] = useState({
+    isOpen: false,
+    leadId: null,
+    remark: '',
+    currentStatus: null,
+  });
+
   // leads query
   const {
     data: paginatedData = { leads: [], total: 0, totalPages: 0, page: 1 },
@@ -526,6 +534,18 @@ const displayLeads = isSearching
                               return;
                             }
 
+                            // If changing to contacted, open a small modal to capture customer remark
+                            if (newStatus === "contacted") {
+                              setContactedModal({
+                                isOpen: true,
+                                leadId: lead._id,
+                                remark: lead.customerRemark || '',
+                                currentStatus: currentStatus,
+                              });
+                              e.target.value = currentStatus;
+                              return;
+                            }
+
                             updateStatusMutation.mutate(
                               { id: lead._id, status: newStatus },
                               {
@@ -798,6 +818,13 @@ const displayLeads = isSearching
                     </div>
                   )}
 
+                  {selected.customerRemark && (
+                    <div className="md:col-span-2">
+                      <p className="text-gray-500 mb-1">Customer Remark</p>
+                      <p className="font-medium text-gray-800">{selected.customerRemark}</p>
+                    </div>
+                  )}
+
                   <div className="md:col-span-2">
                     <p className="text-gray-500">Lead ID</p>
                     <p className="text-xs font-mono text-gray-400 bg-gray-100 p-2 rounded">{selected._id}</p>
@@ -833,24 +860,59 @@ const displayLeads = isSearching
           }}
         />
 
+        {/* Contacted remark modal */}
+        {contactedModal.isOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div className="absolute inset-0 bg-black/50" onClick={() => setContactedModal({ isOpen: false, leadId: null, remark: '', currentStatus: null })} />
+            <div className="relative bg-white rounded-xl shadow-lg p-6 w-full max-w-md z-10">
+              <h3 className="text-lg font-semibold text-gray-900">Add customer remark</h3>
+              <p className="text-sm text-gray-500 mt-1 mb-4">Add any remark provided by the customer when marking as contacted (optional).</p>
+
+              <textarea
+                rows={4}
+                className="w-full border rounded p-2 text-sm"
+                value={contactedModal.remark}
+                onChange={(e) => setContactedModal((s) => ({ ...s, remark: e.target.value }))}
+              />
+
+              <div className="mt-4 flex justify-end gap-3">
+                <button onClick={() => setContactedModal({ isOpen: false, leadId: null, remark: '', currentStatus: null })} className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100">Cancel</button>
+                <button
+                  onClick={() => {
+                    if (!contactedModal.leadId) return;
+                    updateStatusMutation.mutate(
+                      { id: contactedModal.leadId, status: 'contacted', customerRemark: contactedModal.remark },
+                      {
+                        onSuccess: () => {
+                          notify.success('Status updated successfully');
+                          // keep immediate UI in sync
+                          queryClient.invalidateQueries({ queryKey: ['leads'] });
+                          queryClient.invalidateQueries({ queryKey: ['leads', 'my'] });
+                          setSelected((s) => (s && s._id === contactedModal.leadId ? { ...s, status: 'contacted', customerRemark: contactedModal.remark } : s));
+                          setContactedModal({ isOpen: false, leadId: null, remark: '', currentStatus: null });
+                        },
+                        onError: (err) => {
+                          notify.error(err?.response?.data?.message || 'Failed to update status');
+                        },
+                      }
+                    );
+                  }}
+                  className="px-4 py-2 rounded-lg text-white bg-orange-600 hover:bg-orange-700"
+                  disabled={updateStatusMutation.isPending}
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
 
         {/* Visits */}
         {visitModal && <AddVisitModal open={visitModal} onClose={() => setVisitModal(false)} lead={visitLead} />}
         {visitHistoryOpen && <VisitHistory open={visitHistoryOpen} onClose={() => setVisitHistoryOpen(false)} leadId={visitLead?._id} />}
 
-        {/* Status Change Confirmation Modal */}
-        <ConfirmModal
-          isOpen={statusChangeModal.isOpen}
-          title="Mark Lead as Deal Closed"
-          description="Are you sure you want to mark this lead as deal closed? This action cannot be undone and the lead will become read-only. You will no longer be able to edit, delete, or modify this lead."
-          onCancel={() => {
-            setStatusChangeModal({ isOpen: false, leadId: null, newStatus: null, currentStatus: null });
-          }}
-          onConfirm={handleConfirmStatusChange}
-          confirmLabel="Yes, Mark as Closed"
-          cancelLabel="Cancel"
-          loading={updateStatusMutation.isPending}
-        />
+
 
         {/* Mark Deal Closed Confirmation Modal */}
         <ConfirmModal

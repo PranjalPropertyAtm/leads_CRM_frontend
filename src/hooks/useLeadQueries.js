@@ -121,8 +121,10 @@ export const useUpdateLeadStatus = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, status }) => {
-      const response = await axios.put(`/leads/${id}/status`, { status });
+    mutationFn: async ({ id, status, customerRemark }) => {
+      const payload = { status };
+      if (typeof customerRemark !== 'undefined') payload.customerRemark = customerRemark;
+      const response = await axios.put(`/leads/${id}/status`, payload);
       return response.data;
     },
     onSuccess: (data) => {
