@@ -769,10 +769,10 @@ export default function MyLeads() {
                     </div>
                   )}
 
-                  <div className="md:col-span-2">
+                  {/* <div className="md:col-span-2">
                     <p className="text-gray-500">Lead ID</p>
                     <p className="text-xs font-mono text-gray-400 bg-gray-100 p-2 rounded">{selected._id}</p>
-                  </div>
+                  </div> */}
                 </div>
               </div>
 
