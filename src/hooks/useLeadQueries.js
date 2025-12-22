@@ -41,6 +41,8 @@ export const useCreateLead = () => {
     onSuccess: (data) => {
       // Invalidate lead lists so new lead appears
       queryClient.invalidateQueries({ queryKey: ['leads'] })
+      // Also refresh customers because backend upserts customers on lead create
+      queryClient.invalidateQueries({ queryKey: ['customers'] })
     },
   })
 }
@@ -64,6 +66,9 @@ export const useUpdateLead = () => {
       queryClient.invalidateQueries({ queryKey: ['leads'] })
       queryClient.invalidateQueries({ queryKey: ['leads', 'my'] })
 
+      // Also refresh customers because lead update can change customer data
+      queryClient.invalidateQueries({ queryKey: ['customers'] })
+
       // 🔥 MOST IMPORTANT – refresh single lead
       queryClient.invalidateQueries({ queryKey: ['lead', id] })
     },
@@ -83,6 +88,8 @@ export const useDeleteLead = () => {
       // Invalidate all lead queries so deleted lead disappears
       queryClient.invalidateQueries({ queryKey: ['leads'] })
       queryClient.invalidateQueries({ queryKey: ['leads', 'my'] })
+      // Customer data may change after lead deletion (history/merge), refresh customers
+      queryClient.invalidateQueries({ queryKey: ['customers'] })
     },
   })
 }
@@ -131,6 +138,8 @@ export const useUpdateLeadStatus = () => {
       // Invalidate all lead queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       queryClient.invalidateQueries({ queryKey: ['leads', 'my'] });
+      // Status changes may affect customer counts - refresh customers
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
     },
   });
 };
@@ -148,6 +157,8 @@ export const useMarkDealClosed = () => {
       // Invalidate all lead queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       queryClient.invalidateQueries({ queryKey: ['leads', 'my'] });
+      // Deal-closed affects customer stats - refresh customers
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
     },
   });
 };
