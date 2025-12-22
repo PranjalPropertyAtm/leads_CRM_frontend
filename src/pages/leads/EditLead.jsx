@@ -28,7 +28,7 @@ export default function EditLead() {
     mobileNumber: "",
     email: "",
     city: "",
-    preferredLocation: "",
+    preferredLocation: [],
     propertyLocation: "",
     propertyType: "",
     subPropertyType: "",
@@ -59,13 +59,18 @@ export default function EditLead() {
   useEffect(() => {
     if (leadData) {
       setCustomerType(leadData.customerType || "tenant");
+      const pref = Array.isArray(leadData.preferredLocation)
+        ? leadData.preferredLocation
+        : leadData.preferredLocation
+        ? [leadData.preferredLocation]
+        : [];
       setForm({
         customerName: leadData.customerName || "",
         ownerName: leadData.ownerName || "",
         mobileNumber: leadData.mobileNumber || "",
         email: leadData.email || "",
         city: leadData.city || "",
-        preferredLocation: leadData.preferredLocation || "",
+        preferredLocation: pref,
         propertyLocation: leadData.propertyLocation || "",
         propertyType: leadData.propertyType || "",
         subPropertyType: leadData.subPropertyType || "",
@@ -114,8 +119,10 @@ export default function EditLead() {
 
     if (customerType === "tenant") {
       if (!form.customerName.trim()) e.customerName = "Customer name required";
-      if (!form.preferredLocation)
+      if (!Array.isArray(form.preferredLocation) || form.preferredLocation.length === 0)
         e.preferredLocation = "Preferred location required";
+      else if (Array.isArray(form.preferredLocation) && form.preferredLocation.length > 3)
+        e.preferredLocation = "Select at most 3 preferred locations";
     } else {
       if (!form.ownerName.trim()) e.ownerName = "Owner name required";
       if (!form.propertyLocation)
@@ -174,13 +181,18 @@ export default function EditLead() {
   const resetForm = () => {
     if (leadData) {
       setCustomerType(leadData.customerType || "tenant");
+      const pref = Array.isArray(leadData.preferredLocation)
+        ? leadData.preferredLocation
+        : leadData.preferredLocation
+        ? [leadData.preferredLocation]
+        : [];
       setForm({
         customerName: leadData.customerName || "",
         ownerName: leadData.ownerName || "",
         mobileNumber: leadData.mobileNumber || "",
         email: leadData.email || "",
         city: leadData.city || "",
-        preferredLocation: leadData.preferredLocation || "",
+        preferredLocation: pref,
         propertyLocation: leadData.propertyLocation || "",
         propertyType: leadData.propertyType || "",
         subPropertyType: leadData.subPropertyType || "",
@@ -317,7 +329,7 @@ export default function EditLead() {
                   options={cities}
                   onChange={(e) => {
                     handleChange(e);
-                    setForm((p) => ({ ...p, preferredLocation: "" }));
+                    setForm((p) => ({ ...p, preferredLocation: [] }));
                   }}
                   error={errors.city}
                 />
@@ -329,9 +341,11 @@ export default function EditLead() {
                   value={form.preferredLocation}
                   options={locationOptions.map((l) => ({ value: l, label: l }))}
                   disabled={!form.city}
-                  onChange={(e) => handleChange({ target: { name: e.target.name, value: e.target.value } })}
+                  onChange={handleChange}
                   error={errors.preferredLocation}
                   placeholder="Search location..."
+                  multi
+                  max={3}
                 />
 
                 {/* Property Type */}

@@ -314,7 +314,7 @@ export default function AllCustomers() {
                     <div>
                       <p className="text-gray-500">Preferred Location</p>
                       <p className="font-medium">
-                        {selected.preferredLocation || "N/A"}
+                        {Array.isArray(selected.preferredLocation) ? selected.preferredLocation.join(", ") : (selected.preferredLocation || "N/A")}
                       </p>
                     </div>
 

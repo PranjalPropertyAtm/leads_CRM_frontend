@@ -28,7 +28,8 @@ export default function AddLead() {
     mobileNumber: "",
     email: "",
     city: "",
-    preferredLocation: "",
+    // support multiple preferred locations
+    preferredLocation: [],
     propertyLocation: "",
     propertyType: "",
     subPropertyType: "",
@@ -84,8 +85,10 @@ export default function AddLead() {
 
     if (customerType === "tenant") {
       if (!form.customerName.trim()) e.customerName = "Customer name required";
-      if (!form.preferredLocation)
+      if (!Array.isArray(form.preferredLocation) || form.preferredLocation.length === 0)
         e.preferredLocation = "Preferred location required";
+      else if (Array.isArray(form.preferredLocation) && form.preferredLocation.length > 3)
+        e.preferredLocation = "Select at most 3 preferred locations";
     } else {
       if (!form.ownerName.trim()) e.ownerName = "Owner name required";
       if (!form.propertyLocation)
@@ -150,7 +153,7 @@ export default function AddLead() {
       mobileNumber: "",
       email: "",
       city: "",
-      preferredLocation: "",
+      preferredLocation: [],
       propertyLocation: "",
       propertyType: "",
       subPropertyType: "",
@@ -266,7 +269,7 @@ export default function AddLead() {
                   options={cities}
                   onChange={(e) => {
                     handleChange(e);
-                    setForm((p) => ({ ...p, preferredLocation: "" }));
+                    setForm((p) => ({ ...p, preferredLocation: [] }));
                   }}
                   error={errors.city}
                 />
@@ -278,9 +281,11 @@ export default function AddLead() {
                   value={form.preferredLocation}
                   options={locationOptions.map((l) => ({ value: l, label: l }))}
                   disabled={!form.city}
-                  onChange={(e) => handleChange({ target: { name: e.target.name, value: e.target.value } })}
+                  onChange={handleChange}
                   error={errors.preferredLocation}
                   placeholder="Search location..."
+                  multi
+                  max={3}
                 />
 
                 {/* Property Type */}
