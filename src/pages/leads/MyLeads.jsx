@@ -240,6 +240,16 @@ export default function MyLeads() {
   const filtered = (leads || []).filter((lead) => {
     const q = filter.trim().toLowerCase();
     if (!q) return true;
+
+    const pref = lead.preferredLocation;
+    const prop = lead.propertyLocation;
+    const matchLocation = (() => {
+      if (Array.isArray(pref)) return pref.some((p) => (p || "").toLowerCase().includes(q));
+      if (typeof pref === "string" && pref.toLowerCase().includes(q)) return true;
+      if (typeof prop === "string" && prop.toLowerCase().includes(q)) return true;
+      return false;
+    })();
+
     return (
       (lead.customerName || "").toLowerCase().includes(q) ||
       (lead.ownerName || "").toLowerCase().includes(q) ||
@@ -248,8 +258,9 @@ export default function MyLeads() {
       (lead.city || "").toLowerCase().includes(q) ||
       (lead.propertyType || "").toLowerCase().includes(q) ||
       (lead.source || "").toLowerCase().includes(q) ||
-      (lead.customerType || "").toLowerCase().includes(q)||
-      (lead.budget ? lead.budget.toString().toLowerCase().includes(q) : false)
+      (lead.customerType || "").toLowerCase().includes(q) ||
+      (lead.budget ? lead.budget.toString().toLowerCase().includes(q) : false) ||
+      matchLocation
     );
   });
 
