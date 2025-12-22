@@ -109,6 +109,7 @@ export default function RegistrationModal({ open, onClose, lead }) {
             className="w-full border rounded-lg px-3 py-2 mt-1"
             value={registrationDate}
             onChange={(e) => setRegistrationDate(e.target.value)}
+            onClick={(e) => e.target.showPicker()}
           />
         </div>
 
