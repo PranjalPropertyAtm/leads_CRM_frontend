@@ -150,7 +150,8 @@ export default function EditLead() {
       budget: form.budget || undefined,
       source: form.source,
       assignedTo: form.assignedTo || undefined,
-      requirements: form.requirements || undefined,
+      // allow empty string to be sent so backend can clear the field
+      requirements: form.requirements,
       area: form.area || undefined,
       landmark: form.landmark || undefined,
     };

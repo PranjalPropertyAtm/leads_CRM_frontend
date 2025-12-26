@@ -220,6 +220,17 @@ export default function AllLeads() {
       return false;
     })();
 
+    // derive assignedTo name (handles cases where assignedTo is an id or populated object)
+    const assignedName = (() => {
+      const at = lead.assignedTo;
+      if (!at) return "";
+      if (typeof at === "string") {
+        const emp = employees.find((e) => e._id === at);
+        return emp?.name || "";
+      }
+      return at?.name || "";
+    })();
+
     return (
       lead.customerName?.toLowerCase().includes(q) ||
       lead.ownerName?.toLowerCase().includes(q) ||
@@ -230,7 +241,8 @@ export default function AllLeads() {
       lead.source?.toLowerCase().includes(q) ||
       lead.budget?.toLowerCase().includes(q) ||
       lead.customerType?.toLowerCase().includes(q) ||
-      matchLocation
+      matchLocation ||
+      (assignedName && assignedName.toLowerCase().includes(q))
     );
   });
 

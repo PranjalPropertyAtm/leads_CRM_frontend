@@ -250,6 +250,17 @@ export default function MyLeads() {
       return false;
     })();
 
+    // derive assignedTo name (handles cases where assignedTo is an id or populated object)
+    const assignedName = (() => {
+      const at = lead.assignedTo;
+      if (!at) return "";
+      if (typeof at === "string") {
+        const emp = employees.find((e) => e._id === at);
+        return emp?.name || "";
+      }
+      return at?.name || "";
+    })();
+
     return (
       (lead.customerName || "").toLowerCase().includes(q) ||
       (lead.ownerName || "").toLowerCase().includes(q) ||
@@ -260,7 +271,8 @@ export default function MyLeads() {
       (lead.source || "").toLowerCase().includes(q) ||
       (lead.customerType || "").toLowerCase().includes(q) ||
       (lead.budget ? lead.budget.toString().toLowerCase().includes(q) : false) ||
-      matchLocation
+      matchLocation ||
+      (assignedName && assignedName.toLowerCase().includes(q))
     );
   });
 
@@ -750,6 +762,33 @@ export default function MyLeads() {
                   <InfoRow label="Mobile Number" value={selected.mobileNumber} />
                   <InfoRow label="Email" value={selected.email || "N/A"} />
                   <InfoRow label="City" value={selected.city} />
+
+
+                  
+                  {/* Assisted (Assigned Employee) */}
+                  {selected.assignedTo && (
+                    <InfoRow
+                      label="Assisted To"
+                      value={
+                        typeof selected.assignedTo === "string"
+                          ? selected.assignedTo
+                          : selected.assignedTo?.name || "N/A"
+                      }
+                    />
+                  )}
+
+                  {/* SHOW ONLY TO ADMIN */}
+                  {selected.createdBy && (
+                    <InfoRow
+                      label="Created By"
+                      value={
+                        typeof selected.createdBy === "string"
+                          ? selected.createdBy
+                          : selected.createdBy?.name || "N/A"
+                      }
+                    />
+                  )}
+
                   {selected.customerType === "tenant" ? (
                     <>
                       <InfoRow label="Preferred Location" value={Array.isArray(selected.preferredLocation) ? selected.preferredLocation.join(", ") : (selected.preferredLocation || "N/A")} />
