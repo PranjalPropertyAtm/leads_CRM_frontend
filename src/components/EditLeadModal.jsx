@@ -77,7 +77,14 @@ export default function EditLeadModal({ open, onClose, lead }) {
   const updateLead = useUpdateLead();
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name } = e.target;
+    let { value } = e.target;
+
+    // For budget, allow only numeric digits (no currency symbols or letters)
+    if (name === "budget") {
+      value = value.replace(/\D/g, "");
+    }
+
     setForm((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
   };
@@ -347,6 +354,9 @@ export default function EditLeadModal({ open, onClose, lead }) {
               name="budget"
               value={form.budget}
               onChange={handleChange}
+              inputMode="numeric"
+              pattern="\\d*"
+              placeholder="Enter amount (numbers only)"
             />
             <SelectField
               label="Source *"

@@ -157,6 +157,7 @@ const AdminSidebar = () => {
               >
                 All Leads
               </NavLink>
+              {user?.role!== "admin" && (
               <NavLink
                 to="/my-leads"
                 className={({ isActive }) =>
@@ -169,6 +170,22 @@ const AdminSidebar = () => {
               >
                 My Leads
               </NavLink>
+              )}
+              {user?.role !== "employee" && (
+                <NavLink
+                  to="/leads-by-employee"
+                  className={({ isActive }) =>
+                    `block px-3 py-2 rounded-md text-sm transition-all duration-200
+                     ${isActive 
+                       ? "bg-slate-800/70 text-white font-medium" 
+                       : "text-slate-400 hover:bg-slate-800/30 hover:text-slate-200"}`
+                  }
+                  onClick={() => setIsOpen(false)}
+                >
+                  Leads by Employee
+                </NavLink>
+              )}
+              
             </div>
           )}
 

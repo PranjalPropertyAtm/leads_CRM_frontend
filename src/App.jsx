@@ -18,6 +18,7 @@ const Reports = lazy(() => import("./pages/Reports.jsx"));
 const EditLead = lazy(() => import("./pages/leads/EditLead.jsx"));
 const AllLeads = lazy(() => import("./pages/leads/AllLeads.jsx"));
 const MyLeads = lazy(() => import("./pages/leads/MyLeads.jsx"));
+const LeadsByEmployee = lazy(() => import("./pages/leads/LeadsByEmployee.jsx"));
 const MyVisits = lazy(() => import("./pages/Visits/MyVisits.jsx"));
 const AllVisits = lazy(() => import("./pages/Visits/AllVisits.jsx"));
 // const CustomerDetail = lazy(() => import("./pages/customers/CustomerDetail.jsx"));
@@ -55,6 +56,7 @@ function App() {
             <Route path="/edit-lead/:id" element={<EditLead />} />
             <Route path="/all-leads" element={<AllLeads />} />
             <Route path="/my-leads" element={<MyLeads />} />
+            <Route path="/leads-by-employee" element={<LeadsByEmployee />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/add" element={<AddDetails />} />
             <Route path="/add-employee" element={<AddEmployee />} />
