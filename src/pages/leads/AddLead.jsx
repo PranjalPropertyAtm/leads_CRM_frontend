@@ -99,6 +99,8 @@ export default function AddLead() {
     return Object.keys(e).length === 0;
   };
 
+  
+
   // ======================
   // Submit
   // ======================
@@ -406,7 +408,7 @@ export default function AddLead() {
             )}
 
             {/* COMMON FIELDS */}
-            <InputField
+            {/* <InputField
               label="Budget"
               name="budget"
               value={form.budget}
@@ -414,7 +416,26 @@ export default function AddLead() {
               inputMode="numeric"
               pattern="\\d*"
               placeholder="Enter amount (numbers only)"
-            />
+            /> */}
+
+
+            
+<InputField
+  label="Budget"
+  name="budget"
+  value={form.budget}
+  onChange={handleChange}
+  type="text"
+  inputMode="numeric"
+  pattern="[0-9]*"
+  placeholder="Enter amount (numbers only)"
+  onKeyPress={(e) => {
+    // Prevent non-numeric characters from being typed
+    if (!/[0-9]/.test(e.key)) {
+      e.preventDefault();
+    }
+  }}
+/>
 
             
 

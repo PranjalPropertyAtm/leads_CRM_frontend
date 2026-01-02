@@ -101,9 +101,15 @@ export default function EditLead() {
   }));
 
   const updateLead = useUpdateLead();
-
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name } = e.target;
+    let { value } = e.target;
+  
+    // For budget, allow only numeric digits (no currency symbols or letters)
+    if (name === "budget") {
+      value = value.replace(/\D/g, ""); // This strips all non-digits
+    }
+  
     setForm((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
   };
@@ -461,12 +467,21 @@ export default function EditLead() {
 
             {/* COMMON FIELDS */}
             <InputField
-              label="Budget"
-              name="budget"
-              value={form.budget}
-              onChange={handleChange}
-            />
-
+  label="Budget"
+  name="budget"
+  value={form.budget}
+  onChange={handleChange}
+  type="text"
+  inputMode="numeric"
+  pattern="[0-9]*"
+  placeholder="Enter amount (numbers only)"
+  onKeyPress={(e) => {
+    // Prevent non-numeric characters from being typed
+    if (!/[0-9]/.test(e.key)) {
+      e.preventDefault();
+    }
+  }}
+/>
             <SelectField
               label="Source *"
               name="source"
