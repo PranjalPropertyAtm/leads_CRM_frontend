@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Search, Eye, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Eye, ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { useAllVisits } from "../../hooks/useVisitQueries";
 import VisitDetailsModal from "../../components/VisitDetailsModal";
 
@@ -10,11 +10,13 @@ export default function AllVisits() {
   const [selectedVisit, setSelectedVisit] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   const { 
     data = { visits: [], total: 0, totalPages: 0, page: 1 }, 
     isLoading 
-  } = useAllVisits(currentPage, pageSize);
+  } = useAllVisits(currentPage, pageSize, startDate || null, endDate || null);
 
   const { visits = [], total = 0, totalPages = 0 } = data;
 
@@ -44,22 +46,95 @@ export default function AllVisits() {
   return (
     <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100">
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-1">All Visits</h1>
-            <p className="text-sm text-gray-600 font-medium">View and manage all property visits</p>
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-1">All Visits</h1>
+              <p className="text-sm text-gray-600 font-medium">View and manage all property visits</p>
+            </div>
+
+            <div className="relative">
+              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                placeholder="Search visits..."
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+                className="pl-11 pr-4 py-2.5 rounded-lg border border-gray-300 bg-white shadow-sm w-80 
+                           focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all 
+                           text-sm font-medium placeholder:text-gray-400"
+              />
+            </div>
           </div>
 
-          <div className="relative">
-            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              placeholder="Search visits..."
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              className="pl-11 pr-4 py-2.5 rounded-lg border border-gray-300 bg-white shadow-sm w-80 
-                         focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all 
-                         text-sm font-medium placeholder:text-gray-400"
-            />
+          {/* Date Filter */}
+          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Start Date
+                </label>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-3 text-gray-400" size={16} />
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => {
+                      setStartDate(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 bg-white shadow-sm w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm font-medium"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  End Date
+                </label>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-3 text-gray-400" size={16} />
+                  <input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => {
+                      setEndDate(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    min={startDate || undefined}
+                    className="pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 bg-white shadow-sm w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm font-medium"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {(startDate || endDate) && (
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <button
+                  onClick={() => {
+                    setStartDate("");
+                    setEndDate("");
+                    setCurrentPage(1);
+                  }}
+                  className="text-sm text-blue-600 hover:text-blue-700 font-medium hover:underline"
+                >
+                  Clear Date Filter
+                </button>
+                {(startDate || endDate) && (
+                  <p className="text-sm text-gray-600 mt-2">
+                    {startDate && (
+                      <span>
+                        From: <span className="font-semibold text-gray-900">{new Date(startDate).toLocaleDateString()}</span>
+                      </span>
+                    )}
+                    {endDate && (
+                      <span className={startDate ? " ml-4" : ""}>
+                        To: <span className="font-semibold text-gray-900">{new Date(endDate).toLocaleDateString()}</span>
+                      </span>
+                    )}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         </div>
 

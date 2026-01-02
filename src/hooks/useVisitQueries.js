@@ -35,13 +35,15 @@ export const useMyVisits = (page = 1, limit = 10) => {
   });
 };
 
-export const useAllVisits = (page = 1, limit = 10) => {
+export const useAllVisits = (page = 1, limit = 10, startDate = null, endDate = null) => {
   return useQuery({
-    queryKey: ["visits", "all", page, limit],
+    queryKey: ["visits", "all", page, limit, startDate, endDate],
     queryFn: async () => {
-      const res = await axios.get("/visits/all", {
-        params: { page, limit }
-      });
+      const params = { page, limit };
+      if (startDate) params.startDate = startDate;
+      if (endDate) params.endDate = endDate;
+      
+      const res = await axios.get("/visits/all", { params });
       return {
         visits: res.data.data || [],
         total: res.data.total || 0,
