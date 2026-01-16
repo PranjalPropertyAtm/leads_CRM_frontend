@@ -21,7 +21,7 @@ import axiosInstance from "../../lib/axios.js";
 import { notify } from "../../utils/toast.js";
 
 import { useNavigate } from "react-router-dom";
-import { useUpdateLeadStatus, useMarkDealClosed } from "../../hooks/useLeadQueries.js";
+import { useUpdateLeadStatus, useMarkDealClosed, useUpdateEmployeeRemarks } from "../../hooks/useLeadQueries.js";
 import { useFetchEmployees } from "../../hooks/useEmployeeQueries.js";
 import { useLoadUser } from "../../hooks/useAuthQueries.js";
 
@@ -35,6 +35,8 @@ export default function LeadsByEmployee() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { data: user } = useLoadUser();
+  const isCustomerCare = user?.designation && 
+    user.designation.toLowerCase().includes("customer care");
 
   // Filters
   const [selectedEmployee, setSelectedEmployee] = useState("");
@@ -87,6 +89,14 @@ export default function LeadsByEmployee() {
     leadId: null,
   });
 
+  // Employee remarks modal (for customer care executives)
+  const [remarksModal, setRemarksModal] = useState({
+    isOpen: false,
+    leadId: null,
+    lead: null,
+    remarks: '',
+  });
+
   // Employees query
   const {
     data: employeesData,
@@ -104,6 +114,18 @@ export default function LeadsByEmployee() {
   // Mutations
   const updateStatusMutation = useUpdateLeadStatus();
   const markDealClosedMutation = useMarkDealClosed();
+  const updateRemarksMutation = useUpdateEmployeeRemarks();
+
+  // Clear leads when no employee is selected (including on initial mount)
+  useEffect(() => {
+    if (!selectedEmployee) {
+      setLeads([]);
+      setTotal(0);
+      setTotalPages(0);
+      setSelected(null);
+      setCurrentPage(1);
+    }
+  }, [selectedEmployee]);
 
   // Fetch leads when filters change
   useEffect(() => {
@@ -735,7 +757,7 @@ export default function LeadsByEmployee() {
                             <Eye size={14} /> View Details
                           </button>
 
-                          {lead.createdBy?._id === user?._id &&
+                          {lead.createdBy?._id === user?._id  &&
                             !lead.dealClosed &&
                             lead.status !== "deal_closed" && (
                               <button
@@ -748,6 +770,24 @@ export default function LeadsByEmployee() {
                                 <Edit size={14} /> Edit Lead
                               </button>
                             )}
+
+                          {/* Add Remarks - Only for Customer Care Executives */}
+                          {/* {isCustomerCare && !lead.dealClosed && lead.status !== "deal_closed" && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setRemarksModal({
+                                  isOpen: true,
+                                  leadId: lead._id,
+                                  lead: lead,
+                                  remarks: lead.employeeRemarks || '',
+                                });
+                              }}
+                              className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-purple-600 transition"
+                            >
+                              <Edit size={14} /> {lead.employeeRemarks ? 'Edit Remarks' : 'Add Remarks'}
+                            </button>
+                          )} */}
 
                           {!lead.isRegistered &&
                             lead.createdBy?._id === user?._id &&
@@ -775,6 +815,25 @@ export default function LeadsByEmployee() {
                           >
                             <Eye size={14} /> View Visits
                           </button>
+
+                            {/* Add Remarks - Only for Customer Care Executives */}
+                            {isCustomerCare && !lead.dealClosed && lead.status !== "deal_closed" && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setRemarksModal({
+                                  isOpen: true,
+                                  leadId: lead._id,
+                                  lead: lead,
+                                  remarks: lead.employeeRemarks || '',
+                                });
+                              }}
+                              className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-purple-600 transition"
+                            >
+                              <Edit size={14} /> {lead.employeeRemarks ? 'Edit Remarks' : 'Add Remarks'}
+                            </button>
+                          )}
+
 
                           {lead.createdBy?._id === user?._id &&
                             !lead.dealClosed &&
@@ -1035,6 +1094,15 @@ export default function LeadsByEmployee() {
                       </p>
                     </div>
                   )}
+
+                  {selected.employeeRemarks && (
+                    <div className="md:col-span-2">
+                      <p className="text-gray-500 mb-1">Employee Remarks</p>
+                      <p className="font-medium text-gray-800 bg-blue-50 p-2 rounded">
+                        {selected.employeeRemarks}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1219,6 +1287,96 @@ export default function LeadsByEmployee() {
           cancelLabel="Cancel"
           loading={markDealClosedMutation.isPending}
         />
+
+        {/* Employee Remarks Modal */}
+        {remarksModal.isOpen && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-xl shadow-xl max-w-2xl w-full p-6"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-bold text-gray-800">
+                  {remarksModal.remarks ? 'Edit' : 'Add'} Employee Remarks
+                </h2>
+                <button
+                  onClick={() => setRemarksModal({ isOpen: false, leadId: null, lead: null, remarks: '' })}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+
+              {remarksModal.lead && (
+                <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                  <p className="text-sm text-gray-600 mb-1">
+                    <span className="font-medium">Lead:</span> {remarksModal.lead.customerName || remarksModal.lead.ownerName}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    <span className="font-medium">Mobile:</span> {remarksModal.lead.mobileNumber}
+                  </p>
+                </div>
+              )}
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Employee Remarks
+                  <span className="text-xs text-gray-500 ml-2">(Customer Care Executive)</span>
+                </label>
+                <textarea
+                  value={remarksModal.remarks}
+                  onChange={(e) => setRemarksModal(prev => ({ ...prev, remarks: e.target.value }))}
+                  rows={5}
+                  placeholder="Add your remarks about this lead..."
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  This remark will be visible to all users viewing this lead.
+                </p>
+              </div>
+
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => setRemarksModal({ isOpen: false, leadId: null, lead: null, remarks: '' })}
+                  className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    updateRemarksMutation.mutate(
+                      {
+                        id: remarksModal.leadId,
+                        employeeRemarks: remarksModal.remarks.trim() || undefined,
+                        customerType: remarksModal.lead?.customerType, // Required by validation schema
+                      },
+                      {
+                        onSuccess: () => {
+                          notify.success("Employee remarks updated successfully");
+                          setRemarksModal({ isOpen: false, leadId: null, lead: null, remarks: '' });
+                          fetchLeads();
+                          // Update the selected lead if it's the same
+                          if (selected && selected._id === remarksModal.leadId) {
+                            setSelected({ ...selected, employeeRemarks: remarksModal.remarks.trim() || undefined });
+                          }
+                        },
+                        onError: (err) => {
+                          notify.error(err?.response?.data?.message || "Failed to update remarks");
+                        },
+                      }
+                    );
+                  }}
+                  className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                  disabled={updateRemarksMutation.isPending}
+                >
+                  {updateRemarksMutation.isPending ? 'Saving...' : 'Save Remarks'}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
 
         {/* Status Change Confirmation Modal */}
         <ConfirmModal

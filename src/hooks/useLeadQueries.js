@@ -162,3 +162,28 @@ export const useMarkDealClosed = () => {
     },
   });
 };
+
+// Update employee remarks (for customer care executives)
+export const useUpdateEmployeeRemarks = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, employeeRemarks, customerType }) => {
+      const payload = {
+        employeeRemarks: employeeRemarks || undefined,
+      };
+      // Include customerType if provided (required by validation schema)
+      if (customerType) {
+        payload.customerType = customerType;
+      }
+      const response = await axios.put(`/leads/update/${id}`, payload);
+      return response.data;
+    },
+    onSuccess: (_, { id }) => {
+      // Refresh lead list and single lead
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      queryClient.invalidateQueries({ queryKey: ['leads', 'my'] });
+      queryClient.invalidateQueries({ queryKey: ['lead', id] });
+    },
+  });
+};

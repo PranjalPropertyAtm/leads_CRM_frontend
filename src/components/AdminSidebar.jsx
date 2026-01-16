@@ -16,7 +16,13 @@ import {
 
 const AdminSidebar = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const { data: user } = useLoadUser();
+  const { data: user, isLoading: userLoading } = useLoadUser();
+  
+  // Determine if user can see "Leads by Employee"
+  const canViewLeadsByEmployee = user && (
+    user.role !== "employee" || 
+    (user.designation && user.designation.toLowerCase().includes("customer care"))
+  );
 
   const [openMenus, setOpenMenus] = useState({
     leads: false,
@@ -171,7 +177,8 @@ const AdminSidebar = () => {
                 My Leads
               </NavLink>
               )}
-              {user?.role !== "employee" && (
+
+              {!userLoading && canViewLeadsByEmployee && (
                 <NavLink
                   to="/leads-by-employee"
                   className={({ isActive }) =>
