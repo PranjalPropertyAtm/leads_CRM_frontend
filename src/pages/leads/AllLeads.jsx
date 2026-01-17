@@ -12,6 +12,7 @@ import {
   HousePlus,
   Edit,
   CheckCircle,
+  MessageSquare,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
@@ -517,12 +518,25 @@ const displayLeads = isSearching
                   {displayLeads.map((lead, idx) => (
                     <tr
                       key={lead._id}
-                      className="hover:bg-blue-50/50 transition-colors group"
+                      className={`hover:bg-blue-50/50 transition-colors group ${
+                        lead.employeeRemarks ? "bg-purple-50/30 border-l-4 border-l-purple-500" : ""
+                      }`}
                     >
                       <td className="px-4 py-3 text-gray-600 font-semibold">{(currentPage - 1) * displayPageSize + idx + 1}</td>
 
                       <td className="px-4 py-3">
-                        <span className="font-semibold text-gray-900">{lead.customerName || lead.ownerName}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-gray-900">{lead.customerName || lead.ownerName}</span>
+                          {lead.employeeRemarks && (
+                            <span 
+                              className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full font-semibold"
+                              title="Customer Care has added remarks"
+                            >
+                              <MessageSquare size={12} />
+                             
+                            </span>
+                          )}
+                        </div>
                       </td>
 
                       <td className="px-4 py-3">
