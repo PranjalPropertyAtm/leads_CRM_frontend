@@ -1097,7 +1097,7 @@ export default function LeadsByEmployee() {
 
                   {selected.employeeRemarks && (
                     <div className="md:col-span-2">
-                      <p className="text-gray-500 mb-1">Employee Remarks</p>
+                      <p className="text-gray-500 mb-1">Internal Remarks</p>
                       <p className="font-medium text-gray-800 bg-blue-50 p-2 rounded">
                         {selected.employeeRemarks}
                       </p>
@@ -1299,7 +1299,7 @@ export default function LeadsByEmployee() {
             >
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-2xl font-bold text-gray-800">
-                  {remarksModal.remarks ? 'Edit' : 'Add'} Employee Remarks
+                  {remarksModal.remarks ? 'Edit' : 'Add'} Internal Remarks
                 </h2>
                 <button
                   onClick={() => setRemarksModal({ isOpen: false, leadId: null, lead: null, remarks: '' })}
@@ -1322,7 +1322,7 @@ export default function LeadsByEmployee() {
 
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Employee Remarks
+                  Internal Remarks
                   <span className="text-xs text-gray-500 ml-2">(Customer Care Executive)</span>
                 </label>
                 <textarea
@@ -1354,7 +1354,7 @@ export default function LeadsByEmployee() {
                       },
                       {
                         onSuccess: () => {
-                          notify.success("Employee remarks updated successfully");
+                          notify.success("Internal remarks updated successfully");
                           setRemarksModal({ isOpen: false, leadId: null, lead: null, remarks: '' });
                           fetchLeads();
                           // Update the selected lead if it's the same

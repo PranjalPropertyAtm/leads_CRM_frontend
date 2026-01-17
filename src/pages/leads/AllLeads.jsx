@@ -854,7 +854,7 @@ const displayLeads = isSearching
 
                   {selected.employeeRemarks && (
                     <div className="md:col-span-2">
-                      <p className="text-gray-500 mb-1">Employee Remarks</p>
+                      <p className="text-gray-500 mb-1">Internal Remarks</p>
                       <p className="font-medium text-gray-800 bg-blue-50 p-2 rounded">{selected.employeeRemarks}</p>
                     </div>
                   )}
