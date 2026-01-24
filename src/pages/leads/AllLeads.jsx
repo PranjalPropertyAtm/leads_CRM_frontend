@@ -13,6 +13,7 @@ import {
   Edit,
   CheckCircle,
   MessageSquare,
+  Bell,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
@@ -26,6 +27,7 @@ import { useFetchEmployees } from "../../hooks/useEmployeeQueries.js";
 import { useLoadUser } from "../../hooks/useAuthQueries.js";
 
 import AddVisitModal from "../../components/AddVisitModal.jsx";
+import AddReminderModal from "../../components/AddReminderModal.jsx";
 import VisitHistory from "../../components/VisitHistory.jsx";
 // import SearchableSelect from "../../components/SearchableSelect.jsx";
 import RegisterLeadModal from "../../components/RegisterLeadModal.jsx";
@@ -73,6 +75,10 @@ export default function AllLeads() {
   const [visitModal, setVisitModal] = useState(false);
   const [visitHistoryOpen, setVisitHistoryOpen] = useState(false);
   const [visitLead, setVisitLead] = useState(null);
+
+  // reminders
+  const [reminderModal, setReminderModal] = useState(false);
+  const [reminderLead, setReminderLead] = useState(null);
 
   // status change confirmation
   const [statusChangeModal, setStatusChangeModal] = useState({
@@ -134,21 +140,21 @@ export default function AllLeads() {
   // -------------------------
   // Handlers
   // -------------------------
-  const handleDelete = (id) => {
-    if (!window.confirm("Are you sure you want to delete this lead?")) return;
-    if (!deleteLeadMutation) return notify.error("Delete not available");
+  // const handleDelete = (id) => {
+  //   if (!window.confirm("Are you sure you want to delete this lead?")) return;
+  //   if (!deleteLeadMutation) return notify.error("Delete not available");
 
-    deleteLeadMutation.mutate(id, {
-      onSuccess: () => {
-        notify.success("Lead deleted successfully");
-        if (selected?._id === id) setSelected(null);
-        queryClient.invalidateQueries(["leads"]);
-      },
-      onError: (err) => {
-        notify.error(err?.response?.data?.message || "Failed to delete lead");
-      },
-    });
-  };
+  //   deleteLeadMutation.mutate(id, {
+  //     onSuccess: () => {
+  //       notify.success("Lead deleted successfully");
+  //       if (selected?._id === id) setSelected(null);
+  //       queryClient.invalidateQueries(["leads"]);
+  //     },
+  //     onError: (err) => {
+  //       notify.error(err?.response?.data?.message || "Failed to delete lead");
+  //     },
+  //   });
+  // };
 
   const handlePageChange = (newPage) => {
     const maxPages = filter.trim() ? totalPagesForPagination : totalPages;
@@ -258,12 +264,12 @@ export default function AllLeads() {
   //   if (currentPage > totalPagesForPagination) setCurrentPage(1);
   // }, [totalPagesForPagination]);
 
-const displayLeads = isSearching
-  ? filtered.slice(
+  const displayLeads = isSearching
+    ? filtered.slice(
       (currentPage - 1) * displayPageSize,
       currentPage * displayPageSize
     )
-  : leads; // 🔥 IMPORTANT
+    : leads; // 🔥 IMPORTANT
 
   // -------------------------
   // Registration
@@ -475,7 +481,7 @@ const displayLeads = isSearching
             <Search className="absolute left-3 top-3 text-gray-400" size={16} />
             <input
               placeholder="Search leads..."
-                className="pl-11 pr-4 py-2.5 rounded-lg border border-gray-300 bg-white shadow-sm w-80 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm font-medium placeholder:text-gray-400"
+              className="pl-11 pr-4 py-2.5 rounded-lg border border-gray-300 bg-white shadow-sm w-80 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm font-medium placeholder:text-gray-400"
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
             />
@@ -486,122 +492,121 @@ const displayLeads = isSearching
         <div className="bg-white rounded-xl shadow-md border overflow-hidden">
           {isLoading ? (
             <div className="py-10 text-center text-gray-500">Loading...</div>
-          ) :displayLeads.length === 0
- ? (
-            <div className="py-10 text-center text-gray-500">No leads found</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-gray-50 text-gray-600 text-xs uppercase tracking-wide">
-                    {[
-                      "S.NO",
-                      "Name",
-                      "Type",
-                      "Date",
-                      "Mobile",
-                      "Location",
-                      "Property",
-                      "Budget",
-                      "Source",
-                      "Status",
-                      "Registered",
-                      "Visits",
-                      "",
-                    ].map((h) => (
-                      <th key={h} className="px-3 py-4 font-semibold text-left">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
+          ) : displayLeads.length === 0
+            ? (
+              <div className="py-10 text-center text-gray-500">No leads found</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-gray-50 text-gray-600 text-xs uppercase tracking-wide">
+                      {[
+                        "S.NO",
+                        "Name",
+                        "Type",
+                        "Date",
+                        "Mobile",
+                        "Location",
+                        "Property",
+                        "Budget",
+                        "Source",
+                        "Status",
+                        "Registered",
+                        "Visits",
+                        "",
+                      ].map((h) => (
+                        <th key={h} className="px-3 py-4 font-semibold text-left">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
 
-                <tbody> 
-                  {displayLeads.map((lead, idx) => (
-                    <tr
-                      key={lead._id}
-                      className={`hover:bg-blue-50/50 transition-colors group ${
-                        lead.employeeRemarks ? "bg-purple-50/30 border-l-4 border-l-purple-500" : ""
-                      }`}
-                    >
-                      <td className="px-4 py-3 text-gray-600 font-semibold">{(currentPage - 1) * displayPageSize + idx + 1}</td>
+                  <tbody>
+                    {displayLeads.map((lead, idx) => (
+                      <tr
+                        key={lead._id}
+                        className={`hover:bg-blue-50/50 transition-colors group ${lead.employeeRemarks ? "bg-purple-50/30 border-l-4 border-l-purple-500" : ""
+                          }`}
+                      >
+                        <td className="px-4 py-3 text-gray-600 font-semibold">{(currentPage - 1) * displayPageSize + idx + 1}</td>
 
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-gray-900">{lead.customerName || lead.ownerName}</span>
-                          {lead.employeeRemarks && (
-                            <span 
-                              className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full font-semibold"
-                              title="Customer Care has added remarks"
-                            >
-                              <MessageSquare size={12} />
-                             
-                            </span>
-                          )}
-                        </div>
-                      </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-gray-900">{lead.customerName || lead.ownerName}</span>
+                            {lead.employeeRemarks && (
+                              <span
+                                className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full font-semibold"
+                                title="Customer Care has added remarks"
+                              >
+                                <MessageSquare size={12} />
 
-                      <td className="px-4 py-3">
-                        <span
-                          className={`px-3 py-1.5 text-xs rounded-full font-semibold ${lead.customerType === "tenant" ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"
-                            }`}
-                        >
-                          {lead.customerType}
-                        </span>
-                      </td>
+                              </span>
+                            )}
+                          </div>
+                        </td>
 
-                      <td className="px-4 py-3">{new Date(lead.createdAt).toLocaleDateString()}</td>
-                      <td className="px-4 py-3">{lead.mobileNumber || "N/A"}</td>
-                     <td className="px-4 py-3">{lead.customerType === "tenant" ? (Array.isArray(lead.preferredLocation) ? lead.preferredLocation.join(", ") : lead.preferredLocation) : lead.propertyLocation}</td>
-                      <td className="px-4 py-3">{lead.propertyType || "N/A"}</td>
-                      <td className="px-4 py-3">{lead.budget ? `₹${lead.budget}` : "N/A"}</td>
-                      <td className="px-4 py-3">{lead.source || "N/A"}</td>
+                        <td className="px-4 py-3">
+                          <span
+                            className={`px-3 py-1.5 text-xs rounded-full font-semibold ${lead.customerType === "tenant" ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"
+                              }`}
+                          >
+                            {lead.customerType}
+                          </span>
+                        </td>
 
-                      <td className="px-4 py-3">
-                        <select
-                          value={lead.status || "new"}
-                          onChange={(e) => {
-                            const newStatus = e.target.value;
-                            const currentStatus = lead.status || "new";
+                        <td className="px-4 py-3">{new Date(lead.createdAt).toLocaleDateString()}</td>
+                        <td className="px-4 py-3">{lead.mobileNumber || "N/A"}</td>
+                        <td className="px-4 py-3">{lead.customerType === "tenant" ? (Array.isArray(lead.preferredLocation) ? lead.preferredLocation.join(", ") : lead.preferredLocation) : lead.propertyLocation}</td>
+                        <td className="px-4 py-3">{lead.propertyType || "N/A"}</td>
+                        <td className="px-4 py-3">{lead.budget ? `₹${lead.budget}` : "N/A"}</td>
+                        <td className="px-4 py-3">{lead.source || "N/A"}</td>
 
-                            // Ask for confirmation if changing to deal_closed
-                            if (newStatus === "deal_closed") {
-                              setStatusChangeModal({
-                                isOpen: true,
-                                leadId: lead._id,
-                                newStatus: newStatus,
-                                currentStatus: currentStatus,
-                              });
-                              // Reset select to current value temporarily
-                              e.target.value = currentStatus;
-                              return;
-                            }
+                        <td className="px-4 py-3">
+                          <select
+                            value={lead.status || "new"}
+                            onChange={(e) => {
+                              const newStatus = e.target.value;
+                              const currentStatus = lead.status || "new";
 
-                            // If changing to contacted, open a small modal to capture customer remark
-                            if (newStatus === "contacted") {
-                              setContactedModal({
-                                isOpen: true,
-                                leadId: lead._id,
-                                remark: lead.customerRemark || '',
-                                currentStatus: currentStatus,
-                              });
-                              e.target.value = currentStatus;
-                              return;
-                            }
-
-                            updateStatusMutation.mutate(
-                              { id: lead._id, status: newStatus },
-                              {
-                                onSuccess: () => {
-                                  notify.success("Status updated successfully");
-                                },
-                                onError: (err) => {
-                                  notify.error(err?.response?.data?.message || "Failed to update status");
-                                  // Reset to previous value on error
-                                  e.target.value = currentStatus;
-                                },
+                              // Ask for confirmation if changing to deal_closed
+                              if (newStatus === "deal_closed") {
+                                setStatusChangeModal({
+                                  isOpen: true,
+                                  leadId: lead._id,
+                                  newStatus: newStatus,
+                                  currentStatus: currentStatus,
+                                });
+                                // Reset select to current value temporarily
+                                e.target.value = currentStatus;
+                                return;
                               }
-                            );
-                          }}
-                          className={`text-xs px-2 py-1 rounded-full border-0 font-medium ${lead.status === "deal_closed"
+
+                              // If changing to contacted, open a small modal to capture customer remark
+                              if (newStatus === "contacted") {
+                                setContactedModal({
+                                  isOpen: true,
+                                  leadId: lead._id,
+                                  remark: lead.customerRemark || '',
+                                  currentStatus: currentStatus,
+                                });
+                                e.target.value = currentStatus;
+                                return;
+                              }
+
+                              updateStatusMutation.mutate(
+                                { id: lead._id, status: newStatus },
+                                {
+                                  onSuccess: () => {
+                                    notify.success("Status updated successfully");
+                                  },
+                                  onError: (err) => {
+                                    notify.error(err?.response?.data?.message || "Failed to update status");
+                                    // Reset to previous value on error
+                                    e.target.value = currentStatus;
+                                  },
+                                }
+                              );
+                            }}
+                            className={`text-xs px-2 py-1 rounded-full border-0 font-medium ${lead.status === "deal_closed"
                               ? "bg-green-100 text-green-700"
                               : lead.status === "lost"
                                 ? "bg-red-100 text-red-700"
@@ -614,120 +619,135 @@ const displayLeads = isSearching
                                       : lead.status === "contacted"
                                         ? "bg-orange-100 text-orange-700"
                                         : "bg-gray-100 text-gray-700"
-                            }`}
-                          disabled={
-                            updateStatusMutation.isPending ||
-                            lead.dealClosed ||
-                            lead.status === "deal_closed" ||
-                            lead.createdBy?._id !== user?._id
-                          }
-                          title={
-                            lead.dealClosed || lead.status === "deal_closed"
-                              ? "Deal is closed. Cannot modify status."
-                              : lead.createdBy?._id !== user?._id
-                                ? "Only the creator can change status"
-                                : ""
-                          }
-                        >
-                          <option value="new">New</option>
-                          <option value="contacted">Contacted</option>
-                          <option value="registered">Registered</option>
-                          <option value="visit_scheduled">Visit Scheduled</option>
-                          <option value="visit_completed">Visit Completed</option>
-                          <option value="deal_closed">Deal Closed</option>
-                          <option value="lost">Lost</option>
-                        </select>
-                      </td>
-
-                      <td className="px-4 py-3">
-                        {lead.isRegistered ? (
-                          <span className="px-3 py-1.5 bg-green-100 text-green-700 text-xs rounded-full font-semibold">Yes</span>
-                        ) : (
-                          <span className="px-3 py-1.5 bg-red-100 text-red-700 text-xs rounded-full font-semibold">No</span>
-                        )}
-                      </td>
-
-                      <td className="px-4 py-3">
-                        <span className="px-3 py-1.5 bg-purple-100 text-purple-700 text-xs rounded-full font-semibold">{lead.totalVisits || 0} Visits</span>
-                      </td>
-
-                      <td className="px-4 py-3 text-right">
-                        <ActionMenu>
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelected(lead);
-                            }} 
-                            className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-blue-600 transition"
+                              }`}
+                            disabled={
+                              updateStatusMutation.isPending ||
+                              lead.dealClosed ||
+                              lead.status === "deal_closed" ||
+                              lead.createdBy?._id !== user?._id
+                            }
+                            title={
+                              lead.dealClosed || lead.status === "deal_closed"
+                                ? "Deal is closed. Cannot modify status."
+                                : lead.createdBy?._id !== user?._id
+                                  ? "Only the creator can change status"
+                                  : ""
+                            }
                           >
-                            <Eye size={14} /> View Details
-                          </button>
+                            <option value="new">New</option>
+                            <option value="contacted">Contacted</option>
+                            <option value="registered">Registered</option>
+                            <option value="visit_scheduled">Visit Scheduled</option>
+                            <option value="visit_completed">Visit Completed</option>
+                            <option value="deal_closed">Deal Closed</option>
+                            <option value="lost">Lost</option>
+                          </select>
+                        </td>
 
-                          {lead.createdBy?._id === user?._id && !lead.dealClosed && lead.status !== "deal_closed" && (
+                        <td className="px-4 py-3">
+                          {lead.isRegistered ? (
+                            <span className="px-3 py-1.5 bg-green-100 text-green-700 text-xs rounded-full font-semibold">Yes</span>
+                          ) : (
+                            <span className="px-3 py-1.5 bg-red-100 text-red-700 text-xs rounded-full font-semibold">No</span>
+                          )}
+                        </td>
+
+                        <td className="px-4 py-3">
+                          <span className="px-3 py-1.5 bg-purple-100 text-purple-700 text-xs rounded-full font-semibold">{lead.totalVisits || 0} Visits</span>
+                        </td>
+
+                        <td className="px-4 py-3 text-right">
+                          <ActionMenu>
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                navigate(`/edit-lead/${lead._id}`);
+                                setSelected(lead);
                               }}
                               className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-blue-600 transition"
                             >
-                              <Edit size={14} /> Edit Lead
+                              <Eye size={14} /> View Details
                             </button>
-                          )}
 
-                          {!lead.isRegistered && lead.createdBy?._id === user?._id && !lead.dealClosed && lead.status !== "deal_closed" && (
+                            {lead.createdBy?._id === user?._id && !lead.dealClosed && lead.status !== "deal_closed" && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate(`/edit-lead/${lead._id}`);
+                                }}
+                                className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-blue-600 transition"
+                              >
+                                <Edit size={14} /> Edit Lead
+                              </button>
+                            )}
+
+                            {!lead.isRegistered && lead.createdBy?._id === user?._id && !lead.dealClosed && lead.status !== "deal_closed" && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setRegLead(lead);
+                                  setShowRegModal(true);
+                                }}
+                                className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-green-600 transition"
+                              >
+                                <UserPlus size={14} /> Register
+                              </button>
+                            )}
+
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setRegLead(lead);
-                                setShowRegModal(true);
-                              }}
-                              className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-green-600 transition"
-                            >
-                              <UserPlus size={14} /> Register
-                            </button>
-                          )}
-
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setVisitHistoryOpen(true);
-                              setVisitLead(lead);
-                            }}
-                            className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-blue-600 transition"
-                          >
-                            <Eye size={14} /> View Visits
-                          </button>
-
-                          {lead.createdBy?._id === user?._id && !lead.dealClosed && lead.status !== "deal_closed" && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setVisitModal(true);
+                                setVisitHistoryOpen(true);
                                 setVisitLead(lead);
                               }}
-                              className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-green-600 transition"
+                              className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-blue-600 transition"
                             >
-                              <HousePlus size={14} /> Add Visit
+                              <Eye size={14} /> View Visits
                             </button>
-                          )}
 
-                          {!lead.dealClosed && lead.status !== "deal_closed" && lead.createdBy?._id === user?._id && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setDealClosedModal({
-                                  isOpen: true,
-                                  leadId: lead._id,
-                                });
-                              }}
-                              className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-green-700 font-medium transition"
-                            >
-                              <CheckCircle size={14} /> Mark Deal Closed
-                            </button>
-                          )}
 
-                          {/* {!lead.dealClosed && lead.status !== "deal_closed" && (
+
+                            {lead.createdBy?._id === user?._id && !lead.dealClosed && lead.status !== "deal_closed" && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setVisitModal(true);
+                                  setVisitLead(lead);
+                                }}
+                                className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-green-600 transition"
+                              >
+                                <HousePlus size={14} /> Add Visit
+                              </button>
+                            )}
+
+                            {lead.createdBy?._id === user?._id && !lead.dealClosed && lead.status !== "deal_closed" && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setReminderModal(true);
+                                  setReminderLead(lead);
+                                }}
+                                className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-purple-600 transition"
+                              >
+                                <Bell size={14} /> Add Reminder
+                              </button>
+                            )}
+
+                            {!lead.dealClosed && lead.status !== "deal_closed" && lead.createdBy?._id === user?._id && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setDealClosedModal({
+                                    isOpen: true,
+                                    leadId: lead._id,
+                                  });
+                                }}
+                                className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-green-700 font-medium transition"
+                              >
+                                <CheckCircle size={14} /> Mark Deal Closed
+                              </button>
+                            )}
+
+                            {/* {!lead.dealClosed && lead.status !== "deal_closed" && (
                             <button 
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -738,14 +758,14 @@ const displayLeads = isSearching
                               <Trash2 size={14} /> Delete
                             </button>
                           )} */}
-                        </ActionMenu>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                          </ActionMenu>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
         </div>
 
         {/* Pagination */}
@@ -959,6 +979,9 @@ const displayLeads = isSearching
         {/* Visits */}
         {visitModal && <AddVisitModal open={visitModal} onClose={() => setVisitModal(false)} lead={visitLead} />}
         {visitHistoryOpen && <VisitHistory open={visitHistoryOpen} onClose={() => setVisitHistoryOpen(false)} leadId={visitLead?._id} />}
+
+        {/* Reminders */}
+        {reminderModal && <AddReminderModal open={reminderModal} onClose={() => setReminderModal(false)} lead={reminderLead} />}
 
 
 

@@ -23,6 +23,7 @@ const MyVisits = lazy(() => import("./pages/Visits/MyVisits.jsx"));
 const AllVisits = lazy(() => import("./pages/Visits/AllVisits.jsx"));
 // const CustomerDetail = lazy(() => import("./pages/customers/CustomerDetail.jsx"));
 const AllCustomers = lazy(() => import("./pages/customers/AllCustomers.jsx"));
+const Reminders = lazy(() => import("./pages/Reminders.jsx"));
 const Settings = lazy(() => import("./pages/Settings.jsx"));
 
 // Loading fallback component
@@ -66,6 +67,7 @@ function App() {
             <Route path="/all-visits" element={<AllVisits />} />
             {/* <Route path="/customers/:id" element={<CustomerDetail />} /> */}
             <Route path="/all-customers" element={<AllCustomers />} />
+            <Route path="/reminders" element={<Reminders />} />
             <Route path="/settings" element={<Settings />} />
           </Route>
 

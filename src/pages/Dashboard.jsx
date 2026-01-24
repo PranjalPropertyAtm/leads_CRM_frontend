@@ -15,7 +15,9 @@ import {
   UserCircle2,
 } from "lucide-react";
 import { useDashboardStats } from "../hooks/useDashboardQueries.js";
+import { useLoadUser } from "../hooks/useAuthQueries.js";
 import { useNavigate } from "react-router-dom";
+import RemindersList from "../components/RemindersList.jsx";
 
 // Memoized metric card component for performance
 const MetricCard = React.memo(({ icon: Icon, title, value, subtitle, trend, color, delay = 0 }) => {
@@ -158,6 +160,7 @@ RecentLeadItem.displayName = "RecentLeadItem";
 
 export default function Dashboard() {
   const { data: stats, isLoading, error } = useDashboardStats();
+  const { data: user } = useLoadUser();
 
   // Memoize calculations for performance
   const metrics = useMemo(() => {
@@ -253,6 +256,16 @@ export default function Dashboard() {
             delay={0.3}
           />
         </div>
+
+        {/* Today's Reminders - All users */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.35 }}
+          className="mb-8"
+        >
+          <RemindersList date={new Date().toISOString().split("T")[0]} showAddButton={false} />
+        </motion.div>
 
         {/* Charts and Activity Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

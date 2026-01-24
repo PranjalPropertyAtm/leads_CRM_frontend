@@ -371,7 +371,7 @@ export default function AllCustomers() {
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-700">
-                            {lead?.status || "Lead"}
+                            {lead?.createdBy?.name || "Employee"}
                           </span>
                           <span className="text-xs text-gray-400">{formatDate(lead?.createdAt)}</span>
                         </div>

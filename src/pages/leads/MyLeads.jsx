@@ -16,6 +16,7 @@ import {
   HousePlus,
   Edit,
   CheckCircle,
+  Bell,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMyLeads, useDeleteLead, useUpdateLeadStatus, useMarkDealClosed } from "../../hooks/useLeadQueries.js";
@@ -26,6 +27,7 @@ import { notify } from "../../utils/toast.js";
 import axiosInstance from "../../lib/axios.js";
 import { useNavigate } from "react-router-dom";
 import AddVisitModal from "../../components/AddVisitModal.jsx";
+import AddReminderModal from "../../components/AddReminderModal.jsx";
 import VisitHistory from "../../components/VisitHistory.jsx";
 import RegisterLeadModal from "../../components/RegisterLeadModal.jsx";
 import ConfirmModal from "../../components/ConfirmModal.jsx";
@@ -63,6 +65,10 @@ export default function MyLeads() {
   const [visitModal, setVisitModal] = useState(false);
   const [visitHistoryOpen, setVisitHistoryOpen] = useState(false);
   const [visitLead, setVisitLead] = useState(null);
+  
+  // Reminders
+  const [reminderModal, setReminderModal] = useState(false);
+  const [reminderLead, setReminderLead] = useState(null);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -654,6 +660,8 @@ export default function MyLeads() {
                             <Eye size={14}/> View Visits
                           </button>
 
+                         
+
                           {/* ADD VISIT - only for creator and not closed */}
                           {lead.createdBy?._id === user?._id && !lead.dealClosed && lead.status !== "deal_closed" && (
                             <button
@@ -664,6 +672,19 @@ export default function MyLeads() {
                                className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-green-600 transition"
                             >
                               <HousePlus size={14} /> Add Visit
+                            </button>
+                          )}
+
+                           {/* ADD REMINDER - only for creator and not closed */}
+                           {lead.createdBy?._id === user?._id && !lead.dealClosed && lead.status !== "deal_closed" && (
+                            <button
+                              onClick={() => {
+                                setReminderModal(true);
+                                setReminderLead(lead);
+                              }}
+                              className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-purple-600 transition"
+                            >
+                              <Bell size={14} /> Add Reminder
                             </button>
                           )}
 
@@ -913,6 +934,9 @@ export default function MyLeads() {
         {/* Visits */}
         {visitModal && <AddVisitModal open={visitModal} onClose={() => setVisitModal(false)} lead={visitLead} />}
         {visitHistoryOpen && <VisitHistory open={visitHistoryOpen} onClose={() => setVisitHistoryOpen(false)} leadId={visitLead?._id} />}
+        
+        {/* Reminders */}
+        {reminderModal && <AddReminderModal open={reminderModal} onClose={() => setReminderModal(false)} lead={reminderLead} />}
 
 
 

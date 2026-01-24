@@ -12,6 +12,7 @@ import {
   FiX,
   FiFolder,
   FiBarChart2,
+  FiBell,
 } from "react-icons/fi";
 
 const AdminSidebar = () => {
@@ -275,6 +276,21 @@ const AdminSidebar = () => {
             </>
           {/* )} */}
 
+            {/* Reminders - All users */}
+            <NavLink
+              to="/reminders"
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-4 py-3 mb-1 rounded-lg transition-all duration-200 font-medium
+                 ${isActive 
+                   ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-500/30" 
+                   : "text-slate-300 hover:bg-slate-800/50 hover:text-white"}`
+              }
+              onClick={() => setIsOpen(false)}
+            >
+              <FiBell className="text-lg" />
+              <span>Reminders</span>
+            </NavLink>
+
           {/* Reports */}
           <NavLink
             to="/reports"
@@ -289,6 +305,8 @@ const AdminSidebar = () => {
             <FiBarChart2 className="text-lg" />
             <span>Reports</span>
           </NavLink>
+
+        
 
 
 

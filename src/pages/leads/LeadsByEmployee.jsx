@@ -14,6 +14,7 @@ import {
   CheckCircle,
   Calendar,
   MessageSquare,
+  Bell,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
@@ -27,6 +28,7 @@ import { useFetchEmployees } from "../../hooks/useEmployeeQueries.js";
 import { useLoadUser } from "../../hooks/useAuthQueries.js";
 
 import AddVisitModal from "../../components/AddVisitModal.jsx";
+import AddReminderModal from "../../components/AddReminderModal.jsx";
 import VisitHistory from "../../components/VisitHistory.jsx";
 import RegisterLeadModal from "../../components/RegisterLeadModal.jsx";
 import ConfirmModal from "../../components/ConfirmModal.jsx";
@@ -67,6 +69,10 @@ export default function LeadsByEmployee() {
   const [visitModal, setVisitModal] = useState(false);
   const [visitHistoryOpen, setVisitHistoryOpen] = useState(false);
   const [visitLead, setVisitLead] = useState(null);
+  
+  // Reminders
+  const [reminderModal, setReminderModal] = useState(false);
+  const [reminderLead, setReminderLead] = useState(null);
 
   // Status change confirmation
   const [statusChangeModal, setStatusChangeModal] = useState({
@@ -830,6 +836,20 @@ export default function LeadsByEmployee() {
                             <Eye size={14} /> View Visits
                           </button>
 
+                          {/* Add Reminder - only for creator and not closed */}
+                          {lead.createdBy?._id === user?._id && !lead.dealClosed && lead.status !== "deal_closed" && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setReminderModal(true);
+                                setReminderLead(lead);
+                              }}
+                              className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-purple-600 transition"
+                            >
+                              <Bell size={14} /> Add Reminder
+                            </button>
+                          )}
+
                             {/* Add Remarks - Only for Customer Care Executives */}
                             {isCustomerCare && !lead.dealClosed && lead.status !== "deal_closed" && (
                             <button
@@ -1285,6 +1305,15 @@ export default function LeadsByEmployee() {
             open={visitHistoryOpen}
             onClose={() => setVisitHistoryOpen(false)}
             leadId={visitLead?._id}
+          />
+        )}
+        
+        {/* Reminders */}
+        {reminderModal && (
+          <AddReminderModal
+            open={reminderModal}
+            onClose={() => setReminderModal(false)}
+            lead={reminderLead}
           />
         )}
 
