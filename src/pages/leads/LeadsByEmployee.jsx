@@ -33,6 +33,7 @@ import VisitHistory from "../../components/VisitHistory.jsx";
 import RegisterLeadModal from "../../components/RegisterLeadModal.jsx";
 import ConfirmModal from "../../components/ConfirmModal.jsx";
 import SearchableSelect from "../../components/SearchableSelect.jsx";
+import { formatDate } from "../../utils/dateFormat.js";
 
 export default function LeadsByEmployee() {
   const queryClient = useQueryClient();
@@ -554,12 +555,12 @@ export default function LeadsByEmployee() {
                 Showing leads for: <span className="font-semibold text-gray-900">{selectedEmployeeName}</span>
                 {startDate && (
                   <span className="ml-4">
-                    From: <span className="font-semibold">{new Date(startDate).toLocaleDateString()}</span>
+                    From: <span className="font-semibold">{formatDate(startDate)}</span>
                   </span>
                 )}
                 {endDate && (
                   <span className="ml-4">
-                    To: <span className="font-semibold">{new Date(endDate).toLocaleDateString()}</span>
+                    To: <span className="font-semibold">{formatDate(endDate)}</span>
                   </span>
                 )}
               </p>
@@ -646,7 +647,7 @@ export default function LeadsByEmployee() {
                       </td>
 
                       <td className="px-4 py-3">
-                        {new Date(lead.createdAt).toLocaleDateString()}
+                        {formatDate(lead.createdAt)}
                       </td>
                       <td className="px-4 py-3">{lead.mobileNumber || "N/A"}</td>
                       <td className="px-4 py-3">
@@ -1160,9 +1161,7 @@ export default function LeadsByEmployee() {
                       label="Registration Date"
                       value={
                         selected.registrationDetails?.registrationDate
-                          ? new Date(
-                              selected.registrationDetails.registrationDate
-                            ).toLocaleDateString()
+                          ? formatDate(selected.registrationDetails.registrationDate)
                           : "N/A"
                       }
                     />

@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Search, Eye, ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { useAllVisits } from "../../hooks/useVisitQueries";
 import VisitDetailsModal from "../../components/VisitDetailsModal";
+import { formatDate } from "../../utils/dateFormat";
 
 export default function AllVisits() {
   const [filter, setFilter] = useState("");
@@ -123,12 +124,12 @@ export default function AllVisits() {
                   <p className="text-sm text-gray-600 mt-2">
                     {startDate && (
                       <span>
-                        From: <span className="font-semibold text-gray-900">{new Date(startDate).toLocaleDateString()}</span>
+                        From: <span className="font-semibold text-gray-900">{formatDate(startDate)}</span>
                       </span>
                     )}
                     {endDate && (
                       <span className={startDate ? " ml-4" : ""}>
-                        To: <span className="font-semibold text-gray-900">{new Date(endDate).toLocaleDateString()}</span>
+                        To: <span className="font-semibold text-gray-900">{formatDate(endDate)}</span>
                       </span>
                     )}
                   </p>
@@ -187,11 +188,7 @@ export default function AllVisits() {
                       </td>
                       <td className="px-6 py-4">
                         <span className="text-gray-700 font-medium">
-                          {new Date(visit.visitDate).toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric'
-                          })}
+                          {formatDate(visit.visitDate)}
                         </span>
                       </td>
                       <td className="px-6 py-4">

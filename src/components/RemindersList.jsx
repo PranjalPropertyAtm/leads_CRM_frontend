@@ -4,6 +4,7 @@ import { Bell, Calendar, Clock, CheckCircle, Trash2, Edit, X, User } from "lucid
 import { useRemindersByDate, useMarkReminderCompleted, useDeleteReminder } from "../hooks/useReminderQueries";
 import { useLoadUser } from "../hooks/useAuthQueries";
 import { notify } from "../utils/toast";
+import { formatDate, formatDateLong } from "../utils/dateFormat";
 import AddReminderModal from "./AddReminderModal";
 import CancelReminderModal from "./CancelReminderModal";
 
@@ -43,17 +44,6 @@ export default function RemindersList({ date, showAddButton = true }) {
   //   }
   // };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return "";
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
-
   const isToday = (dateString) => {
     if (!dateString) return false;
     const today = new Date();
@@ -89,7 +79,7 @@ export default function RemindersList({ date, showAddButton = true }) {
           <div className="flex items-center gap-2">
             <Bell className="text-blue-600" size={20} />
             <h3 className="text-lg font-semibold text-gray-900">
-              {isToday(date) ? "Today's Reminders" : `Reminders for ${formatDate(date)}`}
+              {isToday(date) ? "Today's Reminders" : `Reminders for ${formatDateLong(date)}`}
             </h3>
             {incompleteReminders.length > 0 && (
               <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full font-semibold">
@@ -152,7 +142,7 @@ export default function RemindersList({ date, showAddButton = true }) {
                             <div className="flex items-center gap-1">
                               <Calendar size={12} />
                               <span>
-                                {new Date(reminder.reminderDate).toLocaleDateString()}
+                                {formatDate(reminder.reminderDate)}
                               </span>
                             </div>
                             {reminder.reminderTime && (
@@ -239,7 +229,7 @@ export default function RemindersList({ date, showAddButton = true }) {
                             <div className="flex items-center gap-1">
                               <Calendar size={12} />
                               <span>
-                                {new Date(reminder.reminderDate).toLocaleDateString()}
+                                {formatDate(reminder.reminderDate)}
                               </span>
                             </div>
                             {reminder.reminderTime && (

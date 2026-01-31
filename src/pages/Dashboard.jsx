@@ -18,6 +18,7 @@ import { useDashboardStats } from "../hooks/useDashboardQueries.js";
 import { useLoadUser } from "../hooks/useAuthQueries.js";
 import { useNavigate } from "react-router-dom";
 import RemindersList from "../components/RemindersList.jsx";
+import { formatDate } from "../utils/dateFormat.js";
 
 // Memoized metric card component for performance
 const MetricCard = React.memo(({ icon: Icon, title, value, subtitle, trend, color, delay = 0 }) => {
@@ -105,11 +106,7 @@ const StatusBadge = ({ status }) => {
 const RecentLeadItem = React.memo(({ lead }) => {
   const navigate = useNavigate();
   const name = lead.customerName || lead.ownerName || "N/A";
-  const date = new Date(lead.createdAt).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+  const date = formatDate(lead.createdAt);
 
   return (
     <div

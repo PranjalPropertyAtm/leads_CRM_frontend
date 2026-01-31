@@ -5,6 +5,7 @@ import { useAllReminders, useMarkReminderCompleted, useDeleteReminder } from "..
 import { useFetchEmployees } from "../hooks/useEmployeeQueries";
 import { useLoadUser } from "../hooks/useAuthQueries";
 import { notify } from "../utils/toast";
+import { formatDate } from "../utils/dateFormat";
 import AddReminderModal from "../components/AddReminderModal";
 import CancelReminderModal from "../components/CancelReminderModal";
 
@@ -313,11 +314,7 @@ export default function Reminders() {
                                 <div className="flex items-center gap-1">
                                   <Calendar size={14} />
                                   <span>
-                                    {new Date(reminder.reminderDate).toLocaleDateString("en-US", {
-                                      year: "numeric",
-                                      month: "short",
-                                      day: "numeric",
-                                    })}
+                                    {formatDate(reminder.reminderDate)}
                                   </span>
                                 </div>
                                 {reminder.reminderTime && (
@@ -406,11 +403,7 @@ export default function Reminders() {
                               <div className="flex items-center gap-1">
                                 <Calendar size={12} />
                                 <span>
-                                  {new Date(reminder.reminderDate).toLocaleDateString("en-US", {
-                                    year: "numeric",
-                                    month: "short",
-                                    day: "numeric",
-                                  })}
+                                  {formatDate(reminder.reminderDate)}
                                 </span>
                               </div>
                               {reminder.reminderTime && (
@@ -482,11 +475,7 @@ export default function Reminders() {
                               <div className="flex items-center gap-1">
                                 <Calendar size={12} />
                                 <span>
-                                  {new Date(reminder.reminderDate).toLocaleDateString("en-US", {
-                                    year: "numeric",
-                                    month: "short",
-                                    day: "numeric",
-                                  })}
+                                  {formatDate(reminder.reminderDate)}
                                 </span>
                               </div>
                               {reminder.reminderTime && (

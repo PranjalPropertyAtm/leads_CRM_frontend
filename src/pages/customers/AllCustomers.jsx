@@ -1,15 +1,9 @@
-const formatDate = (value) => {
-  if (!value) return "";
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return "";
-  return d.toLocaleDateString();
-};
-
 import React, { useMemo, useState } from "react";
 import { Search, Eye, Users, ChevronLeft, ChevronRight, Trash2, X } from "lucide-react";
 import { motion } from "framer-motion";
 import { useFetchCustomers } from "../../hooks/useCustomerQueries.js";
-import { notify } from "../../utils/toast.js"
+import { notify } from "../../utils/toast.js";
+import { formatDate } from "../../utils/dateFormat.js";
 
 const buildLeadArray = (cust) => {
   const list = [cust.leadId, ...(cust.leadHistory || [])].filter(Boolean);

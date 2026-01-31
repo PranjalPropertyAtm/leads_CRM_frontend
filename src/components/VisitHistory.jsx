@@ -2,6 +2,7 @@
 import { motion } from "framer-motion";
 import { X, Calendar, User } from "lucide-react";
 import { useLeadVisits } from "../hooks/useVisitQueries";
+import { formatDate } from "../utils/dateFormat";
 
 export default function VisitHistory({ open, onClose, leadId }) {
   const { data: visits = [], isLoading } = useLeadVisits(leadId);
@@ -45,7 +46,7 @@ export default function VisitHistory({ open, onClose, leadId }) {
                   <div className="flex justify-between">
                     <p className="font-semibold">
                       <Calendar size={16} className="inline-block mr-1" />
-                      {new Date(v.visitDate).toLocaleDateString()}
+                      {formatDate(v.visitDate)}
                     </p>
 
                     <p className="text-sm flex items-center gap-1">

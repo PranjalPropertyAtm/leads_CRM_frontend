@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useGetProfile, useUpdateProfile, useChangePassword } from '../hooks/useSettingsQueries.js';
 import { User, Mail, Phone, Lock, Save, Eye, EyeOff } from 'lucide-react';
+import { formatDate } from '../utils/dateFormat.js';
 
 export default function Settings() {
   const { data: profile, isLoading: profileLoading } = useGetProfile();
@@ -329,7 +330,7 @@ export default function Settings() {
             <div className="flex justify-between items-center py-2">
               <span className="text-sm text-gray-600">Member Since</span>
               <span className="text-sm font-medium text-gray-900">
-                {profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString() : 'N/A'}
+                {profile?.createdAt ? formatDate(profile.createdAt) : 'N/A'}
               </span>
             </div>
           </div>

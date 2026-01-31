@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Search, Eye, PlusCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { useMyVisits } from "../../hooks/useVisitQueries";
 import VisitDetailsModal from "../../components/VisitDetailsModal";
+import { formatDate } from "../../utils/dateFormat";
 // import AddVisitModal from "../../components/AddVisitModal";
 
 export default function MyVisits() {
@@ -126,11 +127,7 @@ export default function MyVisits() {
 
                       <td className="px-6 py-4">
                         <span className="text-gray-700 font-medium">
-                          {new Date(visit.visitDate).toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric'
-                          })}
+                          {formatDate(visit.visitDate)}
                         </span>
                       </td>
                       <td className="px-6 py-4">

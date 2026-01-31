@@ -3,6 +3,7 @@
 import React, { useEffect } from "react";
 import { motion } from "framer-motion";
 import { X } from "lucide-react";
+import { formatDate } from "../utils/dateFormat";
 
 export default function VisitDetailsModal({ open, onClose, visit }) {
   useEffect(() => {
@@ -78,7 +79,7 @@ export default function VisitDetailsModal({ open, onClose, visit }) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             <Info
               label="Visit Date"
-              value={new Date(visit.visitDate).toLocaleDateString()}
+              value={formatDate(visit.visitDate)}
             />
 
             {/* -------- TENANT LEAD VISIT -------- */}

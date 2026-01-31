@@ -32,6 +32,7 @@ import VisitHistory from "../../components/VisitHistory.jsx";
 // import SearchableSelect from "../../components/SearchableSelect.jsx";
 import RegisterLeadModal from "../../components/RegisterLeadModal.jsx";
 import ConfirmModal from "../../components/ConfirmModal.jsx";
+import { formatDate } from "../../utils/dateFormat.js";
 
 export default function AllLeads() {
   const queryClient = useQueryClient();
@@ -553,7 +554,7 @@ export default function AllLeads() {
                           </span>
                         </td>
 
-                        <td className="px-4 py-3">{new Date(lead.createdAt).toLocaleDateString()}</td>
+                        <td className="px-4 py-3">{formatDate(lead.createdAt)}</td>
                         <td className="px-4 py-3">{lead.mobileNumber || "N/A"}</td>
                         <td className="px-4 py-3">{lead.customerType === "tenant" ? (Array.isArray(lead.preferredLocation) ? lead.preferredLocation.join(", ") : lead.preferredLocation) : lead.propertyLocation}</td>
                         <td className="px-4 py-3">{lead.propertyType || "N/A"}</td>
@@ -906,7 +907,7 @@ export default function AllLeads() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                     <InfoRow label="Plan Name" value={selected.registrationDetails?.planName} />
                     <InfoRow label="Member Code" value={selected.registrationDetails?.memberCode || "N/A"} />
-                    <InfoRow label="Registration Date" value={selected.registrationDetails?.registrationDate ? new Date(selected.registrationDetails.registrationDate).toLocaleDateString() : "N/A"} />
+                    <InfoRow label="Registration Date" value={selected.registrationDetails?.registrationDate ? formatDate(selected.registrationDetails.registrationDate) : "N/A"} />
                     {/* SAFELY render registeredBy: either populated object or a string */}
                     <InfoRow label="Registered By" value={selected.registrationDetails?.registeredBy?.name || "NA"} />
                   </div>
