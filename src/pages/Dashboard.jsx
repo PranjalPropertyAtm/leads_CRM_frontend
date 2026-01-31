@@ -171,7 +171,7 @@ export default function Dashboard() {
       dealClosed: stats.leads?.dealClosed || 0,
       conversionRate: stats.leads?.conversionRate || 0,
       totalCustomers: stats.customers?.total || 0,
-      activeCustomers: stats.customers?.active || 0,
+      // activeCustomers: stats.customers?.active || 0,
       totalVisits: stats.visits?.total || 0,
       recentVisits: stats.visits?.recent || 0,
       recentLeads: stats.recentLeads || [],
@@ -243,7 +243,7 @@ export default function Dashboard() {
             icon={Building2}
             title="Total Customers"
             value={metrics.totalCustomers}
-            subtitle={`${metrics.activeCustomers} active`}
+            // subtitle={`${metrics.activeCustomers} active`}
             color="bg-purple-500"
             delay={0.2}
           />
