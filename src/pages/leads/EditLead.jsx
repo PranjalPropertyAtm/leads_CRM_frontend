@@ -38,6 +38,8 @@ export default function EditLead() {
     requirements: "",
     area: "",
     landmark: "",
+    requirementDurationValue: 30,
+    requirementDurationUnit: "days",
   });
 
   const [errors, setErrors] = useState({});
@@ -64,6 +66,7 @@ export default function EditLead() {
         : leadData.preferredLocation
         ? [leadData.preferredLocation]
         : [];
+      const dur = leadData.requirementDuration;
       setForm({
         customerName: leadData.customerName || "",
         ownerName: leadData.ownerName || "",
@@ -80,6 +83,8 @@ export default function EditLead() {
         requirements: leadData.requirements || "",
         area: leadData.area || "",
         landmark: leadData.landmark || "",
+        requirementDurationValue: dur?.value ?? 30,
+        requirementDurationUnit: dur?.unit || "days",
       });
       setErrors({});
     }
@@ -165,6 +170,10 @@ export default function EditLead() {
     if (customerType === "tenant") {
       payload.customerName = form.customerName;
       payload.preferredLocation = form.preferredLocation;
+      payload.requirementDuration = {
+        value: Number(form.requirementDurationValue) || 30,
+        unit: form.requirementDurationUnit || "days",
+      };
     } else {
       payload.ownerName = form.ownerName;
       payload.propertyLocation = form.propertyLocation;
@@ -193,6 +202,7 @@ export default function EditLead() {
         : leadData.preferredLocation
         ? [leadData.preferredLocation]
         : [];
+      const dur = leadData.requirementDuration;
       setForm({
         customerName: leadData.customerName || "",
         ownerName: leadData.ownerName || "",
@@ -209,6 +219,8 @@ export default function EditLead() {
         requirements: leadData.requirements || "",
         area: leadData.area || "",
         landmark: leadData.landmark || "",
+        requirementDurationValue: dur?.value ?? 30,
+        requirementDurationUnit: dur?.unit || "days",
       });
       setErrors({});
     }
@@ -498,6 +510,34 @@ export default function EditLead() {
               onChange={handleChange}
               error={errors.assignedTo}
             />
+
+            {/* Requirement Duration (timeline) - tenant leads only */}
+            {customerType === "tenant" && (
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-1">Requirement Duration</label>
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    min={1}
+                    name="requirementDurationValue"
+                    value={form.requirementDurationValue}
+                    onChange={handleChange}
+                    className="w-24 px-3 py-2 rounded-lg border border-gray-300"
+                  />
+                  <select
+                    name="requirementDurationUnit"
+                    value={form.requirementDurationUnit}
+                    onChange={handleChange}
+                    className="flex-1 px-3 py-2 rounded-lg border border-gray-300"
+                  >
+                    <option value="days">Days</option>
+                    <option value="weeks">Weeks</option>
+                    <option value="months">Months</option>
+                  </select>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">Expected closure timeline from lead creation</p>
+              </div>
+            )}
 
             <div className="md:col-span-2">
               <label className="text-sm font-medium text-gray-700 mb-1">
