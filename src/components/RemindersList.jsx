@@ -4,7 +4,7 @@ import { Bell, Calendar, Clock, CheckCircle, Trash2, Edit, X, User } from "lucid
 import { useRemindersByDate, useMarkReminderCompleted, useDeleteReminder } from "../hooks/useReminderQueries";
 import { useLoadUser } from "../hooks/useAuthQueries";
 import { notify } from "../utils/toast";
-import { formatDate, formatDateLong } from "../utils/dateFormat";
+import { formatDate, formatDateLong, formatTime24To12 } from "../utils/dateFormat";
 import AddReminderModal from "./AddReminderModal";
 import CancelReminderModal from "./CancelReminderModal";
 
@@ -148,7 +148,7 @@ export default function RemindersList({ date, showAddButton = true }) {
                             {reminder.reminderTime && (
                               <div className="flex items-center gap-1">
                                 <Clock size={12} />
-                                <span>{reminder.reminderTime}</span>
+                                <span>{formatTime24To12(reminder.reminderTime)}</span>
                               </div>
                             )}
                             {isAdmin && reminder.createdBy && (
@@ -235,7 +235,7 @@ export default function RemindersList({ date, showAddButton = true }) {
                             {reminder.reminderTime && (
                               <div className="flex items-center gap-1">
                                 <Clock size={12} />
-                                <span>{reminder.reminderTime}</span>
+                                <span>{formatTime24To12(reminder.reminderTime)}</span>
                               </div>
                             )}
                             {isAdmin && reminder.createdBy && (

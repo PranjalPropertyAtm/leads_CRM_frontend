@@ -5,7 +5,7 @@ import { useAllReminders, useMarkReminderCompleted, useDeleteReminder } from "..
 import { useFetchEmployees } from "../hooks/useEmployeeQueries";
 import { useLoadUser } from "../hooks/useAuthQueries";
 import { notify } from "../utils/toast";
-import { formatDate } from "../utils/dateFormat";
+import { formatDate, formatTime24To12 } from "../utils/dateFormat";
 import AddReminderModal from "../components/AddReminderModal";
 import CancelReminderModal from "../components/CancelReminderModal";
 
@@ -320,7 +320,7 @@ export default function Reminders() {
                                 {reminder.reminderTime && (
                                   <div className="flex items-center gap-1">
                                     <Clock size={14} />
-                                    <span>{reminder.reminderTime}</span>
+                                    <span>{formatTime24To12(reminder.reminderTime)}</span>
                                   </div>
                                 )}
                                 {isAdmin && reminder.createdBy && (
@@ -409,7 +409,7 @@ export default function Reminders() {
                               {reminder.reminderTime && (
                                 <div className="flex items-center gap-1">
                                   <Clock size={12} />
-                                  <span>{reminder.reminderTime}</span>
+                                  <span>{formatTime24To12(reminder.reminderTime)}</span>
                                 </div>
                               )}
                               {isAdmin && reminder.createdBy && (
@@ -481,7 +481,7 @@ export default function Reminders() {
                               {reminder.reminderTime && (
                                 <div className="flex items-center gap-1">
                                   <Clock size={12} />
-                                  <span>{reminder.reminderTime}</span>
+                                  <span>{formatTime24To12(reminder.reminderTime)}</span>
                                 </div>
                               )}
                               {isAdmin && reminder.createdBy && (

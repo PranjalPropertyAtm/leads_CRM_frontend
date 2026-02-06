@@ -2,12 +2,15 @@ import React, { useState } from "react";
 import { X, Calendar, Clock } from "lucide-react";
 import { notify } from "../utils/toast";
 import { useCreateReminder } from "../hooks/useReminderQueries";
+import { time12To24 } from "../utils/dateFormat";
 
 export default function AddReminderModal({ open, onClose, lead = null }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [reminderDate, setReminderDate] = useState("");
-  const [reminderTime, setReminderTime] = useState("");
+  const [timeHour, setTimeHour] = useState("");
+  const [timeMinute, setTimeMinute] = useState("0");
+  const [timePeriod, setTimePeriod] = useState("AM");
 
   const createReminderMutation = useCreateReminder();
 
@@ -24,12 +27,14 @@ export default function AddReminderModal({ open, onClose, lead = null }) {
       return notify.error("Please select a reminder date");
     }
 
+    const reminderTime24 = timeHour ? time12To24(timeHour, timeMinute, timePeriod) : null;
+
     createReminderMutation.mutate(
       {
         title: title.trim(),
         description: description.trim(),
         reminderDate,
-        reminderTime: reminderTime || null,
+        reminderTime: reminderTime24,
         leadId: lead?._id || null,
       },
       {
@@ -40,7 +45,9 @@ export default function AddReminderModal({ open, onClose, lead = null }) {
           setTitle("");
           setDescription("");
           setReminderDate("");
-          setReminderTime("");
+          setTimeHour("");
+          setTimeMinute("0");
+          setTimePeriod("AM");
         },
         onError: (err) => {
           notify.error(err?.response?.data?.message || "Failed to create reminder");
@@ -113,18 +120,42 @@ export default function AddReminderModal({ open, onClose, lead = null }) {
             />
           </div>
 
-          {/* Reminder Time */}
+          {/* Reminder Time (12-hour) */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <Clock size={16} className="inline-block mr-1" />
               Reminder Time (Optional)
             </label>
-            <input
-              type="time"
-              value={reminderTime}
-              onChange={(e) => setReminderTime(e.target.value)}
-              className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
+            <div className="flex gap-2 items-center">
+              <select
+                value={timeHour}
+                onChange={(e) => setTimeHour(e.target.value)}
+                className="flex-1 border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">No time</option>
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((h) => (
+                  <option key={h} value={h}>{h}</option>
+                ))}
+              </select>
+              <span className="text-gray-500 font-medium">:</span>
+              <select
+                value={timeMinute}
+                onChange={(e) => setTimeMinute(e.target.value)}
+                className="flex-1 border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                {Array.from({ length: 60 }, (_, i) => (
+                  <option key={i} value={i}>{String(i).padStart(2, "0")}</option>
+                ))}
+              </select>
+              <select
+                value={timePeriod}
+                onChange={(e) => setTimePeriod(e.target.value)}
+                className="w-20 border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="AM">AM</option>
+                <option value="PM">PM</option>
+              </select>
+            </div>
           </div>
         </div>
 
