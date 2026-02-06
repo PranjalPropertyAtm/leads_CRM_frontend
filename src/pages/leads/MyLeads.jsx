@@ -537,7 +537,7 @@ export default function MyLeads() {
                     <tr
                       key={lead._id}
                       className={`hover:bg-blue-50/50 transition-colors group ${
-                        !lead.dealClosed && lead.expectedClosureDate && getRemainingDays(lead.expectedClosureDate) < 0
+                        lead.customerType !== "owner" && !lead.dealClosed && lead.expectedClosureDate && getRemainingDays(lead.expectedClosureDate) < 0
                           ? "bg-red-50/50 border-l-4 border-l-red-400"
                           : ""
                       }`}
@@ -561,11 +561,13 @@ export default function MyLeads() {
                       </td>
 
                       <td className="px-4 py-3">{formatDate(lead.createdAt)}</td>
-                      <td className="px-4 py-3 text-xs text-gray-600">{formatRequirementDuration(lead.requirementDuration)}</td>
-                      <td className="px-4 py-3 text-xs">{lead.expectedClosureDate ? formatDate(lead.expectedClosureDate) : "—"}</td>
-                      
+                      <td className="px-4 py-3 text-xs text-gray-600">{lead.customerType === "owner" ? "—" : formatRequirementDuration(lead.requirementDuration)}</td>
+                      <td className="px-4 py-3 text-xs">{lead.customerType === "owner" ? "—" : (lead.expectedClosureDate ? formatDate(lead.expectedClosureDate) : "—")}</td>
+
                       <td className="px-4 py-3">
-                        {lead.dealClosed || lead.status === "deal_closed" ? (
+                        {lead.customerType === "owner" ? (
+                          "—"
+                        ) : lead.dealClosed || lead.status === "deal_closed" ? (
                           <span className="text-gray-500">Closed</span>
                         ) : (() => {
                           const displayLevel = getDisplayUrgencyLevel(lead);
