@@ -25,19 +25,27 @@ import { useFetchEmployees } from "../../hooks/useEmployeeQueries.js";
 import { createPortal } from "react-dom";
 import { notify } from "../../utils/toast.js";
 import axiosInstance from "../../lib/axios.js";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import AddVisitModal from "../../components/AddVisitModal.jsx";
 import AddReminderModal from "../../components/AddReminderModal.jsx";
 import VisitHistory from "../../components/VisitHistory.jsx";
 import RegisterLeadModal from "../../components/RegisterLeadModal.jsx";
 import ConfirmModal from "../../components/ConfirmModal.jsx";
 import { formatDate } from "../../utils/dateFormat.js";
+import { getCountdownText, URGENCY_COLORS, formatRequirementDuration, getRemainingDays, getDisplayUrgencyLevel } from "../../utils/leadUrgency.js";
 
+
+const VALID_URGENCY = ["", "critical", "overdue", "high"];
 
 export default function MyLeads() {
   const navigate = useNavigate();
-  const { data: user } = useLoadUser(); // {data: user}
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { data: user } = useLoadUser();
+  const urgencyFromUrl = searchParams.get("urgencyFilter") || "";
+  const initialUrgency = VALID_URGENCY.includes(urgencyFromUrl) ? urgencyFromUrl : "";
+
   const [filter, setFilter] = useState("");
+  const [urgencyFilter, setUrgencyFilter] = useState(initialUrgency);
   const isSearching = Boolean(filter.trim());
   const [selected, setSelected] = useState(null);
 
@@ -55,6 +63,12 @@ export default function MyLeads() {
       setCurrentPage(1);
     }
   }, [filter]);
+
+  // Sync urgency filter from URL (e.g. when navigating from dashboard "View all")
+  useEffect(() => {
+    const u = searchParams.get("urgencyFilter") || "";
+    if (VALID_URGENCY.includes(u)) setUrgencyFilter(u);
+  }, [searchParams]);
 
   // Registration Modal
   const [showRegModal, setShowRegModal] = useState(false);
@@ -76,15 +90,12 @@ export default function MyLeads() {
   const [pageSize, setPageSize] = useState(5);
 
 
-  // NOTE: make sure your useMyLeads accepts (page, limit) and uses them in queryKey & request params:
-  // queryKey: ['leads', 'my', page, limit]
-  // axios.get('/leads/my', { params: { page, limit }})
   const {
-    data = { leads: [], total: 0, totalPages: 0, page: 1 },
+    data = { leads: [], total: 0, totalPages: 0, page: 1, countCritical: 0, countOverdue: 0, countHigh: 0 },
     isLoading,
-  } = useMyLeads(isSearching ? 1 : currentPage, pageSize);
+  } = useMyLeads(isSearching ? 1 : currentPage, pageSize, urgencyFilter);
 
-  const { leads = [], total = 0, totalPages = 0 } = data;
+  const { leads = [], total = 0, totalPages = 0, countCritical = 0, countOverdue = 0, countHigh = 0 } = data;
 
   const {
       data: employeesData,
@@ -438,7 +449,7 @@ export default function MyLeads() {
     <div className="bg-slate-50 p-4 font-[Inter]">
       <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="max-w-7xl mx-auto">
         {/* HEADER */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-1">My Leads</h1>
             <p className="text-sm text-gray-600 font-medium">Leads assigned to you</p>
@@ -453,6 +464,38 @@ export default function MyLeads() {
               onChange={(e) => setFilter(e.target.value)}
             />
           </div>
+        </div>
+
+        {/* Urgency filter chips with counts */}
+        <div className="flex flex-wrap items-center gap-2 mb-6">
+          <button
+            type="button"
+            onClick={() => { setUrgencyFilter(""); setSearchParams({}); setCurrentPage(1); }}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${!urgencyFilter ? "bg-gray-900 text-white" : "bg-white border border-gray-300 text-gray-600 hover:bg-gray-50"}`}
+          >
+            All
+          </button>
+          <button
+            type="button"
+            onClick={() => { setUrgencyFilter("critical"); setSearchParams({ urgencyFilter: "critical" }); setCurrentPage(1); }}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-1.5 ${urgencyFilter === "critical" ? "bg-red-600 text-white" : "bg-white border border-gray-300 text-gray-600 hover:bg-gray-50"}`}
+          >
+            Critical <span className="bg-black/15 px-1.5 py-0.5 rounded text-xs">{countCritical}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => { setUrgencyFilter("overdue"); setSearchParams({ urgencyFilter: "overdue" }); setCurrentPage(1); }}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-1.5 ${urgencyFilter === "overdue" ? "bg-amber-600 text-white" : "bg-white border border-gray-300 text-gray-600 hover:bg-gray-50"}`}
+          >
+            Overdue <span className="bg-black/15 px-1.5 py-0.5 rounded text-xs">{countOverdue}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => { setUrgencyFilter("high"); setSearchParams({ urgencyFilter: "high" }); setCurrentPage(1); }}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-1.5 ${urgencyFilter === "high" ? "bg-blue-600 text-white" : "bg-white border border-gray-300 text-gray-600 hover:bg-gray-50"}`}
+          >
+            High <span className="bg-black/15 px-1.5 py-0.5 rounded text-xs">{countHigh}</span>
+          </button>
         </div>
 
         {/* TABLE */}
@@ -470,8 +513,10 @@ export default function MyLeads() {
                       "S.NO",
                       "Name",
                       "Type",
-                      // "Member Code",
                       "Date",
+                      "Duration",
+                      "Due",
+                      "Urgency",
                       "Mobile",
                       "Location",
                       "Property",
@@ -489,7 +534,14 @@ export default function MyLeads() {
 
                 <tbody>
                   {displayLeads.map((lead, idx) => (
-                    <tr key={lead._id} className="hover:bg-blue-50/50 transition-colors group">
+                    <tr
+                      key={lead._id}
+                      className={`hover:bg-blue-50/50 transition-colors group ${
+                        !lead.dealClosed && lead.expectedClosureDate && getRemainingDays(lead.expectedClosureDate) < 0
+                          ? "bg-red-50/50 border-l-4 border-l-red-400"
+                          : ""
+                      }`}
+                    >
                       <td className="px-4 py-3">{(currentPage - 1) * displayPageSize + idx + 1}</td>
 
                       <td className="px-4 py-3">
@@ -508,8 +560,26 @@ export default function MyLeads() {
                         </span>
                       </td>
 
-                      {/* <td className="px-4 py-3">{lead.memberCode || "N/A"}</td> */}
                       <td className="px-4 py-3">{formatDate(lead.createdAt)}</td>
+                      <td className="px-4 py-3 text-xs text-gray-600">{formatRequirementDuration(lead.requirementDuration)}</td>
+                      <td className="px-4 py-3 text-xs">{lead.expectedClosureDate ? formatDate(lead.expectedClosureDate) : "—"}</td>
+                      
+                      <td className="px-4 py-3">
+                        {lead.dealClosed || lead.status === "deal_closed" ? (
+                          <span className="text-gray-500">Closed</span>
+                        ) : (() => {
+                          const displayLevel = getDisplayUrgencyLevel(lead);
+                          if (!displayLevel) return "—";
+                          return (
+                            <>
+                              <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${URGENCY_COLORS[displayLevel] || "bg-gray-100 text-gray-700"}`}>{displayLevel}</span>
+                              {lead.expectedClosureDate && (
+                                <div className={`text-xs mt-0.5 ${getCountdownText(lead).startsWith("Overdue") ? "text-red-600 font-medium" : "text-gray-500"}`}>{getCountdownText(lead)}</div>
+                              )}
+                            </>
+                          );
+                        })()}
+                      </td>
                       <td className="px-4 py-3">{lead.mobileNumber || "N/A"}</td>
                       <td className="px-4 py-3">{lead.customerType === "tenant" ? (Array.isArray(lead.preferredLocation) ? lead.preferredLocation.join(", ") : lead.preferredLocation) : lead.propertyLocation}</td>
                       <td className="px-4 py-3">{lead.propertyType || "N/A"}</td>

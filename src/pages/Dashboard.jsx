@@ -19,6 +19,7 @@ import { useLoadUser } from "../hooks/useAuthQueries.js";
 import { useNavigate } from "react-router-dom";
 import RemindersList from "../components/RemindersList.jsx";
 import { formatDate } from "../utils/dateFormat.js";
+import { getCountdownText, URGENCY_COLORS, formatRequirementDuration } from "../utils/leadUrgency.js";
 
 // Memoized metric card component for performance
 const MetricCard = React.memo(({ icon: Icon, title, value, subtitle, trend, color, delay = 0 }) => {
@@ -30,7 +31,7 @@ const MetricCard = React.memo(({ icon: Icon, title, value, subtitle, trend, colo
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay }}
       className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer"
-      onClick={() => navigate("/leads/all")}
+      onClick={() => navigate("/all-leads")}
     >
       <div className="flex items-start justify-between">
         <div className="flex-1">
@@ -102,27 +103,37 @@ const StatusBadge = ({ status }) => {
   );
 };
 
+// Urgency badge
+const UrgencyBadge = ({ level }) => (
+  <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${URGENCY_COLORS[level] || "bg-gray-100 text-gray-700"}`}>
+    {level || "—"}
+  </span>
+);
+
 // Recent lead item component
 const RecentLeadItem = React.memo(({ lead }) => {
   const navigate = useNavigate();
   const name = lead.customerName || lead.ownerName || "N/A";
   const date = formatDate(lead.createdAt);
+  const countdown = getCountdownText(lead);
+  const durationText = formatRequirementDuration(lead.requirementDuration);
 
   return (
     <div
-      onClick={() => navigate(`/leads/all`)}
+      onClick={() => navigate("/all-leads")}
       className="p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer last:border-b-0"
     >
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
             <p className="font-semibold text-gray-900">{name}</p>
             <StatusBadge status={lead.status} />
+            {lead.urgencyLevel && <UrgencyBadge level={lead.urgencyLevel} />}
           </div>
           <p className="text-xs text-gray-500 mb-1">
             Created by {lead.createdBy?.name || "Unknown"}
           </p>
-          <div className="flex items-center gap-4 text-xs text-gray-500">
+          <div className="flex items-center gap-4 text-xs text-gray-500 flex-wrap">
             {lead.mobileNumber && (
               <span className="flex items-center gap-1">
                 <Phone size={12} />
@@ -139,6 +150,14 @@ const RecentLeadItem = React.memo(({ lead }) => {
               <Clock size={12} />
               {date}
             </span>
+            {durationText !== "—" && (
+              <span title="Requirement duration">{durationText}</span>
+            )}
+            {lead.expectedClosureDate && !lead.dealClosed && (
+              <span className={countdown.startsWith("Overdue") ? "text-red-600 font-medium" : ""}>
+                {countdown}
+              </span>
+            )}
           </div>
         </div>
         <div className={`px-2 py-1 text-xs rounded-full font-medium ${
@@ -156,6 +175,7 @@ const RecentLeadItem = React.memo(({ lead }) => {
 RecentLeadItem.displayName = "RecentLeadItem";
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const { data: stats, isLoading, error } = useDashboardStats();
   const { data: user } = useLoadUser();
 
@@ -172,6 +192,10 @@ export default function Dashboard() {
       totalVisits: stats.visits?.total || 0,
       recentVisits: stats.visits?.recent || 0,
       recentLeads: stats.recentLeads || [],
+      urgentLeads: stats.urgentLeads || [],
+      overdueLeads: stats.overdueLeads || [],
+      slaBreach: stats.slaBreach || { count: 0, leads: [] },
+      averageClosureDays: stats.averageClosureDays ?? null,
       statusBreakdown: stats.breakdowns?.status || [],
       customerTypeBreakdown: stats.breakdowns?.customerType || [],
       employeeBreakdown: stats.breakdowns?.employees || [],
@@ -263,6 +287,135 @@ export default function Dashboard() {
         >
           <RemindersList date={new Date().toISOString().split("T")[0]} showAddButton={false} />
         </motion.div>
+
+        {/* Urgent & Overdue Leads - All users */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.36 }}
+            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-orange-700">Urgent Leads</h2>
+              <button
+                onClick={() => navigate(user?.role === "admin" ? "/all-leads?urgencyFilter=critical" : "/my-leads?urgencyFilter=critical")}
+                className="text-sm text-blue-600 hover:underline"
+              >
+                View all
+              </button>
+            </div>
+            {metrics.urgentLeads.length > 0 ? (
+              <div className="space-y-2">
+                {metrics.urgentLeads.map((lead) => (
+                  <div
+                    key={lead._id}
+                    onClick={() => navigate(user?.role === "admin" ? "/all-leads?urgencyFilter=critical" : "/my-leads?urgencyFilter=critical")}
+                    className="p-3 rounded-lg border border-orange-100 bg-orange-50/50 hover:bg-orange-50 cursor-pointer"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-medium text-gray-900 truncate">
+                        {lead.customerName || lead.ownerName || "N/A"}
+                      </span>
+                      <UrgencyBadge level={lead.urgencyLevel} />
+                    </div>
+                    <p className="text-xs text-gray-600 mt-1">
+                      {lead.mobileNumber && (
+                        <span className="font-medium text-gray-700">{lead.mobileNumber}</span>
+                      )}
+                      {lead.mobileNumber && " · "}
+                      {getCountdownText(lead)} · Due {formatDate(lead.expectedClosureDate)}
+                      {user?.role === "admin" && lead.createdBy?.name && (
+                        <span className="block mt-0.5 text-gray-500">Created by {lead.createdBy.name}</span>
+                      )}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-sm">No urgent leads</p>
+            )}
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.37 }}
+            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-red-700">Overdue Leads</h2>
+              <button
+                onClick={() => navigate(user?.role === "admin" ? "/all-leads?urgencyFilter=overdue" : "/my-leads?urgencyFilter=overdue")}
+                className="text-sm text-blue-600 hover:underline"
+              >
+                View all
+              </button>
+            </div>
+            {metrics.overdueLeads.length > 0 ? (
+              <div className="space-y-2">
+                {metrics.overdueLeads.map((lead) => (
+                  <div
+                    key={lead._id}
+                    onClick={() => navigate(user?.role === "admin" ? "/all-leads?urgencyFilter=overdue" : "/my-leads?urgencyFilter=overdue")}
+                    className="p-3 rounded-lg border border-red-100 bg-red-50/50 hover:bg-red-50 cursor-pointer"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-medium text-gray-900 truncate">
+                        {lead.customerName || lead.ownerName || "N/A"}
+                      </span>
+                      <span className="text-xs font-medium text-red-700">{getCountdownText(lead)}</span>
+                    </div>
+                    <p className="text-xs text-gray-600 mt-1">
+                      {lead.mobileNumber && (
+                        <span className="font-medium text-gray-700">{lead.mobileNumber}</span>
+                      )}
+                      {lead.mobileNumber && " · "}
+                      Expected {formatDate(lead.expectedClosureDate)}
+                      {user?.role === "admin" && lead.createdBy?.name && (
+                        <span className="block mt-0.5 text-gray-500">Created by {lead.createdBy.name}</span>
+                      )}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-sm">No overdue leads</p>
+            )}
+          </motion.div>
+        </div>
+
+        {/* Admin: SLA Breach & Average Closure Time */}
+        {user?.role === "admin" && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.38 }}
+            className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-6"
+          >
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-2">SLA Breach Report</h2>
+              <p className="text-2xl font-bold text-red-600">{metrics.slaBreach.count}</p>
+              <p className="text-sm text-gray-500">Leads past expected closure date (not closed)</p>
+              {metrics.slaBreach.leads?.length > 0 && (
+                <div className="mt-3 space-y-2">
+                  {metrics.slaBreach.leads.slice(0, 5).map((lead) => (
+                    <div key={lead._id} className="flex justify-between text-sm">
+                      <span className="text-gray-700">{lead.customerName || lead.ownerName || "—"}</span>
+                      <span className="text-red-600">{formatDate(lead.expectedClosureDate)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-2">Average Closure Time</h2>
+              <p className="text-2xl font-bold text-blue-600">
+                {metrics.averageClosureDays != null ? `${Number(metrics.averageClosureDays).toFixed(1)} days` : "—"}
+              </p>
+              <p className="text-sm text-gray-500">Avg. days from start to deal closed</p>
+            </div>
+          </motion.div>
+        )}
 
         {/* Charts and Activity Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -397,7 +550,7 @@ export default function Dashboard() {
               <h2 className="text-xl font-semibold text-gray-900">Recent Leads</h2>
             </div>
             <button
-              onClick={() => window.location.href = "/leads/all"}
+              onClick={() => navigate("/all-leads")}
               className="text-sm text-blue-600 hover:text-blue-700 font-medium"
             >
               View All →

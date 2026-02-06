@@ -2,32 +2,27 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import axios from '../lib/axios.js'
 
 // Fetch leads (admin: all, employee: depending on backend rules)
-export const useFetchLeads = (page = 1, limit = 10) => {
+export const useFetchLeads = (page = 1, limit = 10, urgencyFilter = '') => {
   return useQuery({
-    queryKey: ['leads', page, limit],
+    queryKey: ['leads', page, limit, urgencyFilter || 'all'],
     queryFn: async () => {
-      const response = await axios.get('/leads/all',{
-        params: { page, limit },
-      })
+      const params = { page, limit };
+      if (urgencyFilter) params.urgencyFilter = urgencyFilter;
+      const response = await axios.get('/leads/all', { params });
       const data = response.data;
-      // const leads = data.data || []
-      // const total = data.count ?? leads.length
-
-      // Slice manually
-      // const start = (page - 1) * limit
-      // const end = start + limit
-      // const paginatedLeads = leads.slice(start, end)
-
       return {
         leads: data.data || [],
         total: data.total || 0,
         page: data.page || page,
-        limit:  data.limit || limit,
+        limit: data.limit || limit,
         totalPages: data.totalPages || Math.ceil((data.total || 0) / limit),
-      }
+        countCritical: data.countCritical ?? 0,
+        countOverdue: data.countOverdue ?? 0,
+        countHigh: data.countHigh ?? 0,
+      };
     },
-  })
-}
+  });
+};
 
 // Create lead
 export const useCreateLead = () => {
@@ -95,29 +90,23 @@ export const useDeleteLead = () => {
 }
 
 // Fetch current user's leads (employee view)
-export const useMyLeads = (page = 1, limit = 10) => {
+export const useMyLeads = (page = 1, limit = 10, urgencyFilter = '') => {
   return useQuery({
-    queryKey: ['leads', 'my', page, limit],
+    queryKey: ['leads', 'my', page, limit, urgencyFilter || 'all'],
     queryFn: async () => {
-      const response = await axios.get('/leads/my', {
-        params: { page, limit },
-      });
+      const params = { page, limit };
+      if (urgencyFilter) params.urgencyFilter = urgencyFilter;
+      const response = await axios.get('/leads/my', { params });
       const data = response.data;
-      // const leads = data.data || [];
-      // const total = data.count ?? (Array.isArray(leads) ? leads.length : 0);
-
-           // Slice manually
-      // const start = (page - 1) * limit
-      // const end = start + limit
-      // const paginatedLeads = leads.slice(start, end)
-
-
-     return {
+      return {
         leads: data.data || [],
         total: data.total || 0,
         page: data.page || page,
-        limit:  data.limit || limit,
+        limit: data.limit || limit,
         totalPages: data.totalPages || Math.ceil((data.total || 0) / limit),
+        countCritical: data.countCritical ?? 0,
+        countOverdue: data.countOverdue ?? 0,
+        countHigh: data.countHigh ?? 0,
       };
     },
   });

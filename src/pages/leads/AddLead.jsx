@@ -39,6 +39,8 @@ export default function AddLead() {
     requirements: "",
     area: "",
     landmark: "",
+    requirementDurationValue: 30,
+    requirementDurationUnit: "days",
   });
 
   const [errors, setErrors] = useState({});
@@ -124,7 +126,11 @@ export default function AddLead() {
       assignedTo:form.assignedTo || undefined,
       requirements: form.requirements || undefined,
       area: form.area || undefined,
-      landmark: form.area || undefined,
+      landmark: form.landmark || undefined,
+      requirementDuration: {
+        value: Number(form.requirementDurationValue) || 30,
+        unit: form.requirementDurationUnit || "days",
+      },
     };
 
     if (customerType === "tenant") {
@@ -165,6 +171,8 @@ export default function AddLead() {
       requirements: "",
       area: "",
       landmark: "",
+      requirementDurationValue: 30,
+      requirementDurationUnit: "days",
     });
     setErrors({});
   };
@@ -456,6 +464,31 @@ export default function AddLead() {
               error={errors.assignedTo}
             />
 
+            {/* Requirement Duration */}
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-1">Requirement Duration</label>
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  min={1}
+                  name="requirementDurationValue"
+                  value={form.requirementDurationValue}
+                  onChange={handleChange}
+                  className="w-24 px-3 py-2 rounded-lg border border-gray-300"
+                />
+                <select
+                  name="requirementDurationUnit"
+                  value={form.requirementDurationUnit}
+                  onChange={handleChange}
+                  className="flex-1 px-3 py-2 rounded-lg border border-gray-300"
+                >
+                  <option value="days">Days</option>
+                  <option value="weeks">Weeks</option>
+                  <option value="months">Months</option>
+                </select>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">Expected closure timeline from lead creation</p>
+            </div>
 
             <div className="md:col-span-2">
               <label className="text-sm font-medium text-gray-700 mb-1">

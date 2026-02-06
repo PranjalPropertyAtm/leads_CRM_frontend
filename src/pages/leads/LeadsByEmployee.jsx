@@ -34,6 +34,7 @@ import RegisterLeadModal from "../../components/RegisterLeadModal.jsx";
 import ConfirmModal from "../../components/ConfirmModal.jsx";
 import SearchableSelect from "../../components/SearchableSelect.jsx";
 import { formatDate } from "../../utils/dateFormat.js";
+import { getCountdownText, URGENCY_COLORS, formatRequirementDuration, getRemainingDays, getDisplayUrgencyLevel } from "../../utils/leadUrgency.js";
 
 export default function LeadsByEmployee() {
   const queryClient = useQueryClient();
@@ -588,6 +589,9 @@ export default function LeadsByEmployee() {
                       "Name",
                       "Type",
                       "Date",
+                      "Duration",
+                      "Due",
+                      "Urgency",
                       "Mobile",
                       "Location",
                       "Property",
@@ -611,6 +615,10 @@ export default function LeadsByEmployee() {
                       key={lead._id}
                       className={`hover:bg-blue-50/50 transition-colors group ${
                         lead.employeeRemarks ? "bg-purple-50/30 border-l-4 border-l-purple-500" : ""
+                      } ${
+                        !lead.dealClosed && lead.expectedClosureDate && getRemainingDays(lead.expectedClosureDate) < 0
+                          ? "bg-red-50/50 border-l-4 border-l-red-400"
+                          : ""
                       }`}
                     >
                       <td className="px-4 py-3 text-gray-600 font-semibold">
@@ -646,8 +654,24 @@ export default function LeadsByEmployee() {
                         </span>
                       </td>
 
+                      <td className="px-4 py-3">{formatDate(lead.createdAt)}</td>
+                      <td className="px-4 py-3 text-xs text-gray-600">{formatRequirementDuration(lead.requirementDuration)}</td>
+                      <td className="px-4 py-3 text-xs">{lead.expectedClosureDate ? formatDate(lead.expectedClosureDate) : "—"}</td>
                       <td className="px-4 py-3">
-                        {formatDate(lead.createdAt)}
+                        {lead.dealClosed || lead.status === "deal_closed" ? (
+                          <span className="text-gray-500">Closed</span>
+                        ) : (() => {
+                          const displayLevel = getDisplayUrgencyLevel(lead);
+                          if (!displayLevel) return "—";
+                          return (
+                            <>
+                              <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${URGENCY_COLORS[displayLevel] || "bg-gray-100 text-gray-700"}`}>{displayLevel}</span>
+                              {lead.expectedClosureDate && (
+                                <div className={`text-xs mt-0.5 ${getCountdownText(lead).startsWith("Overdue") ? "text-red-600 font-medium" : "text-gray-500"}`}>{getCountdownText(lead)}</div>
+                              )}
+                            </>
+                          );
+                        })()}
                       </td>
                       <td className="px-4 py-3">{lead.mobileNumber || "N/A"}</td>
                       <td className="px-4 py-3">
