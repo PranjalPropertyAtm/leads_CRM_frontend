@@ -384,8 +384,8 @@ export default function Dashboard() {
           </motion.div>
         </div>
 
-        {/* Admin: SLA Breach & Average Closure Time */}
-        {user?.role === "admin" && (
+        {/* Admin: SLA Breach & Average Closure Time - hidden for now */}
+        {false && user?.role === "admin" && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
