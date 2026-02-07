@@ -616,7 +616,7 @@ export default function LeadsByEmployee() {
                       className={`hover:bg-blue-50/50 transition-colors group ${
                         lead.employeeRemarks ? "bg-purple-50/30 border-l-4 border-l-purple-500" : ""
                       } ${
-                        lead.customerType !== "owner" && !lead.dealClosed && lead.expectedClosureDate && getRemainingDays(lead.expectedClosureDate) < 0
+                        lead.status !== "lost" && lead.customerType !== "owner" && !lead.dealClosed && lead.expectedClosureDate && getRemainingDays(lead.expectedClosureDate) < 0
                           ? "bg-red-50/50 border-l-4 border-l-red-400"
                           : ""
                       }`}
@@ -655,10 +655,10 @@ export default function LeadsByEmployee() {
                       </td>
 
                       <td className="px-4 py-3">{formatDate(lead.createdAt)}</td>
-                      <td className="px-4 py-3 text-xs text-gray-600">{lead.customerType === "owner" ? "—" : formatRequirementDuration(lead.requirementDuration)}</td>
-                      <td className="px-4 py-3 text-xs">{lead.customerType === "owner" ? "—" : (lead.expectedClosureDate ? formatDate(lead.expectedClosureDate) : "—")}</td>
+                      <td className="px-4 py-3 text-xs text-gray-600">{(lead.customerType === "owner" || lead.status === "lost") ? "—" : formatRequirementDuration(lead.requirementDuration)}</td>
+                      <td className="px-4 py-3 text-xs">{(lead.customerType === "owner" || lead.status === "lost") ? "—" : (lead.expectedClosureDate ? formatDate(lead.expectedClosureDate) : "—")}</td>
                       <td className="px-4 py-3">
-                        {lead.customerType === "owner" ? (
+                        {(lead.customerType === "owner" || lead.status === "lost") ? (
                           "—"
                         ) : lead.dealClosed || lead.status === "deal_closed" ? (
                           <span className="text-gray-500">Closed</span>
@@ -794,6 +794,14 @@ export default function LeadsByEmployee() {
 
                       <td className="px-4 py-3 text-right">
                         <ActionMenu>
+                          {(() => {
+                            const isCreator = lead.createdBy?._id === user?._id;
+                            const assignedId = lead.assignedTo && (typeof lead.assignedTo === "object" ? lead.assignedTo._id : lead.assignedTo);
+                            const isAssigned = !!user?._id && !!assignedId && String(assignedId) === String(user._id);
+                            const canShowAllActions = isCreator || isAssigned || isCustomerCare;
+                            const notClosed = !lead.dealClosed && lead.status !== "deal_closed";
+                            return (
+                              <>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -804,53 +812,30 @@ export default function LeadsByEmployee() {
                             <Eye size={14} /> View Details
                           </button>
 
-                          {lead.createdBy?._id === user?._id  &&
-                            !lead.dealClosed &&
-                            lead.status !== "deal_closed" && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  navigate(`/edit-lead/${lead._id}`);
-                                }}
-                                className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-blue-600 transition"
-                              >
-                                <Edit size={14} /> Edit Lead
-                              </button>
-                            )}
-
-                          {/* Add Remarks - Only for Customer Care Executives */}
-                          {/* {isCustomerCare && !lead.dealClosed && lead.status !== "deal_closed" && (
+                          {canShowAllActions && notClosed && (
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setRemarksModal({
-                                  isOpen: true,
-                                  leadId: lead._id,
-                                  lead: lead,
-                                  remarks: lead.employeeRemarks || '',
-                                });
+                                navigate(`/edit-lead/${lead._id}`);
                               }}
-                              className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-purple-600 transition"
+                              className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-blue-600 transition"
                             >
-                              <Edit size={14} /> {lead.employeeRemarks ? 'Edit Remarks' : 'Add Remarks'}
+                              <Edit size={14} /> Edit Lead
                             </button>
-                          )} */}
+                          )}
 
-                          {!lead.isRegistered &&
-                            lead.createdBy?._id === user?._id &&
-                            !lead.dealClosed &&
-                            lead.status !== "deal_closed" && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setRegLead(lead);
-                                  setShowRegModal(true);
-                                }}
-                                className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-green-600 transition"
-                              >
-                                <UserPlus size={14} /> Register
-                              </button>
-                            )}
+                          {!lead.isRegistered && canShowAllActions && notClosed && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setRegLead(lead);
+                                setShowRegModal(true);
+                              }}
+                              className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-green-600 transition"
+                            >
+                              <UserPlus size={14} /> Register
+                            </button>
+                          )}
 
                           <button
                             onClick={(e) => {
@@ -863,8 +848,7 @@ export default function LeadsByEmployee() {
                             <Eye size={14} /> View Visits
                           </button>
 
-                          {/* Add Reminder - only for creator and not closed */}
-                          {lead.createdBy?._id === user?._id && !lead.dealClosed && lead.status !== "deal_closed" && (
+                          {canShowAllActions && notClosed && (
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -877,8 +861,7 @@ export default function LeadsByEmployee() {
                             </button>
                           )}
 
-                            {/* Add Remarks - Only for Customer Care Executives */}
-                            {isCustomerCare && !lead.dealClosed && lead.status !== "deal_closed" && (
+                          {isCustomerCare && notClosed && (
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -895,38 +878,36 @@ export default function LeadsByEmployee() {
                             </button>
                           )}
 
+                          {canShowAllActions && notClosed && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setVisitModal(true);
+                                setVisitLead(lead);
+                              }}
+                              className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-green-600 transition"
+                            >
+                              <HousePlus size={14} /> Add Visit
+                            </button>
+                          )}
 
-                          {lead.createdBy?._id === user?._id &&
-                            !lead.dealClosed &&
-                            lead.status !== "deal_closed" && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setVisitModal(true);
-                                  setVisitLead(lead);
-                                }}
-                                className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-green-600 transition"
-                              >
-                                <HousePlus size={14} /> Add Visit
-                              </button>
-                            )}
-
-                          {!lead.dealClosed &&
-                            lead.status !== "deal_closed" &&
-                            lead.createdBy?._id === user?._id && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setDealClosedModal({
-                                    isOpen: true,
-                                    leadId: lead._id,
-                                  });
-                                }}
-                                className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-green-700 font-medium transition"
-                              >
-                                <CheckCircle size={14} /> Mark Deal Closed
-                              </button>
-                            )}
+                          {notClosed && canShowAllActions && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDealClosedModal({
+                                  isOpen: true,
+                                  leadId: lead._id,
+                                });
+                              }}
+                              className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-green-700 font-medium transition"
+                            >
+                              <CheckCircle size={14} /> Mark Deal Closed
+                            </button>
+                          )}
+                              </>
+                            );
+                          })()}
                         </ActionMenu>
                       </td>
                     </tr>

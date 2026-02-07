@@ -41,6 +41,7 @@ export default function MyLeads() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: user } = useLoadUser();
+  const isCustomerCare = user?.designation?.toLowerCase().includes("customer care");
   const urgencyFromUrl = searchParams.get("urgencyFilter") || "";
   const initialUrgency = VALID_URGENCY.includes(urgencyFromUrl) ? urgencyFromUrl : "";
 
@@ -537,7 +538,7 @@ export default function MyLeads() {
                     <tr
                       key={lead._id}
                       className={`hover:bg-blue-50/50 transition-colors group ${
-                        lead.customerType !== "owner" && !lead.dealClosed && lead.expectedClosureDate && getRemainingDays(lead.expectedClosureDate) < 0
+                        lead.status !== "lost" && lead.customerType !== "owner" && !lead.dealClosed && lead.expectedClosureDate && getRemainingDays(lead.expectedClosureDate) < 0
                           ? "bg-red-50/50 border-l-4 border-l-red-400"
                           : ""
                       }`}
@@ -561,11 +562,11 @@ export default function MyLeads() {
                       </td>
 
                       <td className="px-4 py-3">{formatDate(lead.createdAt)}</td>
-                      <td className="px-4 py-3 text-xs text-gray-600">{lead.customerType === "owner" ? "—" : formatRequirementDuration(lead.requirementDuration)}</td>
-                      <td className="px-4 py-3 text-xs">{lead.customerType === "owner" ? "—" : (lead.expectedClosureDate ? formatDate(lead.expectedClosureDate) : "—")}</td>
+                      <td className="px-4 py-3 text-xs text-gray-600">{(lead.customerType === "owner" || lead.status === "lost") ? "—" : formatRequirementDuration(lead.requirementDuration)}</td>
+                      <td className="px-4 py-3 text-xs">{(lead.customerType === "owner" || lead.status === "lost") ? "—" : (lead.expectedClosureDate ? formatDate(lead.expectedClosureDate) : "—")}</td>
 
                       <td className="px-4 py-3">
-                        {lead.customerType === "owner" ? (
+                        {(lead.customerType === "owner" || lead.status === "lost") ? (
                           "—"
                         ) : lead.dealClosed || lead.status === "deal_closed" ? (
                           <span className="text-gray-500">Closed</span>
@@ -687,30 +688,31 @@ export default function MyLeads() {
                       {/* ACTIONS */}
                       <td className="px-4 py-3 text-right">
                         <ActionMenu>
-                          {/* VIEW */}
+                          {(() => {
+                            const isCreator = lead.createdBy?._id === user?._id;
+                            const assignedId = lead.assignedTo && (typeof lead.assignedTo === "object" ? lead.assignedTo._id : lead.assignedTo);
+                            const isAssigned = !!user?._id && !!assignedId && String(assignedId) === String(user._id);
+                            const canShowAllActions = isCreator || isAssigned || isCustomerCare;
+                            const notClosed = !lead.dealClosed && lead.status !== "deal_closed";
+                            return (
+                              <>
                           <button
-                            onClick={() => {
-                              setSelected(lead);
-                            }}
+                            onClick={() => setSelected(lead)}
                             className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-blue-600 transition"
                           >
                             <Eye size={14} /> View Details
                           </button>
 
-                          {/* EDIT - only if lead created by current user and not closed */}
-                          {lead.createdBy?._id === user?._id && !lead.dealClosed && lead.status !== "deal_closed" && (
+                          {canShowAllActions && notClosed && (
                             <button
-                              onClick={() => {
-                                navigate(`/edit-lead/${lead._id}`);
-                              }}
+                              onClick={() => navigate(`/edit-lead/${lead._id}`)}
                               className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-blue-600 transition"
                             >
                               <Edit size={14} /> Edit Lead
                             </button>
                           )}
 
-                          {/* REGISTER - only if lead created by current user & not registered & not closed */}
-                          {!lead.isRegistered && lead.createdBy?._id === user?._id && !lead.dealClosed && lead.status !== "deal_closed" && (
+                          {!lead.isRegistered && canShowAllActions && notClosed && (
                             <button
                               onClick={() => {
                                 setRegLead(lead);
@@ -722,7 +724,6 @@ export default function MyLeads() {
                             </button>
                           )}
 
-                          {/* VIEW VISITS */}
                           <button
                             onClick={() => {
                               setVisitHistoryOpen(true);
@@ -733,23 +734,19 @@ export default function MyLeads() {
                             <Eye size={14}/> View Visits
                           </button>
 
-                         
-
-                          {/* ADD VISIT - only for creator and not closed */}
-                          {lead.createdBy?._id === user?._id && !lead.dealClosed && lead.status !== "deal_closed" && (
+                          {canShowAllActions && notClosed && (
                             <button
                               onClick={() => {
                                 setVisitModal(true);
                                 setVisitLead(lead);
                               }}
-                               className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-green-600 transition"
+                              className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-green-600 transition"
                             >
                               <HousePlus size={14} /> Add Visit
                             </button>
                           )}
 
-                           {/* ADD REMINDER - only for creator and not closed */}
-                           {lead.createdBy?._id === user?._id && !lead.dealClosed && lead.status !== "deal_closed" && (
+                          {canShowAllActions && notClosed && (
                             <button
                               onClick={() => {
                                 setReminderModal(true);
@@ -761,7 +758,7 @@ export default function MyLeads() {
                             </button>
                           )}
 
-                          {!lead.dealClosed && lead.status !== "deal_closed" && lead.createdBy?._id === user?._id && (
+                          {notClosed && canShowAllActions && (
                             <button
                               onClick={() => {
                                 setDealClosedModal({
@@ -774,6 +771,9 @@ export default function MyLeads() {
                               <CheckCircle size={14} /> Mark Deal Closed
                             </button>
                           )}
+                              </>
+                            );
+                          })()}
 
                            {/* DELETE - only if not closed */}
                           {/* {!lead.dealClosed && lead.status !== "deal_closed" && (

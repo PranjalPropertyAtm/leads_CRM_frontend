@@ -42,6 +42,7 @@ export default function AllLeads() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: user } = useLoadUser();
+  const isCustomerCare = user?.designation?.toLowerCase().includes("customer care");
 
   const urgencyFromUrl = searchParams.get("urgencyFilter") || "";
   const initialUrgency = VALID_URGENCY.includes(urgencyFromUrl) ? urgencyFromUrl : "";
@@ -577,7 +578,7 @@ export default function AllLeads() {
                         className={`hover:bg-blue-50/50 transition-colors group ${
                           lead.employeeRemarks ? "bg-purple-50/30 border-l-4 border-l-purple-500" : ""
                         } ${
-                          lead.customerType !== "owner" && !lead.dealClosed && lead.expectedClosureDate && getRemainingDays(lead.expectedClosureDate) < 0
+                          lead.status !== "lost" && lead.customerType !== "owner" && !lead.dealClosed && lead.expectedClosureDate && getRemainingDays(lead.expectedClosureDate) < 0
                             ? "bg-red-50/50 border-l-4 border-l-red-400"
                             : ""
                         }`}
@@ -609,12 +610,12 @@ export default function AllLeads() {
                         </td>
 
                         <td className="px-4 py-3">{formatDate(lead.createdAt)}</td>
-                        <td className="px-4 py-3 text-xs text-gray-600">{lead.customerType === "owner" ? "—" : formatRequirementDuration(lead.requirementDuration)}</td>
+                        <td className="px-4 py-3 text-xs text-gray-600">{(lead.customerType === "owner" || lead.status === "lost") ? "—" : formatRequirementDuration(lead.requirementDuration)}</td>
                         <td className="px-4 py-3 text-xs">
-                          {lead.customerType === "owner" ? "—" : (lead.expectedClosureDate ? formatDate(lead.expectedClosureDate) : "—")}
+                          {(lead.customerType === "owner" || lead.status === "lost") ? "—" : (lead.expectedClosureDate ? formatDate(lead.expectedClosureDate) : "—")}
                         </td>
                         <td className="px-4 py-3">
-                          {lead.customerType === "owner" ? (
+                          {(lead.customerType === "owner" || lead.status === "lost") ? (
                             "—"
                           ) : lead.dealClosed || lead.status === "deal_closed" ? (
                             <span className="text-gray-500">Closed</span>
@@ -739,6 +740,14 @@ export default function AllLeads() {
 
                         <td className="px-4 py-3 text-right">
                           <ActionMenu>
+                            {(() => {
+                              const isCreator = lead.createdBy?._id === user?._id;
+                              const assignedId = lead.assignedTo && (typeof lead.assignedTo === "object" ? lead.assignedTo._id : lead.assignedTo);
+                              const isAssigned = !!user?._id && !!assignedId && String(assignedId) === String(user._id);
+                              const canShowAllActions = isCreator || isAssigned || isCustomerCare;
+                              const notClosed = !lead.dealClosed && lead.status !== "deal_closed";
+                              return (
+                                <>
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -749,7 +758,7 @@ export default function AllLeads() {
                               <Eye size={14} /> View Details
                             </button>
 
-                            {lead.createdBy?._id === user?._id && !lead.dealClosed && lead.status !== "deal_closed" && (
+                            {canShowAllActions && notClosed && (
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -761,7 +770,7 @@ export default function AllLeads() {
                               </button>
                             )}
 
-                            {!lead.isRegistered && lead.createdBy?._id === user?._id && !lead.dealClosed && lead.status !== "deal_closed" && (
+                            {!lead.isRegistered && canShowAllActions && notClosed && (
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -785,9 +794,7 @@ export default function AllLeads() {
                               <Eye size={14} /> View Visits
                             </button>
 
-
-
-                            {lead.createdBy?._id === user?._id && !lead.dealClosed && lead.status !== "deal_closed" && (
+                            {canShowAllActions && notClosed && (
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -800,7 +807,7 @@ export default function AllLeads() {
                               </button>
                             )}
 
-                            {lead.createdBy?._id === user?._id && !lead.dealClosed && lead.status !== "deal_closed" && (
+                            {canShowAllActions && notClosed && (
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -813,7 +820,7 @@ export default function AllLeads() {
                               </button>
                             )}
 
-                            {!lead.dealClosed && lead.status !== "deal_closed" && lead.createdBy?._id === user?._id && (
+                            {notClosed && canShowAllActions && (
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -827,6 +834,9 @@ export default function AllLeads() {
                                 <CheckCircle size={14} /> Mark Deal Closed
                               </button>
                             )}
+                                </>
+                              );
+                            })()}
 
                             {/* {!lead.dealClosed && lead.status !== "deal_closed" && (
                             <button 

@@ -36,7 +36,7 @@ export function getCountdownText(lead) {
  * Rules: overdue = Overdue; 0–3 = Critical; 4–7 = High; 8–14 = Medium; >14 = Low.
  */
 export function getDisplayUrgencyLevel(lead) {
-  if (lead?.dealClosed || lead?.status === "deal_closed") return null;
+  if (lead?.dealClosed || lead?.status === "deal_closed" || lead?.status === "lost") return null;
   const remaining = getRemainingDays(lead?.expectedClosureDate);
   if (remaining === null) return lead?.urgencyLevel || null;
   if (remaining < 0) return "Overdue";
