@@ -54,6 +54,16 @@ export default function VisitHistory({ open, onClose, leadId }) {
                     </p>
                   </div>
 
+                  {/* Lead created by / Visit added by */}
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-xs text-gray-500">
+                    <span>
+                      Lead created by: {typeof v.leadCreatedBy === "object" && v.leadCreatedBy?.name ? v.leadCreatedBy.name : "—"}
+                    </span>
+                    <span>
+                      Visit added by: {typeof v.visitAddedBy === "object" && v.visitAddedBy?.name ? v.visitAddedBy.name : "—"}
+                    </span>
+                  </div>
+
                   {/* ------------------------------ */}
                   {/* TENANT LEAD VISITS */}
                   {/* ------------------------------ */}

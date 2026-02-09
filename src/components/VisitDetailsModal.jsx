@@ -140,6 +140,14 @@ export default function VisitDetailsModal({ open, onClose, visit }) {
               label="Role"
               value={visit?.visitedBy?.role || "N/A"}
             />
+            <Info
+              label="Lead Created By"
+              value={visit?.leadCreatedBy?.name ?? "—"}
+            />
+            <Info
+              label="Visit Added By"
+              value={visit?.visitAddedBy?.name ?? "—"}
+            />
           </div>
         </div>
       </motion.div>

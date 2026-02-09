@@ -706,13 +706,13 @@ export default function AllLeads() {
                               updateStatusMutation.isPending ||
                               lead.dealClosed ||
                               lead.status === "deal_closed" ||
-                              lead.createdBy?._id !== user?._id
+                              !(user?.role === "admin" || lead.createdBy?._id === user?._id || (!!user?._id && !!(lead.assignedTo && (typeof lead.assignedTo === "object" ? lead.assignedTo._id : lead.assignedTo)) && String(lead.assignedTo?._id ?? lead.assignedTo) === String(user._id)) || isCustomerCare)
                             }
                             title={
                               lead.dealClosed || lead.status === "deal_closed"
                                 ? "Deal is closed. Cannot modify status."
-                                : lead.createdBy?._id !== user?._id
-                                  ? "Only the creator can change status"
+                                : !(user?.role === "admin" || lead.createdBy?._id === user?._id || (!!user?._id && !!(lead.assignedTo && (typeof lead.assignedTo === "object" ? lead.assignedTo._id : lead.assignedTo)) && String(lead.assignedTo?._id ?? lead.assignedTo) === String(user._id)) || isCustomerCare)
+                                  ? "Only the creator, assigned employee, or customer care can change status"
                                   : ""
                             }
                           >
