@@ -19,7 +19,7 @@ import { useLoadUser } from "../hooks/useAuthQueries.js";
 import { useNavigate } from "react-router-dom";
 import RemindersList from "../components/RemindersList.jsx";
 import { formatDate } from "../utils/dateFormat.js";
-import { getCountdownText, URGENCY_COLORS, formatRequirementDuration } from "../utils/leadUrgency.js";
+import { getCountdownText, URGENCY_COLORS, formatRequirementDuration, getDisplayUrgencyLevel } from "../utils/leadUrgency.js";
 
 // Memoized metric card component for performance
 const MetricCard = React.memo(({ icon: Icon, title, value, subtitle, trend, color, delay = 0 }) => {
@@ -103,12 +103,16 @@ const StatusBadge = ({ status }) => {
   );
 };
 
-// Urgency badge
-const UrgencyBadge = ({ level }) => (
-  <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${URGENCY_COLORS[level] || "bg-gray-100 text-gray-700"}`}>
-    {level || "—"}
-  </span>
-);
+// Urgency badge — same as Leads: use display level (Overdue, Critical, High, etc.) and URGENCY_COLORS
+const UrgencyBadge = ({ lead }) => {
+  const displayLevel = getDisplayUrgencyLevel(lead);
+  if (!displayLevel) return null;
+  return (
+    <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${URGENCY_COLORS[displayLevel] || "bg-gray-100 text-gray-700"}`}>
+      {displayLevel}
+    </span>
+  );
+};
 
 // Recent lead item component
 const RecentLeadItem = React.memo(({ lead }) => {
@@ -128,7 +132,7 @@ const RecentLeadItem = React.memo(({ lead }) => {
           <div className="flex items-center gap-2 mb-1 flex-wrap">
             <p className="font-semibold text-gray-900">{name}</p>
             <StatusBadge status={lead.status} />
-            {lead.urgencyLevel && <UrgencyBadge level={lead.urgencyLevel} />}
+            {getDisplayUrgencyLevel(lead) && <UrgencyBadge lead={lead} />}
           </div>
           <p className="text-xs text-gray-500 mb-1">
             Created by {lead.createdBy?.name || "Unknown"}
@@ -317,14 +321,17 @@ export default function Dashboard() {
                       <span className="font-medium text-gray-900 truncate">
                         {lead.customerName || lead.ownerName || "N/A"}
                       </span>
-                      <UrgencyBadge level={lead.urgencyLevel} />
+                      <UrgencyBadge lead={lead} />
                     </div>
                     <p className="text-xs text-gray-600 mt-1">
                       {lead.mobileNumber && (
                         <span className="font-medium text-gray-700">{lead.mobileNumber}</span>
                       )}
                       {lead.mobileNumber && " · "}
-                      {getCountdownText(lead)} · Due {formatDate(lead.expectedClosureDate)}
+                      <span className={getCountdownText(lead).startsWith("Overdue") || getCountdownText(lead).startsWith("by ") ? "text-red-600 font-medium" : ""}>
+                        {getCountdownText(lead)}
+                      </span>
+                      {" · Due "}{formatDate(lead.expectedClosureDate)}
                       {user?.role === "admin" && lead.createdBy?.name && (
                         <span className="block mt-0.5 text-gray-500">Created by {lead.createdBy.name}</span>
                       )}
@@ -363,14 +370,15 @@ export default function Dashboard() {
                       <span className="font-medium text-gray-900 truncate">
                         {lead.customerName || lead.ownerName || "N/A"}
                       </span>
-                      <span className="text-xs font-medium text-red-700">{getCountdownText(lead)}</span>
+                      <UrgencyBadge lead={lead} />
                     </div>
                     <p className="text-xs text-gray-600 mt-1">
                       {lead.mobileNumber && (
                         <span className="font-medium text-gray-700">{lead.mobileNumber}</span>
                       )}
                       {lead.mobileNumber && " · "}
-                      Expected {formatDate(lead.expectedClosureDate)}
+                      <span className="text-red-600 font-medium">{getCountdownText(lead)}</span>
+                      {" · Expected "}{formatDate(lead.expectedClosureDate)}
                       {user?.role === "admin" && lead.createdBy?.name && (
                         <span className="block mt-0.5 text-gray-500">Created by {lead.createdBy.name}</span>
                       )}
