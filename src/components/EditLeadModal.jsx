@@ -340,7 +340,7 @@ export default function EditLeadModal({ open, onClose, lead }) {
                   placeholder="e.g., 1200"
                 />
                 <InputField
-                  label="Landmark"
+                  label="Location Details *"
                   name="landmark"
                   value={form.landmark}
                   onChange={handleChange}

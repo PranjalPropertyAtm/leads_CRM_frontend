@@ -93,8 +93,8 @@ export default function AddLead() {
         e.preferredLocation = "Select at most 3 preferred locations";
     } else {
       if (!form.ownerName.trim()) e.ownerName = "Owner name required";
-      if (!form.propertyLocation)
-        e.propertyLocation = "Property location required";
+      if (!form.propertyLocation) e.propertyLocation = "Location required";
+      if (!form.landmark?.trim()) e.landmark = "Location details required";
     }
 
     setErrors(e);
@@ -362,21 +362,38 @@ export default function AddLead() {
                   onChange={handleChange}
                 />
 
-                <InputField
-                  label="Property Location *"
-                  name="propertyLocation"
-                  value={form.propertyLocation}
-                  onChange={handleChange}
-                  error={errors.propertyLocation}
-                />
-
+                {/* City first — then location options are fetched for this city (same as tenant) */}
                 <SelectField
                   label="City *"
                   name="city"
                   value={form.city}
                   options={cities}
-                  onChange={handleChange}
+                  onChange={(e) => {
+                    handleChange(e);
+                    setForm((p) => ({ ...p, propertyLocation: "" }));
+                  }}
                   error={errors.city}
+                />
+
+                {/* Location: dropdown of locations for selected city (from masters, like tenant preferred location) */}
+                <SearchableSelect
+                  label="Location *"
+                  name="propertyLocation"
+                  value={form.propertyLocation}
+                  options={locationOptions.map((l) => ({ value: l, label: l }))}
+                  disabled={!form.city}
+                  onChange={handleChange}
+                  error={errors.propertyLocation}
+                  placeholder={form.city ? "Search location..." : "Select city first"}
+                />
+
+                <InputField
+                  label="Location Details *"
+                  name="landmark"
+                  value={form.landmark}
+                  onChange={handleChange}
+                  error={errors.landmark}
+                  placeholder="e.g. Near XYZ mall, 2nd floor, building name"
                 />
 
                 <SelectField
@@ -408,13 +425,6 @@ export default function AddLead() {
                   step="any"
                   suffix="sq ft"
                   placeholder="e.g., 1200"
-                />
-
-                <InputField
-                  label="Landmark"
-                  name="landmark"
-                  value={form.landmark}
-                  onChange={handleChange}
                 />
               </>
             )}

@@ -1097,14 +1097,14 @@ export default function LeadsByEmployee() {
                         value={selected.propertyLocation || "N/A"}
                       />
                       <InfoRow
+                        label="Location Details"
+                        value={selected.landmark || "N/A"}
+                      />
+                      <InfoRow
                         label="Area"
                         value={
                           selected.area ? `${selected.area} sq ft` : "N/A"
                         }
-                      />
-                      <InfoRow
-                        label="Landmark"
-                        value={selected.landmark || "N/A"}
                       />
                     </>
                   )}
