@@ -21,7 +21,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import axiosInstance from "../../lib/axios.js";
 import { notify } from "../../utils/toast.js";
 
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { useFetchLeads, useDeleteLead, useUpdateLeadStatus, useMarkDealClosed } from "../../hooks/useLeadQueries.js";
 import { useFetchEmployees } from "../../hooks/useEmployeeQueries.js";
 import { useLoadUser } from "../../hooks/useAuthQueries.js";
@@ -40,6 +40,7 @@ const VALID_URGENCY = ["", "critical", "overdue", "high"];
 export default function AllLeads() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: user } = useLoadUser();
   const isCustomerCare = user?.designation?.toLowerCase().includes("customer care");
@@ -54,6 +55,15 @@ export default function AllLeads() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
   const prevPageSizeRef = useRef(null);
+
+  // Restore page and urgency when returning from Edit Lead
+  useEffect(() => {
+    const s = location.state;
+    if (s?.from === "all-leads") {
+      if (s.page != null) setCurrentPage(s.page);
+      if (s.urgencyFilter != null) setUrgencyFilter(s.urgencyFilter);
+    }
+  }, [location.state]);
 
   useEffect(() => {
     // When searching, fetch all leads by setting a large page size; restore when cleared
@@ -762,7 +772,9 @@ export default function AllLeads() {
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  navigate(`/edit-lead/${lead._id}`);
+                                  navigate(`/edit-lead/${lead._id}`, {
+                                    state: { from: "all-leads", page: currentPage, urgencyFilter },
+                                  });
                                 }}
                                 className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-blue-600 transition"
                               >

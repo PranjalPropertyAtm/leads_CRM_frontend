@@ -25,7 +25,7 @@ import { useFetchEmployees } from "../../hooks/useEmployeeQueries.js";
 import { createPortal } from "react-dom";
 import { notify } from "../../utils/toast.js";
 import axiosInstance from "../../lib/axios.js";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import AddVisitModal from "../../components/AddVisitModal.jsx";
 import AddReminderModal from "../../components/AddReminderModal.jsx";
 import VisitHistory from "../../components/VisitHistory.jsx";
@@ -39,6 +39,7 @@ const VALID_URGENCY = ["", "critical", "overdue", "high"];
 
 export default function MyLeads() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: user } = useLoadUser();
   const isCustomerCare = user?.designation?.toLowerCase().includes("customer care");
@@ -70,6 +71,15 @@ export default function MyLeads() {
     const u = searchParams.get("urgencyFilter") || "";
     if (VALID_URGENCY.includes(u)) setUrgencyFilter(u);
   }, [searchParams]);
+
+  // Restore page and urgency when returning from Edit Lead
+  useEffect(() => {
+    const s = location.state;
+    if (s?.from === "my-leads") {
+      if (s.page != null) setCurrentPage(s.page);
+      if (s.urgencyFilter != null) setUrgencyFilter(s.urgencyFilter);
+    }
+  }, [location.state]);
 
   // Registration Modal
   const [showRegModal, setShowRegModal] = useState(false);
@@ -705,7 +715,15 @@ export default function MyLeads() {
 
                           {canShowAllActions && notClosed && (
                             <button
-                              onClick={() => navigate(`/edit-lead/${lead._id}`)}
+                              onClick={() =>
+                              navigate(`/edit-lead/${lead._id}`, {
+                                state: {
+                                  from: "my-leads",
+                                  page: currentPage,
+                                  urgencyFilter,
+                                },
+                              })
+                            }
                               className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-blue-600 transition"
                             >
                               <Edit size={14} /> Edit Lead

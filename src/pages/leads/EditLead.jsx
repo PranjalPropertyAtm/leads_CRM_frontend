@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Edit as EditIcon, AlertCircle, ArrowLeft } from "lucide-react";
 import { notify } from "../../utils/toast";
 import { useUpdateLead } from "../../hooks/useLeadQueries";
@@ -20,6 +20,7 @@ import SearchableSelect from "../../components/SearchableSelect";
 export default function EditLead() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [customerType, setCustomerType] = useState("tenant");
 
   const [form, setForm] = useState({
@@ -186,7 +187,22 @@ export default function EditLead() {
       {
         onSuccess: () => {
           notify.success("Lead updated successfully");
-          navigate(-1); // Go back to previous page
+          const state = location.state;
+          if (state?.from === "leads-by-employee") {
+            navigate("/leads-by-employee", {
+              state: { from: "leads-by-employee", selectedEmployeeId: state.employeeId, page: state.page },
+            });
+          } else if (state?.from === "my-leads") {
+            navigate("/my-leads", {
+              state: { from: "my-leads", page: state.page, urgencyFilter: state.urgencyFilter },
+            });
+          } else if (state?.from === "all-leads") {
+            navigate("/all-leads", {
+              state: { from: "all-leads", page: state.page, urgencyFilter: state.urgencyFilter },
+            });
+          } else {
+            navigate(-1);
+          }
         },
         onError: (err) =>
           notify.error(err.response?.data?.message || "Failed to update lead"),
@@ -226,6 +242,25 @@ export default function EditLead() {
     }
   };
 
+  const goBack = () => {
+    const state = location.state;
+    if (state?.from === "leads-by-employee") {
+      navigate("/leads-by-employee", {
+        state: { from: "leads-by-employee", selectedEmployeeId: state.employeeId, page: state.page },
+      });
+    } else if (state?.from === "my-leads") {
+      navigate("/my-leads", {
+        state: { from: "my-leads", page: state.page, urgencyFilter: state.urgencyFilter },
+      });
+    } else if (state?.from === "all-leads") {
+      navigate("/all-leads", {
+        state: { from: "all-leads", page: state.page, urgencyFilter: state.urgencyFilter },
+      });
+    } else {
+      navigate(-1);
+    }
+  };
+
   if (leadLoading) {
     return (
       <div className="min-h-screen bg-slate-100 p-6 flex items-center justify-center">
@@ -243,7 +278,7 @@ export default function EditLead() {
         <div className="text-center">
           <p className="text-red-600 mb-4">Lead not found</p>
           <button
-            onClick={() => navigate(-1)}
+            onClick={goBack}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg"
           >
             Go Back
@@ -263,7 +298,7 @@ export default function EditLead() {
         {/* HEADER */}
         <div className="flex items-center gap-3 mb-6">
           <button
-            onClick={() => navigate(-1)}
+            onClick={goBack}
             className="p-2 hover:bg-gray-200 rounded-lg transition"
           >
             <ArrowLeft size={24} className="text-gray-600" />

@@ -22,7 +22,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import axiosInstance from "../../lib/axios.js";
 import { notify } from "../../utils/toast.js";
 
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useUpdateLeadStatus, useMarkDealClosed, useUpdateEmployeeRemarks } from "../../hooks/useLeadQueries.js";
 import { useFetchEmployees } from "../../hooks/useEmployeeQueries.js";
 import { useLoadUser } from "../../hooks/useAuthQueries.js";
@@ -39,6 +39,7 @@ import { getCountdownText, URGENCY_COLORS, formatRequirementDuration, getRemaini
 export default function LeadsByEmployee() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const location = useLocation();
   const { data: user } = useLoadUser();
   const isCustomerCare = user?.designation && 
     user.designation.toLowerCase().includes("customer care");
@@ -125,14 +126,26 @@ export default function LeadsByEmployee() {
   const markDealClosedMutation = useMarkDealClosed();
   const updateRemarksMutation = useUpdateEmployeeRemarks();
 
+  // Restore employee and page when returning from Edit Lead
+  useEffect(() => {
+    const s = location.state;
+    if (s?.from === "leads-by-employee") {
+      if (s.selectedEmployeeId != null) setSelectedEmployee(s.selectedEmployeeId);
+      if (s.page != null) setCurrentPage(s.page);
+    }
+  }, [location.state]);
+
   // Clear leads when no employee is selected (including on initial mount)
+  // When returning from Edit Lead we restore employee+page in another effect; don't reset page to 1 then
   useEffect(() => {
     if (!selectedEmployee) {
       setLeads([]);
       setTotal(0);
       setTotalPages(0);
       setSelected(null);
-      setCurrentPage(1);
+      if (location.state?.from !== "leads-by-employee") {
+        setCurrentPage(1);
+      }
     }
   }, [selectedEmployee]);
 
@@ -816,7 +829,13 @@ export default function LeadsByEmployee() {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                navigate(`/edit-lead/${lead._id}`);
+                                navigate(`/edit-lead/${lead._id}`, {
+                                  state: {
+                                    from: "leads-by-employee",
+                                    employeeId: selectedEmployee,
+                                    page: currentPage,
+                                  },
+                                });
                               }}
                               className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-blue-600 transition"
                             >
