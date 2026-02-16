@@ -572,7 +572,7 @@ export default function AllLeads() {
                         "Budget",
                         "Source",
                         "Status",
-                        "Registered",
+                        "Plan",
                         "Visits",
                         "",
                       ].map((h) => (
@@ -737,10 +737,10 @@ export default function AllLeads() {
                         </td>
 
                         <td className="px-4 py-3">
-                          {lead.isRegistered ? (
-                            <span className="px-3 py-1.5 bg-green-100 text-green-700 text-xs rounded-full font-semibold">Yes</span>
+                          {lead.registrationDetails?.planName ? (
+                            <span className="text-gray-800 font-medium">{lead.registrationDetails.planName}</span>
                           ) : (
-                            <span className="px-3 py-1.5 bg-red-100 text-red-700 text-xs rounded-full font-semibold">No</span>
+                            <span className="text-gray-400">—</span>
                           )}
                         </td>
 
@@ -1005,13 +1005,23 @@ export default function AllLeads() {
 
               <div>
                 <h3 className="text-lg font-semibold text-gray-800 mb-3">Registration Details</h3>
-                {selected?.isRegistered ? (
+                {(selected?.isRegistered || selected?.registrationDetails?.planName) ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                     <InfoRow label="Plan Name" value={selected.registrationDetails?.planName} />
-                    <InfoRow label="Member Code" value={selected.registrationDetails?.memberCode || "N/A"} />
-                    <InfoRow label="Registration Date" value={selected.registrationDetails?.registrationDate ? formatDate(selected.registrationDetails.registrationDate) : "N/A"} />
-                    {/* SAFELY render registeredBy: either populated object or a string */}
-                    <InfoRow label="Registered By" value={selected.registrationDetails?.registeredBy?.name || "NA"} />
+                    <InfoRow
+                      label={selected.registrationDetails?.planName === "Customized" ? "Customized Code" : "Member Code"}
+                      value={
+                        selected.registrationDetails?.planName === "Customized"
+                          ? (selected.registrationDetails?.customizedCode || "N/A")
+                          : (selected.registrationDetails?.memberCode || "N/A")
+                      }
+                    />
+                    {selected.registrationDetails?.planName !== "Customized" && (
+                      <>
+                        <InfoRow label="Registration Date" value={selected.registrationDetails?.registrationDate ? formatDate(selected.registrationDetails.registrationDate) : "N/A"} />
+                        <InfoRow label="Registered By" value={selected.registrationDetails?.registeredBy?.name || "NA"} />
+                      </>
+                    )}
                   </div>
                 ) : (
                   <p className="text-sm text-red-500 font-medium">✖ This lead is not registered yet.</p>
