@@ -19,7 +19,7 @@ import {
   Bell,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useMyLeads, useDeleteLead, useUpdateLeadStatus, useMarkDealClosed } from "../../hooks/useLeadQueries.js";
+import { useMyLeads, useDeleteLead, useUpdateLeadStatus, useMarkDealClosed, useLeadFilterOptions } from "../../hooks/useLeadQueries.js";
 import { useLoadUser } from "../../hooks/useAuthQueries.js";
 import { useFetchEmployees } from "../../hooks/useEmployeeQueries.js";
 import { createPortal } from "react-dom";
@@ -31,6 +31,7 @@ import AddReminderModal from "../../components/AddReminderModal.jsx";
 import VisitHistory from "../../components/VisitHistory.jsx";
 import RegisterLeadModal from "../../components/RegisterLeadModal.jsx";
 import ConfirmModal from "../../components/ConfirmModal.jsx";
+import SearchableSelect from "../../components/SearchableSelect.jsx";
 import { formatDate } from "../../utils/dateFormat.js";
 import { getCountdownText, URGENCY_COLORS, formatRequirementDuration, getRemainingDays, getDisplayUrgencyLevel } from "../../utils/leadUrgency.js";
 
@@ -48,11 +49,26 @@ export default function MyLeads() {
 
   const [filter, setFilter] = useState("");
   const [urgencyFilter, setUrgencyFilter] = useState(initialUrgency);
+  const [statusFilter, setStatusFilter] = useState("");
+  const [customerTypeFilter, setCustomerTypeFilter] = useState("");
+  const [sourceFilter, setSourceFilter] = useState("");
+  const [subPropertyTypeFilter, setSubPropertyTypeFilter] = useState("");
+  const [cityFilter, setCityFilter] = useState("");
+  const [isRegisteredFilter, setIsRegisteredFilter] = useState("");
   const isSearching = Boolean(filter.trim());
   const [selected, setSelected] = useState(null);
 
   const queryClient = useQueryClient();
   const prevPageSizeRef = useRef(null);
+
+  const leadFilters = {
+    status: statusFilter,
+    customerType: customerTypeFilter,
+    source: sourceFilter,
+    subPropertyType: subPropertyTypeFilter,
+    city: cityFilter,
+    isRegistered: isRegisteredFilter,
+  };
 
   useEffect(() => {
     if (filter.trim()) {
@@ -104,7 +120,7 @@ export default function MyLeads() {
   const {
     data = { leads: [], total: 0, totalPages: 0, page: 1, countCritical: 0, countOverdue: 0, countHigh: 0 },
     isLoading,
-  } = useMyLeads(isSearching ? 1 : currentPage, pageSize, urgencyFilter);
+  } = useMyLeads(isSearching ? 1 : currentPage, pageSize, urgencyFilter, leadFilters);
 
   const { leads = [], total = 0, totalPages = 0, countCritical = 0, countOverdue = 0, countHigh = 0 } = data;
 
@@ -114,6 +130,9 @@ export default function MyLeads() {
       isError: empError,
       error: empErrorObj,
     } = useFetchEmployees(1, 1000);
+
+  const { data: filterOptions = { source: [], subPropertyType: [], city: [] } } = useLeadFilterOptions();
+  const { source: sourceOptions = [], subPropertyType: subPropertyTypeOptions = [], city: cityOptions = [] } = filterOptions;
   
     const employees = employeesData?.employees || [];
   
@@ -509,6 +528,102 @@ export default function MyLeads() {
           </button>
         </div>
 
+        {/* Lead filters */}
+        <div className="bg-white rounded-xl shadow-md border p-4 mb-6">
+          <p className="text-sm font-semibold text-gray-700 mb-3">Filter by</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Status</label>
+              <select
+                value={statusFilter}
+                onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">All</option>
+                <option value="new">New</option>
+                <option value="contacted">Contacted</option>
+                <option value="registered">Registered</option>
+                <option value="visit_scheduled">Visit Scheduled</option>
+                <option value="visit_completed">Visit Completed</option>
+                <option value="deal_closed">Deal Closed</option>
+                <option value="lost">Lost</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Customer Type</label>
+              <select
+                value={customerTypeFilter}
+                onChange={(e) => { setCustomerTypeFilter(e.target.value); setCurrentPage(1); }}
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">All</option>
+                <option value="tenant">Tenant</option>
+                <option value="owner">Owner</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Source</label>
+              <SearchableSelect
+                value={sourceFilter}
+                onChange={(e) => { setSourceFilter(e.target.value); setCurrentPage(1); }}
+                options={[{ value: "", label: "All" }, ...sourceOptions.map((s) => ({ value: s, label: s }))]}
+                placeholder="Search source..."
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Sub Property Type</label>
+              <SearchableSelect
+                value={subPropertyTypeFilter}
+                onChange={(e) => { setSubPropertyTypeFilter(e.target.value); setCurrentPage(1); }}
+                options={[{ value: "", label: "All" }, ...subPropertyTypeOptions.map((s) => ({ value: s, label: s }))]}
+                placeholder="Search sub property type..."
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">City</label>
+              <select
+                value={cityFilter}
+                onChange={(e) => { setCityFilter(e.target.value); setCurrentPage(1); }}
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">All</option>
+                {cityOptions.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Registration</label>
+              <select
+                value={isRegisteredFilter}
+                onChange={(e) => { setIsRegisteredFilter(e.target.value); setCurrentPage(1); }}
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">All</option>
+                <option value="true">Registered</option>
+                <option value="false">Not Registered</option>
+              </select>
+            </div>
+          </div>
+          <div className="mt-3 flex justify-end">
+            <button
+              type="button"
+              onClick={() => {
+                setStatusFilter("");
+                setCustomerTypeFilter("");
+                setSourceFilter("");
+                setSubPropertyTypeFilter("");
+                setCityFilter("");
+                setIsRegisteredFilter("");
+                setCurrentPage(1);
+              }}
+              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium transition"
+            >
+              Clear filters
+            </button>
+          </div>
+        </div>
+
         {/* TABLE */}
         <div className="bg-white rounded-xl shadow-md border overflow-hidden">
           {isLoading ? (
@@ -530,7 +645,7 @@ export default function MyLeads() {
                       "Urgency",
                       "Mobile",
                       "Location",
-                      "Property",
+                      "Sub Property Type",
                       "Budget",
                       "Source",
                       "Status",
@@ -595,7 +710,7 @@ export default function MyLeads() {
                       </td>
                       <td className="px-4 py-3">{lead.mobileNumber || "N/A"}</td>
                       <td className="px-4 py-3">{lead.customerType === "tenant" ? (Array.isArray(lead.preferredLocation) ? lead.preferredLocation.join(", ") : lead.preferredLocation) : lead.propertyLocation}</td>
-                      <td className="px-4 py-3">{lead.propertyType || "N/A"}</td>
+                      <td className="px-4 py-3">{lead.subPropertyType || "N/A"}</td>
                       <td className="px-4 py-3">{lead.budget ? `₹${lead.budget}` : "N/A"}</td>
                       <td className="px-4 py-3">{lead.source || "N/A"}</td>
 

@@ -23,7 +23,7 @@ import axiosInstance from "../../lib/axios.js";
 import { notify } from "../../utils/toast.js";
 
 import { useNavigate, useLocation } from "react-router-dom";
-import { useUpdateLeadStatus, useMarkDealClosed, useUpdateEmployeeRemarks } from "../../hooks/useLeadQueries.js";
+import { useUpdateLeadStatus, useMarkDealClosed, useUpdateEmployeeRemarks, useLeadFilterOptions } from "../../hooks/useLeadQueries.js";
 import { useFetchEmployees } from "../../hooks/useEmployeeQueries.js";
 import { useLoadUser } from "../../hooks/useAuthQueries.js";
 
@@ -49,6 +49,13 @@ export default function LeadsByEmployee() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [filter, setFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [customerTypeFilter, setCustomerTypeFilter] = useState("");
+  const [sourceFilter, setSourceFilter] = useState("");
+  const [subPropertyTypeFilter, setSubPropertyTypeFilter] = useState("");
+  const [cityFilter, setCityFilter] = useState("");
+  const [isRegisteredFilter, setIsRegisteredFilter] = useState("");
+  const [assignedToFilter, setAssignedToFilter] = useState("");
   const isSearching = Boolean(filter.trim());
 
   // Pagination
@@ -113,6 +120,9 @@ export default function LeadsByEmployee() {
     isLoading: empLoading,
   } = useFetchEmployees(1, 1000);
 
+  const { data: filterOptions = { source: [], subPropertyType: [], city: [] } } = useLeadFilterOptions();
+  const { source: sourceOptions = [], subPropertyType: subPropertyTypeOptions = [], city: cityOptions = [] } = filterOptions;
+
   const employees = employeesData?.employees || [];
 
   // Map to select options
@@ -154,7 +164,20 @@ export default function LeadsByEmployee() {
     if (selectedEmployee) {
       fetchLeads();
     }
-  }, [selectedEmployee, startDate, endDate, currentPage, pageSize]);
+  }, [
+    selectedEmployee,
+    startDate,
+    endDate,
+    statusFilter,
+    customerTypeFilter,
+    sourceFilter,
+    subPropertyTypeFilter,
+    cityFilter,
+    isRegisteredFilter,
+    assignedToFilter,
+    currentPage,
+    pageSize,
+  ]);
 
   useEffect(() => {
     // When searching, fetch all leads by setting a large page size; restore when cleared
@@ -172,7 +195,7 @@ export default function LeadsByEmployee() {
   // Fetch leads function
   const fetchLeads = async () => {
     if (!selectedEmployee) return;
-    
+
     setIsLoading(true);
     try {
       const params = {
@@ -183,6 +206,13 @@ export default function LeadsByEmployee() {
 
       if (startDate) params.startDate = startDate;
       if (endDate) params.endDate = endDate;
+      if (statusFilter) params.status = statusFilter;
+      if (customerTypeFilter) params.customerType = customerTypeFilter;
+      if (sourceFilter.trim()) params.source = sourceFilter.trim();
+      if (subPropertyTypeFilter.trim()) params.subPropertyType = subPropertyTypeFilter.trim();
+      if (cityFilter.trim()) params.city = cityFilter.trim();
+      if (isRegisteredFilter === "true" || isRegisteredFilter === "false") params.isRegistered = isRegisteredFilter;
+      if (assignedToFilter) params.assignedTo = assignedToFilter;
 
       const response = await axiosInstance.get("/leads/all", { params });
       const data = response.data;
@@ -279,6 +309,13 @@ export default function LeadsByEmployee() {
     setStartDate("");
     setEndDate("");
     setFilter("");
+    setStatusFilter("");
+    setCustomerTypeFilter("");
+    setSourceFilter("");
+    setSubPropertyTypeFilter("");
+    setCityFilter("");
+    setIsRegisteredFilter("");
+    setAssignedToFilter("");
     setCurrentPage(1);
   };
 
@@ -479,15 +516,11 @@ export default function LeadsByEmployee() {
         animate={{ opacity: 1, y: 0 }}
         className="max-w-7xl mx-auto"
       >
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        {/* Header - same as All Leads */}
+        <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-1">
-              Leads by Employee
-            </h1>
-            <p className="text-sm text-gray-600 font-medium">
-              View leads created by specific employees
-            </p>
+            <h1 className="text-3xl font-bold text-gray-900 mb-1">Leads by Employee</h1>
+            <p className="text-sm text-gray-600 font-medium">View leads created by specific employees</p>
           </div>
 
           <div className="relative">
@@ -501,13 +534,12 @@ export default function LeadsByEmployee() {
           </div>
         </div>
 
-        {/* Filters */}
+        {/* Filters - same UI as All Leads (admin section) */}
         <div className="bg-white rounded-xl shadow-md border p-6 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <p className="text-sm font-semibold text-gray-700 mb-4">Filter by</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Select Employee
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Select Employee</label>
               <SearchableSelect
                 value={selectedEmployee}
                 onChange={handleEmployeeChange}
@@ -515,70 +547,135 @@ export default function LeadsByEmployee() {
                 placeholder="Select employee..."
               />
             </div>
-
+              {(user?.role === "admin" || isCustomerCare) && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Assigned To</label>
+                <SearchableSelect
+                  value={assignedToFilter}
+                  onChange={(e) => { setAssignedToFilter(e.target.value); setCurrentPage(1); }}
+                  options={[{ value: "", label: "Any" }, ...employeeOptions]}
+                  placeholder="Any"
+                />
+              </div>
+            )}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Start Date
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
               <div className="relative">
                 <Calendar className="absolute left-3 top-3 text-gray-400" size={16} />
                 <input
                   type="date"
                   value={startDate}
-                  onChange={(e) => {
-                    setStartDate(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  className="pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 bg-white shadow-sm w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm font-medium"
+                  onChange={(e) => { setStartDate(e.target.value); setCurrentPage(1); }}
+                  className="pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 bg-white shadow-sm w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-medium"
                 />
               </div>
             </div>
-
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                End Date
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">End Date</label>
               <div className="relative">
                 <Calendar className="absolute left-3 top-3 text-gray-400" size={16} />
                 <input
                   type="date"
                   value={endDate}
-                  onChange={(e) => {
-                    setEndDate(e.target.value);
-                    setCurrentPage(1);
-                  }}
+                  onChange={(e) => { setEndDate(e.target.value); setCurrentPage(1); }}
                   min={startDate || undefined}
-                  className="pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 bg-white shadow-sm w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm font-medium"
+                  className="pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 bg-white shadow-sm w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-medium"
                 />
               </div>
             </div>
-
+          
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+              <select
+                value={statusFilter}
+                onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-medium"
+              >
+                <option value="">All</option>
+                <option value="new">New</option>
+                <option value="contacted">Contacted</option>
+                <option value="registered">Registered</option>
+                <option value="visit_scheduled">Visit Scheduled</option>
+                <option value="visit_completed">Visit Completed</option>
+                <option value="deal_closed">Deal Closed</option>
+                <option value="lost">Lost</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Customer Type</label>
+              <select
+                value={customerTypeFilter}
+                onChange={(e) => { setCustomerTypeFilter(e.target.value); setCurrentPage(1); }}
+                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-medium"
+              >
+                <option value="">All</option>
+                <option value="tenant">Tenant</option>
+                <option value="owner">Owner</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Source</label>
+              <SearchableSelect
+                value={sourceFilter}
+                onChange={(e) => { setSourceFilter(e.target.value); setCurrentPage(1); }}
+                options={[{ value: "", label: "All" }, ...sourceOptions.map((s) => ({ value: s, label: s }))]}
+                placeholder="Search source..."
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Sub Property Type</label>
+              <SearchableSelect
+                value={subPropertyTypeFilter}
+                onChange={(e) => { setSubPropertyTypeFilter(e.target.value); setCurrentPage(1); }}
+                options={[{ value: "", label: "All" }, ...subPropertyTypeOptions.map((s) => ({ value: s, label: s }))]}
+                placeholder="Search sub property type..."
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
+              <select
+                value={cityFilter}
+                onChange={(e) => { setCityFilter(e.target.value); setCurrentPage(1); }}
+                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-medium"
+              >
+                <option value="">All</option>
+                {cityOptions.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Registration</label>
+              <select
+                value={isRegisteredFilter}
+                onChange={(e) => { setIsRegisteredFilter(e.target.value); setCurrentPage(1); }}
+                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-medium"
+              >
+                <option value="">All</option>
+                <option value="true">Registered</option>
+                <option value="false">Not Registered</option>
+              </select>
+            </div>
             <div className="flex items-end">
               <button
+                type="button"
                 onClick={handleClearFilters}
-                className="w-full px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all text-sm font-medium"
+                className="w-full px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium transition"
               >
-                Clear Filters
+                Clear filters
               </button>
             </div>
           </div>
-
           {selectedEmployee && (
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <p className="text-sm text-gray-600">
-                Showing leads for: <span className="font-semibold text-gray-900">{selectedEmployeeName}</span>
-                {startDate && (
-                  <span className="ml-4">
-                    From: <span className="font-semibold">{formatDate(startDate)}</span>
-                  </span>
-                )}
-                {endDate && (
-                  <span className="ml-4">
-                    To: <span className="font-semibold">{formatDate(endDate)}</span>
-                  </span>
-                )}
-              </p>
-            </div>
+            <p className="text-sm text-gray-600 mt-4 pt-4 border-t border-gray-200">
+              Showing leads for: <span className="font-semibold text-gray-900">{selectedEmployeeName}</span>
+              {startDate && (
+                <span className="ml-4">From: <span className="font-semibold">{formatDate(startDate)}</span></span>
+              )}
+              {endDate && (
+                <span className="ml-4">To: <span className="font-semibold">{formatDate(endDate)}</span></span>
+              )}
+            </p>
           )}
         </div>
 
@@ -607,7 +704,7 @@ export default function LeadsByEmployee() {
                       "Urgency",
                       "Mobile",
                       "Location",
-                      "Property",
+                      "Sub Property Type",
                       "Budget",
                       "Source",
                       "Status",
@@ -696,7 +793,7 @@ export default function LeadsByEmployee() {
                             : lead.preferredLocation
                           : lead.propertyLocation}
                       </td>
-                      <td className="px-4 py-3">{lead.propertyType || "N/A"}</td>
+                      <td className="px-4 py-3">{lead.subPropertyType || "N/A"}</td>
                       <td className="px-4 py-3">
                         {lead.budget ? `₹${lead.budget}` : "N/A"}
                       </td>

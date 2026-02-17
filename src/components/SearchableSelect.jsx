@@ -89,7 +89,10 @@ export default function SearchableSelect({
             {selectedValues.length < max && <span className="text-sm text-gray-400">({selectedValues.length}/{max})</span>}
           </div>
         ) : (
-          value ? (options.find((opt) => opt.value === value)?.label) : <span className="text-gray-400">Select...</span>
+          (() => {
+            const selected = options.find((opt) => opt.value === value);
+            return selected !== undefined ? selected.label : <span className="text-gray-400">Select...</span>;
+          })()
         )}
       </div>
 

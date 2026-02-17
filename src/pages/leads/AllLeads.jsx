@@ -14,6 +14,7 @@ import {
   CheckCircle,
   MessageSquare,
   Bell,
+  Calendar,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
@@ -22,14 +23,14 @@ import axiosInstance from "../../lib/axios.js";
 import { notify } from "../../utils/toast.js";
 
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
-import { useFetchLeads, useDeleteLead, useUpdateLeadStatus, useMarkDealClosed } from "../../hooks/useLeadQueries.js";
+import { useFetchLeads, useDeleteLead, useUpdateLeadStatus, useMarkDealClosed, useLeadFilterOptions } from "../../hooks/useLeadQueries.js";
 import { useFetchEmployees } from "../../hooks/useEmployeeQueries.js";
 import { useLoadUser } from "../../hooks/useAuthQueries.js";
 
 import AddVisitModal from "../../components/AddVisitModal.jsx";
 import AddReminderModal from "../../components/AddReminderModal.jsx";
 import VisitHistory from "../../components/VisitHistory.jsx";
-// import SearchableSelect from "../../components/SearchableSelect.jsx";
+import SearchableSelect from "../../components/SearchableSelect.jsx";
 import RegisterLeadModal from "../../components/RegisterLeadModal.jsx";
 import ConfirmModal from "../../components/ConfirmModal.jsx";
 import { formatDate } from "../../utils/dateFormat.js";
@@ -51,10 +52,33 @@ export default function AllLeads() {
   // page + filters (urgency can be set from URL when coming from dashboard)
   const [filter, setFilter] = useState("");
   const [urgencyFilter, setUrgencyFilter] = useState(initialUrgency);
+  const [statusFilter, setStatusFilter] = useState("");
+  const [customerTypeFilter, setCustomerTypeFilter] = useState("");
+  const [sourceFilter, setSourceFilter] = useState("");
+  const [subPropertyTypeFilter, setSubPropertyTypeFilter] = useState("");
+  const [cityFilter, setCityFilter] = useState("");
+  const [isRegisteredFilter, setIsRegisteredFilter] = useState("");
+  const [createdByFilter, setCreatedByFilter] = useState("");
+  const [assignedToFilter, setAssignedToFilter] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const isSearching = Boolean(filter.trim());
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
   const prevPageSizeRef = useRef(null);
+
+  const leadFilters = {
+    createdBy: createdByFilter || undefined,
+    assignedTo: assignedToFilter || undefined,
+    startDate: startDate || undefined,
+    endDate: endDate || undefined,
+    status: statusFilter || undefined,
+    customerType: customerTypeFilter || undefined,
+    source: sourceFilter || undefined,
+    subPropertyType: subPropertyTypeFilter || undefined,
+    city: cityFilter || undefined,
+    isRegistered: isRegisteredFilter || undefined,
+  };
 
   // Restore page and urgency when returning from Edit Lead
   useEffect(() => {
@@ -126,7 +150,7 @@ export default function AllLeads() {
   const {
     data: paginatedData = { leads: [], total: 0, totalPages: 0, page: 1, countCritical: 0, countOverdue: 0, countHigh: 0 },
     isLoading,
-  } = useFetchLeads(isSearching ? 1 : currentPage, pageSize, urgencyFilter);
+  } = useFetchLeads(isSearching ? 1 : currentPage, pageSize, urgencyFilter, leadFilters);
   const { leads = [], total = 0, totalPages = 0, countCritical = 0, countOverdue = 0, countHigh = 0 } = paginatedData;
 
   // employees query (fetch many for select)
@@ -136,6 +160,10 @@ export default function AllLeads() {
     isError: empError,
     error: empErrorObj,
   } = useFetchEmployees(1, 1000);
+
+  // filter options from backend (source, subPropertyType, city)
+  const { data: filterOptions = { source: [], subPropertyType: [], city: [] } } = useLeadFilterOptions();
+  const { source: sourceOptions = [], subPropertyType: subPropertyTypeOptions = [], city: cityOptions = [] } = filterOptions;
 
   const employees = employeesData?.employees || [];
 
@@ -546,6 +574,248 @@ export default function AllLeads() {
           </button>
         </div>
 
+        {/* Lead filters */}
+        {!(user?.role === "admin" || isCustomerCare) ? (
+          /* Employee view: same UI as My Leads */
+          <div className="bg-white rounded-xl shadow-md border p-4 mb-6">
+            <p className="text-sm font-semibold text-gray-700 mb-3">Filter by</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Status</label>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="">All</option>
+                  <option value="new">New</option>
+                  <option value="contacted">Contacted</option>
+                  <option value="registered">Registered</option>
+                  <option value="visit_scheduled">Visit Scheduled</option>
+                  <option value="visit_completed">Visit Completed</option>
+                  <option value="deal_closed">Deal Closed</option>
+                  <option value="lost">Lost</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Customer Type</label>
+                <select
+                  value={customerTypeFilter}
+                  onChange={(e) => { setCustomerTypeFilter(e.target.value); setCurrentPage(1); }}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="">All</option>
+                  <option value="tenant">Tenant</option>
+                  <option value="owner">Owner</option>
+                </select>
+              </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Source</label>
+              <SearchableSelect
+                value={sourceFilter}
+                onChange={(e) => { setSourceFilter(e.target.value); setCurrentPage(1); }}
+                options={[{ value: "", label: "All" }, ...sourceOptions.map((s) => ({ value: s, label: s }))]}
+                placeholder="Search source..."
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Sub Property Type</label>
+              <SearchableSelect
+                value={subPropertyTypeFilter}
+                onChange={(e) => { setSubPropertyTypeFilter(e.target.value); setCurrentPage(1); }}
+                options={[{ value: "", label: "All" }, ...subPropertyTypeOptions.map((s) => ({ value: s, label: s }))]}
+                placeholder="Search sub property type..."
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">City</label>
+              <select
+                value={cityFilter}
+                onChange={(e) => { setCityFilter(e.target.value); setCurrentPage(1); }}
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">All</option>
+                {cityOptions.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Registration</label>
+                <select
+                  value={isRegisteredFilter}
+                  onChange={(e) => { setIsRegisteredFilter(e.target.value); setCurrentPage(1); }}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="">All</option>
+                  <option value="true">Registered</option>
+                  <option value="false">Not Registered</option>
+                </select>
+              </div>
+            </div>
+            <div className="mt-3 flex justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setStatusFilter("");
+                  setCustomerTypeFilter("");
+                  setSourceFilter("");
+                  setSubPropertyTypeFilter("");
+                  setCityFilter("");
+                  setIsRegisteredFilter("");
+                  setCurrentPage(1);
+                }}
+                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium transition"
+              >
+                Clear filters
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* Admin / Customer care: full filters with Created By, Assigned To, dates */
+          <div className="bg-white rounded-xl shadow-md border p-6 mb-6">
+            <p className="text-sm font-semibold text-gray-700 mb-4">Filter by</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Created By</label>
+                <SearchableSelect
+                  value={createdByFilter}
+                  onChange={(e) => { setCreatedByFilter(e.target.value); setCurrentPage(1); }}
+                  options={[{ value: "", label: "All" }, ...employeeOptions]}
+                  placeholder="All employees"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Assigned To</label>
+                <SearchableSelect
+                  value={assignedToFilter}
+                  onChange={(e) => { setAssignedToFilter(e.target.value); setCurrentPage(1); }}
+                  options={[{ value: "", label: "Any" }, ...employeeOptions]}
+                  placeholder="Any"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-3 text-gray-400" size={16} />
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => { setStartDate(e.target.value); setCurrentPage(1); }}
+                    className="pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 bg-white shadow-sm w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-medium"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-3 text-gray-400" size={16} />
+                  <input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => { setEndDate(e.target.value); setCurrentPage(1); }}
+                    min={startDate || undefined}
+                    className="pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 bg-white shadow-sm w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-medium"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+                  className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-medium"
+                >
+                  <option value="">All</option>
+                  <option value="new">New</option>
+                  <option value="contacted">Contacted</option>
+                  <option value="registered">Registered</option>
+                  <option value="visit_scheduled">Visit Scheduled</option>
+                  <option value="visit_completed">Visit Completed</option>
+                  <option value="deal_closed">Deal Closed</option>
+                  <option value="lost">Lost</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Customer Type</label>
+                <select
+                  value={customerTypeFilter}
+                  onChange={(e) => { setCustomerTypeFilter(e.target.value); setCurrentPage(1); }}
+                  className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-medium"
+                >
+                  <option value="">All</option>
+                  <option value="tenant">Tenant</option>
+                  <option value="owner">Owner</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Source</label>
+                <SearchableSelect
+                  value={sourceFilter}
+                  onChange={(e) => { setSourceFilter(e.target.value); setCurrentPage(1); }}
+                  options={[{ value: "", label: "All" }, ...sourceOptions.map((s) => ({ value: s, label: s }))]}
+                  placeholder="Search source..."
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Sub Property Type</label>
+                <SearchableSelect
+                  value={subPropertyTypeFilter}
+                  onChange={(e) => { setSubPropertyTypeFilter(e.target.value); setCurrentPage(1); }}
+                  options={[{ value: "", label: "All" }, ...subPropertyTypeOptions.map((s) => ({ value: s, label: s }))]}
+                  placeholder="Search sub property type..."
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
+                <select
+                  value={cityFilter}
+                  onChange={(e) => { setCityFilter(e.target.value); setCurrentPage(1); }}
+                  className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-medium"
+                >
+                  <option value="">All</option>
+                  {cityOptions.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Registration</label>
+                <select
+                  value={isRegisteredFilter}
+                  onChange={(e) => { setIsRegisteredFilter(e.target.value); setCurrentPage(1); }}
+                  className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-medium"
+                >
+                  <option value="">All</option>
+                  <option value="true">Registered</option>
+                  <option value="false">Not Registered</option>
+                </select>
+              </div>
+              <div className="flex items-end">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStatusFilter("");
+                    setCustomerTypeFilter("");
+                    setSourceFilter("");
+                    setSubPropertyTypeFilter("");
+                    setCityFilter("");
+                    setIsRegisteredFilter("");
+                    setCreatedByFilter("");
+                    setAssignedToFilter("");
+                    setStartDate("");
+                    setEndDate("");
+                    setCurrentPage(1);
+                  }}
+                  className="w-full px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium transition"
+                >
+                  Clear filters
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Table */}
         <div className="bg-white rounded-xl shadow-md border overflow-hidden">
           {isLoading ? (
@@ -568,7 +838,7 @@ export default function AllLeads() {
                         "Urgency",
                         "Mobile",
                         "Location",
-                        "Property",
+                        "Sub Property Type",
                         "Budget",
                         "Source",
                         "Status",
@@ -648,7 +918,7 @@ export default function AllLeads() {
                         </td>
                         <td className="px-4 py-3">{lead.mobileNumber || "N/A"}</td>
                         <td className="px-4 py-3">{lead.customerType === "tenant" ? (Array.isArray(lead.preferredLocation) ? lead.preferredLocation.join(", ") : lead.preferredLocation) : lead.propertyLocation}</td>
-                        <td className="px-4 py-3">{lead.propertyType || "N/A"}</td>
+                        <td className="px-4 py-3">{lead.subPropertyType || "N/A"}</td>
                         <td className="px-4 py-3">{lead.budget ? `₹${lead.budget}` : "N/A"}</td>
                         <td className="px-4 py-3">{lead.source || "N/A"}</td>
 

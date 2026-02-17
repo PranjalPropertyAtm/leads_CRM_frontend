@@ -2,12 +2,51 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import axios from '../lib/axios.js'
 
 // Fetch leads (admin: all, employee: depending on backend rules)
-export const useFetchLeads = (page = 1, limit = 10, urgencyFilter = '') => {
+// filters: { createdBy, assignedTo, startDate, endDate, status, customerType, source, subPropertyType, city, isRegistered }
+export const useFetchLeads = (page = 1, limit = 10, urgencyFilter = '', filters = {}) => {
+  const {
+    createdBy,
+    assignedTo,
+    startDate,
+    endDate,
+    status,
+    customerType,
+    source,
+    subPropertyType,
+    city,
+    isRegistered,
+  } = filters;
+
   return useQuery({
-    queryKey: ['leads', page, limit, urgencyFilter || 'all'],
+    queryKey: [
+      'leads',
+      page,
+      limit,
+      urgencyFilter || 'all',
+      createdBy,
+      assignedTo,
+      startDate,
+      endDate,
+      status,
+      customerType,
+      source,
+      subPropertyType,
+      city,
+      isRegistered,
+    ],
     queryFn: async () => {
       const params = { page, limit };
       if (urgencyFilter) params.urgencyFilter = urgencyFilter;
+      if (createdBy) params.createdBy = createdBy;
+      if (assignedTo) params.assignedTo = assignedTo;
+      if (startDate) params.startDate = startDate;
+      if (endDate) params.endDate = endDate;
+      if (status) params.status = status;
+      if (customerType) params.customerType = customerType;
+      if (source && source.trim()) params.source = source.trim();
+      if (subPropertyType && subPropertyType.trim()) params.subPropertyType = subPropertyType.trim();
+      if (city && city.trim()) params.city = city.trim();
+      if (isRegistered === 'true' || isRegistered === 'false') params.isRegistered = isRegistered;
       const response = await axios.get('/leads/all', { params });
       const data = response.data;
       return {
@@ -19,6 +58,22 @@ export const useFetchLeads = (page = 1, limit = 10, urgencyFilter = '') => {
         countCritical: data.countCritical ?? 0,
         countOverdue: data.countOverdue ?? 0,
         countHigh: data.countHigh ?? 0,
+      };
+    },
+  });
+};
+
+// Fetch distinct source, subPropertyType, city for lead filters (from backend)
+export const useLeadFilterOptions = () => {
+  return useQuery({
+    queryKey: ['leads', 'filter-options'],
+    queryFn: async () => {
+      const response = await axios.get('/leads/filter-options');
+      const data = response.data?.data || {};
+      return {
+        source: Array.isArray(data.source) ? data.source : [],
+        subPropertyType: Array.isArray(data.subPropertyType) ? data.subPropertyType : [],
+        city: Array.isArray(data.city) ? data.city : [],
       };
     },
   });
@@ -36,6 +91,8 @@ export const useCreateLead = () => {
     onSuccess: (data) => {
       // Invalidate lead lists so new lead appears
       queryClient.invalidateQueries({ queryKey: ['leads'] })
+      // Refresh filter options (source, subPropertyType, city)
+      queryClient.invalidateQueries({ queryKey: ['leads', 'filter-options'] })
       // Also refresh customers because backend upserts customers on lead create
       queryClient.invalidateQueries({ queryKey: ['customers'] })
     },
@@ -60,6 +117,7 @@ export const useUpdateLead = () => {
       // Refresh lead list
       queryClient.invalidateQueries({ queryKey: ['leads'] })
       queryClient.invalidateQueries({ queryKey: ['leads', 'my'] })
+      queryClient.invalidateQueries({ queryKey: ['leads', 'filter-options'] })
 
       // Also refresh customers because lead update can change customer data
       queryClient.invalidateQueries({ queryKey: ['customers'] })
@@ -90,12 +148,20 @@ export const useDeleteLead = () => {
 }
 
 // Fetch current user's leads (employee view)
-export const useMyLeads = (page = 1, limit = 10, urgencyFilter = '') => {
+// filters: { urgencyFilter, status, customerType, source, subPropertyType, city, isRegistered }
+export const useMyLeads = (page = 1, limit = 10, urgencyFilter = '', filters = {}) => {
+  const { status, customerType, source, subPropertyType, city, isRegistered } = filters;
   return useQuery({
-    queryKey: ['leads', 'my', page, limit, urgencyFilter || 'all'],
+    queryKey: ['leads', 'my', page, limit, urgencyFilter || 'all', status, customerType, source, subPropertyType, city, isRegistered],
     queryFn: async () => {
       const params = { page, limit };
       if (urgencyFilter) params.urgencyFilter = urgencyFilter;
+      if (status) params.status = status;
+      if (customerType) params.customerType = customerType;
+      if (source && source.trim()) params.source = source.trim();
+      if (subPropertyType && subPropertyType.trim()) params.subPropertyType = subPropertyType.trim();
+      if (city && city.trim()) params.city = city.trim();
+      if (isRegistered === 'true' || isRegistered === 'false') params.isRegistered = isRegistered;
       const response = await axios.get('/leads/my', { params });
       const data = response.data;
       return {
