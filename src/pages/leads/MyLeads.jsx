@@ -528,16 +528,16 @@ export default function MyLeads() {
           </button>
         </div>
 
-        {/* Lead filters */}
-        <div className="bg-white rounded-xl shadow-md border p-4 mb-6">
-          <p className="text-sm font-semibold text-gray-700 mb-3">Filter by</p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Status</label>
+        {/* Lead filters — compact */}
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-3 mb-4">
+          <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Filters</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+            <div className="space-y-0.5">
+              <label className="block text-[11px] font-medium text-gray-500 uppercase tracking-wide">Status</label>
               <select
                 value={statusFilter}
                 onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-2 py-1.5 rounded border border-gray-200 bg-white text-xs focus:ring-1 focus:ring-blue-500/30 focus:border-blue-400"
               >
                 <option value="">All</option>
                 <option value="new">New</option>
@@ -549,42 +549,44 @@ export default function MyLeads() {
                 <option value="lost">Lost</option>
               </select>
             </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Customer Type</label>
+            <div className="space-y-0.5">
+              <label className="block text-[11px] font-medium text-gray-500 uppercase tracking-wide">Type</label>
               <select
                 value={customerTypeFilter}
                 onChange={(e) => { setCustomerTypeFilter(e.target.value); setCurrentPage(1); }}
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-2 py-1.5 rounded border border-gray-200 bg-white text-xs focus:ring-1 focus:ring-blue-500/30 focus:border-blue-400"
               >
                 <option value="">All</option>
                 <option value="tenant">Tenant</option>
                 <option value="owner">Owner</option>
               </select>
             </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Source</label>
+            <div className="space-y-0.5">
+              <label className="block text-[11px] font-medium text-gray-500 uppercase tracking-wide">Source</label>
               <SearchableSelect
+                compact
                 value={sourceFilter}
                 onChange={(e) => { setSourceFilter(e.target.value); setCurrentPage(1); }}
                 options={[{ value: "", label: "All" }, ...sourceOptions.map((s) => ({ value: s, label: s }))]}
                 placeholder="Search source..."
               />
             </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Sub Property Type</label>
+            <div className="space-y-0.5">
+              <label className="block text-[11px] font-medium text-gray-500 uppercase tracking-wide">Sub type</label>
               <SearchableSelect
+                compact
                 value={subPropertyTypeFilter}
                 onChange={(e) => { setSubPropertyTypeFilter(e.target.value); setCurrentPage(1); }}
                 options={[{ value: "", label: "All" }, ...subPropertyTypeOptions.map((s) => ({ value: s, label: s }))]}
                 placeholder="Search sub property type..."
               />
             </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">City</label>
+            <div className="space-y-0.5">
+              <label className="block text-[11px] font-medium text-gray-500 uppercase tracking-wide">City</label>
               <select
                 value={cityFilter}
                 onChange={(e) => { setCityFilter(e.target.value); setCurrentPage(1); }}
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-2 py-1.5 rounded border border-gray-200 bg-white text-xs focus:ring-1 focus:ring-blue-500/30 focus:border-blue-400"
               >
                 <option value="">All</option>
                 {cityOptions.map((c) => (
@@ -592,12 +594,12 @@ export default function MyLeads() {
                 ))}
               </select>
             </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Registration</label>
+            <div className="space-y-0.5">
+              <label className="block text-[11px] font-medium text-gray-500 uppercase tracking-wide">Reg.</label>
               <select
                 value={isRegisteredFilter}
                 onChange={(e) => { setIsRegisteredFilter(e.target.value); setCurrentPage(1); }}
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-2 py-1.5 rounded border border-gray-200 bg-white text-xs focus:ring-1 focus:ring-blue-500/30 focus:border-blue-400"
               >
                 <option value="">All</option>
                 <option value="true">Registered</option>
@@ -605,7 +607,7 @@ export default function MyLeads() {
               </select>
             </div>
           </div>
-          <div className="mt-3 flex justify-end">
+          <div className="mt-2 pt-2 border-t border-gray-100 flex justify-end">
             <button
               type="button"
               onClick={() => {
@@ -617,9 +619,9 @@ export default function MyLeads() {
                 setIsRegisteredFilter("");
                 setCurrentPage(1);
               }}
-              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium transition"
+              className="px-3 py-1.5 text-xs font-medium text-gray-500 rounded border border-gray-200 bg-white hover:bg-gray-50"
             >
-              Clear filters
+              Clear
             </button>
           </div>
         </div>

@@ -11,6 +11,7 @@ export default function SearchableSelect({
   disabled = false,
   multi = false,
   max = 3,
+  compact = false,
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -64,16 +65,16 @@ export default function SearchableSelect({
   };
 
   return (
-    <div className="mb-3  relative" ref={ref}>
+    <div className={`relative ${compact ? "mb-0" : "mb-3"}`} ref={ref}>
       {label && (
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className={`block font-medium text-gray-700 ${compact ? "text-[11px] uppercase tracking-wide mb-0.5" : "text-sm mb-1"}`}>
           {label}
         </label>
       )}
 
       <div
-        className={`border rounded-lg px-3 py-2 ${disabled ? 'bg-gray-100 cursor-not-allowed opacity-70' : 'bg-white cursor-pointer'} ${
-          error ? "border-red-500" : "border-gray-300"
+        className={`border ${compact ? "rounded px-2 py-1.5 text-xs border-gray-200" : "rounded-lg px-3 py-2"} ${disabled ? 'bg-gray-100 cursor-not-allowed opacity-70' : 'bg-white cursor-pointer'} ${
+          error ? "border-red-500" : compact ? "" : "border-gray-300"
         }`}
         onClick={() => !disabled && setOpen(!open)}
       >
