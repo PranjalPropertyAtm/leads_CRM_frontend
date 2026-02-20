@@ -1,7 +1,8 @@
 
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { motion } from "framer-motion";
+import { ImagePlus, X } from "lucide-react";
 import SearchableSelect from "./SearchableSelect";
 import { notify } from "../utils/toast";
 import { useFetchEmployees } from "../hooks/useEmployeeQueries";
@@ -13,6 +14,8 @@ export default function RegistrationModal({ open, onClose, lead }) {
   const [memberCode, setMemberCode] = useState("");
   const [registrationDate, setRegistrationDate] = useState("");
   const [registeredBy, setRegisteredBy] = useState("");
+  const [paymentScreenshotFile, setPaymentScreenshotFile] = useState(null);
+  const fileInputRef = useRef(null);
 
   const { data: user } = useLoadUser();
   const { data } = useFetchEmployees(1, 1000);
@@ -30,36 +33,39 @@ export default function RegistrationModal({ open, onClose, lead }) {
   const isCustomizedPlan = planName === "Customized";
 
   const handleSubmit = async () => {
+    if (addRegistrationMutation.isPending) return;
     if (!planName.trim()) return notify.error("Plan name is required");
     if (!memberCode.trim()) return notify.error(isCustomizedPlan ? "Customized Code is required" : "Member Code is required");
     if (!isCustomizedPlan && !registeredBy) return notify.error("Please select employee");
+    if (!isCustomizedPlan && !paymentScreenshotFile) return notify.error("Please upload payment screenshot");
 
     const codeValue = memberCode.trim();
-    const payload = {
-      leadId: lead._id,
-      planName,
-      ...(isCustomizedPlan ? { customizedCode: codeValue } : { memberCode: codeValue }),
-      registrationDate: isCustomizedPlan ? new Date() : (registrationDate || new Date()),
-      registeredBy: isCustomizedPlan ? (user?._id ?? "") : registeredBy,
-    };
+    const formData = new FormData();
+    formData.append("leadId", lead._id);
+    formData.append("planName", planName);
+    formData.append(isCustomizedPlan ? "customizedCode" : "memberCode", codeValue);
+    const regDate = isCustomizedPlan ? new Date() : (registrationDate ? new Date(registrationDate) : new Date());
+    formData.append("registrationDate", regDate.toISOString());
+    formData.append("registeredBy", isCustomizedPlan ? (user?._id ?? "") : registeredBy);
+    if (paymentScreenshotFile) formData.append("paymentScreenshot", paymentScreenshotFile);
 
-    // try {
-    //   const res = await axiosInstance.post("/registrations/add", payload);
-    //   notify.success("Registration successful!");
-    //   onClose();
-    // } catch (err) {
-    //   notify.error(err?.response?.data?.message || "Registration failed");
-    // }
-
-    addRegistrationMutation.mutate(payload, {
-      onSuccess: () => {
+    addRegistrationMutation.mutate(formData, {
+      onSuccess: (data) => {
         notify.success("Registration Added Successfully");
+        setPaymentScreenshotFile(null);
+        const updatedLead = data?.data?.lead;
         onClose();
+        if (typeof onSuccess === "function") onSuccess(updatedLead);
       },
-      onError : (error) => {
-        notify.error(error?.response?.data?.message || "Failed to add registartion");
-      }
-    })
+      onError: (error) => {
+        notify.error(error?.response?.data?.message || "Failed to add registration");
+      },
+    });
+  };
+
+  const clearPaymentFile = () => {
+    setPaymentScreenshotFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   return (
@@ -135,6 +141,41 @@ export default function RegistrationModal({ open, onClose, lead }) {
           </div>
         )}
 
+        {/* Payment Screenshot — required for non-Customized plans */}
+        {!isCustomizedPlan && (
+          <div className="mt-4">
+            <label className="text-sm text-gray-600">Payment Screenshot *</label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => setPaymentScreenshotFile(e.target.files?.[0] || null)}
+            />
+            <div className="flex items-center gap-2 mt-1">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
+              >
+                <ImagePlus size={18} />
+                {paymentScreenshotFile ? paymentScreenshotFile.name : "Choose image"}
+              </button>
+              {paymentScreenshotFile && (
+                <button
+                  type="button"
+                  onClick={clearPaymentFile}
+                  className="p-1.5 text-red-600 hover:bg-red-50 rounded"
+                  title="Remove"
+                >
+                  <X size={18} />
+                </button>
+              )}
+            </div>
+            <p className="text-xs text-gray-500 mt-1">JPG, PNG, GIF or WebP (max 5MB)</p>
+          </div>
+        )}
+
         {/* Buttons */}
         <div className="flex justify-end gap-3 mt-6">
           <button className="px-4 py-2 border rounded-lg" onClick={onClose}>
@@ -142,10 +183,11 @@ export default function RegistrationModal({ open, onClose, lead }) {
           </button>
 
           <button
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+            disabled={addRegistrationMutation.isPending}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed"
             onClick={handleSubmit}
           >
-            Register
+            {addRegistrationMutation.isPending ? "Registering..." : "Register"}
           </button>
         </div>
       </motion.div>

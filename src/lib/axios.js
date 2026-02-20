@@ -53,6 +53,14 @@ const axiosInstance = axios.create({
   },
 });
 
+// For FormData (e.g. registration with payment screenshot), omit Content-Type so axios sets multipart/form-data with boundary
+axiosInstance.interceptors.request.use((config) => {
+  if (config.data instanceof FormData) {
+    delete config.headers["Content-Type"];
+  }
+  return config;
+});
+
 // ❗ Auto logout on 401
 axiosInstance.interceptors.response.use(
   (res) => res,
@@ -70,5 +78,20 @@ axiosInstance.interceptors.response.use(
   }
 );
 
+/** Base URL for API (e.g. http://localhost:3001/api) */
+export const apiBaseURL = baseURL;
+
+/**
+ * URL for a payment screenshot. Supports:
+ * - Cloudinary: full URL (https://res.cloudinary.com/...) → returned as-is
+ * - Legacy: relative path (e.g. payment-screenshots/xxx.png) → backend /uploads/ URL
+ */
+export const getUploadsUrl = (pathOrUrl) => {
+  if (!pathOrUrl || typeof pathOrUrl !== "string") return null;
+  const s = pathOrUrl.trim();
+  if (s.startsWith("http://") || s.startsWith("https://")) return s;
+  const base = baseURL.replace(/\/api\/?$/, "");
+  return `${base}/uploads/${s.replace(/^\/+/, "")}`;
+};
 
 export default axiosInstance;

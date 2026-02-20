@@ -24,7 +24,7 @@ import { useLoadUser } from "../../hooks/useAuthQueries.js";
 import { useFetchEmployees } from "../../hooks/useEmployeeQueries.js";
 import { createPortal } from "react-dom";
 import { notify } from "../../utils/toast.js";
-import axiosInstance from "../../lib/axios.js";
+import axiosInstance, { getUploadsUrl } from "../../lib/axios.js";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import AddVisitModal from "../../components/AddVisitModal.jsx";
 import AddReminderModal from "../../components/AddReminderModal.jsx";
@@ -1082,6 +1082,24 @@ export default function MyLeads() {
                         <InfoRow label="Registered By" value={selected.registrationDetails?.registeredBy?.name} />
                       </>
                     )}
+                    {selected.registrationDetails?.paymentScreenshot && (
+                      <div className="md:col-span-2">
+                        <p className="text-gray-600 font-medium mb-1">Payment Screenshot</p>
+                        <a
+                          href={getUploadsUrl(selected.registrationDetails.paymentScreenshot)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block rounded-lg border border-gray-200 overflow-hidden bg-gray-50 hover:opacity-90 max-w-xs"
+                        >
+                          <img
+                            src={getUploadsUrl(selected.registrationDetails.paymentScreenshot)}
+                            alt="Payment screenshot"
+                            className="w-full h-auto max-h-48 object-contain"
+                          />
+                        </a>
+                        <p className="text-xs text-gray-500 mt-1">Click to open full size</p>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <p className="text-sm text-red-500 font-medium">✖ This lead is not registered yet.</p>
@@ -1097,8 +1115,10 @@ export default function MyLeads() {
                 onClose={() => setShowRegModal(false)}
                 employeeOptions={employeeOptions}
                 lead={regLead}
-                onSuccess={() => {
+                onSuccess={(updatedLead) => {
                   queryClient.invalidateQueries(["leads"]);
+                  queryClient.invalidateQueries(["leads", "my"]);
+                  if (updatedLead && regLead?._id === updatedLead._id) setSelected(updatedLead);
                 }}
               />
 

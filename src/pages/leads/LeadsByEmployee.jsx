@@ -19,7 +19,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import axiosInstance from "../../lib/axios.js";
+import axiosInstance, { getUploadsUrl } from "../../lib/axios.js";
 import { notify } from "../../utils/toast.js";
 
 import { useNavigate, useLocation } from "react-router-dom";
@@ -1299,6 +1299,24 @@ export default function LeadsByEmployee() {
                         />
                       </>
                     )}
+                    {selected.registrationDetails?.paymentScreenshot && (
+                      <div className="md:col-span-2">
+                        <p className="text-gray-600 font-medium mb-1">Payment Screenshot</p>
+                        <a
+                          href={getUploadsUrl(selected.registrationDetails.paymentScreenshot)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block rounded-lg border border-gray-200 overflow-hidden bg-gray-50 hover:opacity-90 max-w-xs"
+                        >
+                          <img
+                            src={getUploadsUrl(selected.registrationDetails.paymentScreenshot)}
+                            alt="Payment screenshot"
+                            className="w-full h-auto max-h-48 object-contain"
+                          />
+                        </a>
+                        <p className="text-xs text-gray-500 mt-1">Click to open full size</p>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <p className="text-sm text-red-500 font-medium">
@@ -1315,9 +1333,10 @@ export default function LeadsByEmployee() {
           onClose={() => setShowRegModal(false)}
           employeeOptions={employeeOptions}
           lead={regLead}
-          onSuccess={() => {
+          onSuccess={(updatedLead) => {
             queryClient.invalidateQueries(["leads"]);
             fetchLeads();
+            if (updatedLead && regLead?._id === updatedLead._id) setSelected(updatedLead);
           }}
         />
 
