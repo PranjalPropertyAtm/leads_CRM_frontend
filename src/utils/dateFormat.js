@@ -30,6 +30,22 @@ export function formatDateLong(value) {
 }
 
 /**
+ * Format a Date as time only (e.g. "2:30 PM").
+ * @param {string|Date|number} value - Date or timestamp
+ * @returns {string} e.g. "2:30 PM" or "" if invalid
+ */
+export function formatTime(value) {
+  if (value == null || value === "") return "";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleTimeString("en-GB", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+
+/**
  * Format 24-hour time "HH:mm" as 12-hour "h:mm AM/PM" for display.
  * @param {string} time24 - "HH:mm" or "H:mm"
  * @returns {string} e.g. "2:30 PM" or "" if invalid

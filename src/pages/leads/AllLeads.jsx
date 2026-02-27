@@ -23,7 +23,7 @@ import axiosInstance, { getUploadsUrl } from "../../lib/axios.js";
 import { notify } from "../../utils/toast.js";
 
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
-import { useFetchLeads, useDeleteLead, useUpdateLeadStatus, useMarkDealClosed, useLeadFilterOptions } from "../../hooks/useLeadQueries.js";
+import { useFetchLeads, useDeleteLead, useUpdateLeadStatus, useMarkDealClosed, useLeadFilterOptions, getRemarksList, getCustomerRemarksList, hasRemarks, hasInternalRemarks, useAddEmployeeRemark } from "../../hooks/useLeadQueries.js";
 import { useFetchEmployees } from "../../hooks/useEmployeeQueries.js";
 import { useLoadUser } from "../../hooks/useAuthQueries.js";
 
@@ -33,7 +33,8 @@ import VisitHistory from "../../components/VisitHistory.jsx";
 import SearchableSelect from "../../components/SearchableSelect.jsx";
 import RegisterLeadModal from "../../components/RegisterLeadModal.jsx";
 import ConfirmModal from "../../components/ConfirmModal.jsx";
-import { formatDate } from "../../utils/dateFormat.js";
+import LeadViewDetails from "../../components/LeadViewDetails.jsx";
+import { formatDate, formatTime } from "../../utils/dateFormat.js";
 import { getCountdownText, URGENCY_COLORS, formatRequirementDuration, getRemainingDays, getDisplayUrgencyLevel } from "../../utils/leadUrgency.js";
 
 const VALID_URGENCY = ["", "critical", "overdue", "high"];
@@ -146,6 +147,14 @@ export default function AllLeads() {
     currentStatus: null,
   });
 
+  // Employee remarks modal (add new remark)
+  const [remarksModal, setRemarksModal] = useState({
+    isOpen: false,
+    leadId: null,
+    lead: null,
+    newRemark: '',
+  });
+
   // leads query
   const {
     data: paginatedData = { leads: [], total: 0, totalPages: 0, page: 1, countCritical: 0, countOverdue: 0, countHigh: 0 },
@@ -188,6 +197,7 @@ export default function AllLeads() {
   const deleteLeadMutation = useDeleteLead();
   const updateStatusMutation = useUpdateLeadStatus();
   const markDealClosedMutation = useMarkDealClosed();
+  const addRemarkMutation = useAddEmployeeRemark();
 
 
 
@@ -503,18 +513,6 @@ export default function AllLeads() {
           document.body
         )}
       </>
-    );
-  }
-
-  // -------------------------
-  // InfoRow small helper
-  // -------------------------
-  function InfoRow({ label, value }) {
-    return (
-      <div>
-        <p className="text-gray-500">{label}</p>
-        <p className="font-medium text-gray-800">{value ?? "N/A"}</p>
-      </div>
     );
   }
 
@@ -860,7 +858,7 @@ export default function AllLeads() {
                       <tr
                         key={lead._id}
                         className={`hover:bg-blue-50/50 transition-colors group ${
-                          lead.employeeRemarks ? "bg-purple-50/30 border-l-4 border-l-purple-500" : ""
+                          hasInternalRemarks(lead) ? "bg-purple-50/30 border-l-4 border-l-purple-500" : ""
                         } ${
                           lead.status !== "lost" && lead.customerType !== "owner" && !lead.dealClosed && lead.expectedClosureDate && getRemainingDays(lead.expectedClosureDate) < 0
                             ? "bg-red-50/50 border-l-4 border-l-red-400"
@@ -872,7 +870,7 @@ export default function AllLeads() {
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
                             <span className="font-semibold text-gray-900">{lead.customerName || lead.ownerName}</span>
-                            {lead.employeeRemarks && (
+                            {hasInternalRemarks(lead) && (
                               <span
                                 className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full font-semibold"
                                 title="Customer Care has added remarks"
@@ -1056,6 +1054,23 @@ export default function AllLeads() {
                               </button>
                             )}
 
+                            {(user?.role === "admin" || canShowAllActions) && notClosed && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setRemarksModal({
+                                    isOpen: true,
+                                    leadId: lead._id,
+                                    lead: lead,
+                                    newRemark: '',
+                                  });
+                                }}
+                                className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-purple-600 transition"
+                              >
+                                <MessageSquare size={14} /> Add Remark
+                              </button>
+                            )}
+
                             {!lead.isRegistered && canShowAllActions && notClosed && (
                               <button
                                 onClick={(e) => {
@@ -1186,142 +1201,7 @@ export default function AllLeads() {
           </div>
         )}
 
-        {/* Selected Lead Drawer */}
-        {selected && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white rounded-xl shadow-2xl w-full max-w-2xl p-6 space-y-6 overflow-y-auto max-h-[90vh]">
-              <div className="flex justify-between items-start pb-3 border-b">
-                <div>
-                  <h2 className="text-2xl font-semibold text-gray-800">{selected.customerName || selected.ownerName}</h2>
-                  <p className="text-sm text-gray-500">{selected.customerType === "tenant" ? "Tenant Lead" : "Owner Lead"}</p>
-                </div>
-
-                <button className="text-gray-400 hover:text-gray-600 transition" onClick={() => setSelected(null)}><X size={26} /></button>
-              </div>
-
-              <div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-3">Lead Information</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  <InfoRow label="Mobile Number" value={selected.mobileNumber} />
-                  <InfoRow label="Email" value={selected.email || "N/A"} />
-                  <InfoRow label="City" value={selected.city} />
-
-                  {/* Assisted (Assigned Employee) */}
-                  {selected.assignedTo && (
-                    <InfoRow
-                      label="Assisted To"
-                      value={
-                        typeof selected.assignedTo === "string"
-                          ? selected.assignedTo
-                          : selected.assignedTo?.name || "N/A"
-                      }
-                    />
-                  )}
-
-                  {/* SHOW ONLY TO ADMIN */}
-                  {selected.createdBy && (
-                    <InfoRow
-                      label="Created By"
-                      value={
-                        typeof selected.createdBy === "string"
-                          ? selected.createdBy
-                          : selected.createdBy?.name || "N/A"
-                      }
-                    />
-                  )}
-
-                  {selected.customerType === "tenant" && (
-                    <>
-                      <InfoRow label="Preferred Location" value={Array.isArray(selected.preferredLocation) ? selected.preferredLocation.join(", ") : (selected.preferredLocation || "N/A")} />
-                      <InfoRow label="Budget" value={selected.budget ? `₹${selected.budget}` : "N/A"} />
-                    </>
-                  )}
-
-                  {selected.customerType === "owner" && (
-                    <>
-                      <InfoRow label="Property Location" value={selected.propertyLocation || "N/A"} />
-                      <InfoRow label="Location Details" value={selected.landmark || "N/A"} />
-                      <InfoRow label="Area" value={selected.area ? `${selected.area} sq ft` : "N/A"} />
-                    </>
-                  )}
-
-                  <InfoRow label="Property Type" value={selected.propertyType} />
-                  <InfoRow label="Sub Property Type" value={selected.subPropertyType} />
-                  <InfoRow label="Source" value={selected.source} />
-
-                  {selected.requirements && (
-                    <div className="md:col-span-2">
-                      <p className="text-gray-500 mb-1">Requirements</p>
-                      <p className="font-medium text-gray-800">{selected.requirements}</p>
-                    </div>
-                  )}
-
-                  {selected.customerRemark && (
-                    <div className="md:col-span-2">
-                      <p className="text-gray-500 mb-1">Customer Remark</p>
-                      <p className="font-medium text-gray-800">{selected.customerRemark}</p>
-                    </div>
-                  )}
-
-                  {selected.employeeRemarks && (
-                    <div className="md:col-span-2">
-                      <p className="text-gray-500 mb-1">Internal Remarks</p>
-                      <p className="font-medium text-gray-800 bg-blue-50 p-2 rounded">{selected.employeeRemarks}</p>
-                    </div>
-                  )}
-
-                  {/* <div className="md:col-span-2">
-                    <p className="text-gray-500">Lead ID</p>
-                    <p className="text-xs font-mono text-gray-400 bg-gray-100 p-2 rounded">{selected._id}</p>
-                  </div> */}
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-3">Registration Details</h3>
-                {(selected?.isRegistered || selected?.registrationDetails?.planName) ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <InfoRow label="Plan Name" value={selected.registrationDetails?.planName} />
-                    <InfoRow
-                      label={selected.registrationDetails?.planName === "Customized" ? "Customized Code" : "Member Code"}
-                      value={
-                        selected.registrationDetails?.planName === "Customized"
-                          ? (selected.registrationDetails?.customizedCode || "N/A")
-                          : (selected.registrationDetails?.memberCode || "N/A")
-                      }
-                    />
-                    {selected.registrationDetails?.planName !== "Customized" && (
-                      <>
-                        <InfoRow label="Registration Date" value={selected.registrationDetails?.registrationDate ? formatDate(selected.registrationDetails.registrationDate) : "N/A"} />
-                        <InfoRow label="Registered By" value={selected.registrationDetails?.registeredBy?.name || "NA"} />
-                      </>
-                    )}
-                    {selected.registrationDetails?.paymentScreenshot && (
-                      <div className="md:col-span-2">
-                        <p className="text-gray-600 font-medium mb-1">Payment Screenshot</p>
-                        <a
-                          href={getUploadsUrl(selected.registrationDetails.paymentScreenshot)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block rounded-lg border border-gray-200 overflow-hidden bg-gray-50 hover:opacity-90 max-w-xs"
-                        >
-                          <img
-                            src={getUploadsUrl(selected.registrationDetails.paymentScreenshot)}
-                            alt="Payment screenshot"
-                            className="w-full h-auto max-h-48 object-contain"
-                          />
-                        </a>
-                        <p className="text-xs text-gray-500 mt-1">Click to open full size</p>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-sm text-red-500 font-medium">✖ This lead is not registered yet.</p>
-                )}
-              </div>
-            </motion.div>
-          </div>
-        )}
+        <LeadViewDetails lead={selected} onClose={() => setSelected(null)} />
 
         <RegisterLeadModal
           open={showRegModal}
@@ -1334,20 +1214,13 @@ export default function AllLeads() {
           }}
         />
 
-        {/* Contacted remark modal */}
+        {/* Mark as Contacted confirmation modal — customer remarks are added only via Add Remark */}
         {contactedModal.isOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center">
             <div className="absolute inset-0 bg-black/50" onClick={() => setContactedModal({ isOpen: false, leadId: null, remark: '', currentStatus: null })} />
             <div className="relative bg-white rounded-xl shadow-lg p-6 w-full max-w-md z-10">
-              <h3 className="text-lg font-semibold text-gray-900">Add customer remark</h3>
-              <p className="text-sm text-gray-500 mt-1 mb-4">Add any remark provided by the customer when marking as contacted (optional).</p>
-
-              <textarea
-                rows={4}
-                className="w-full border rounded p-2 text-sm"
-                value={contactedModal.remark}
-                onChange={(e) => setContactedModal((s) => ({ ...s, remark: e.target.value }))}
-              />
+              <h3 className="text-lg font-semibold text-gray-900">Mark as Contacted</h3>
+              <p className="text-sm text-gray-500 mt-1 mb-4">Update this lead&apos;s status to Contacted. Add customer remarks later via &quot;Add Remark&quot; if needed.</p>
 
               <div className="mt-4 flex justify-end gap-3">
                 <button onClick={() => setContactedModal({ isOpen: false, leadId: null, remark: '', currentStatus: null })} className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100">Cancel</button>
@@ -1355,14 +1228,13 @@ export default function AllLeads() {
                   onClick={() => {
                     if (!contactedModal.leadId) return;
                     updateStatusMutation.mutate(
-                      { id: contactedModal.leadId, status: 'contacted', customerRemark: contactedModal.remark },
+                      { id: contactedModal.leadId, status: 'contacted' },
                       {
                         onSuccess: () => {
                           notify.success('Status updated successfully');
-                          // keep immediate UI in sync
                           queryClient.invalidateQueries({ queryKey: ['leads'] });
                           queryClient.invalidateQueries({ queryKey: ['leads', 'my'] });
-                          setSelected((s) => (s && s._id === contactedModal.leadId ? { ...s, status: 'contacted', customerRemark: contactedModal.remark } : s));
+                          setSelected((s) => (s && s._id === contactedModal.leadId ? { ...s, status: 'contacted' } : s));
                           setContactedModal({ isOpen: false, leadId: null, remark: '', currentStatus: null });
                         },
                         onError: (err) => {
@@ -1374,13 +1246,87 @@ export default function AllLeads() {
                   className="px-4 py-2 rounded-lg text-white bg-orange-600 hover:bg-orange-700"
                   disabled={updateStatusMutation.isPending}
                 >
-                  Save
+                  Confirm
                 </button>
               </div>
             </div>
           </div>
         )}
 
+        {/* Employee remarks modal — add new remark */}
+        {remarksModal.isOpen && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-bold text-gray-800">Add Internal Remark</h2>
+                <button
+                  onClick={() => setRemarksModal({ isOpen: false, leadId: null, lead: null, newRemark: '' })}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+              {remarksModal.lead && (
+                <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                  <p className="text-sm text-gray-600 mb-1">
+                    <span className="font-medium">Lead:</span> {remarksModal.lead.customerName || remarksModal.lead.ownerName}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    <span className="font-medium">Mobile:</span> {remarksModal.lead.mobileNumber}
+                  </p>
+                </div>
+              )}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">New remark</label>
+                <textarea
+                  value={remarksModal.newRemark}
+                  onChange={(e) => setRemarksModal(prev => ({ ...prev, newRemark: e.target.value }))}
+                  rows={3}
+                  placeholder="Add your remark about this lead..."
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                />
+              </div>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => setRemarksModal({ isOpen: false, leadId: null, lead: null, newRemark: '' })}
+                  className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    const text = remarksModal.newRemark.trim();
+                    if (!text) {
+                      notify.error("Please enter a remark");
+                      return;
+                    }
+                    addRemarkMutation.mutate(
+                      { id: remarksModal.leadId, remark: text },
+                      {
+                        onSuccess: (data) => {
+                          notify.success("Remark added successfully");
+                          setRemarksModal({ isOpen: false, leadId: null, lead: null, newRemark: '' });
+                          queryClient.invalidateQueries({ queryKey: ['leads'] });
+                          queryClient.invalidateQueries({ queryKey: ['leads', 'my'] });
+                          if (selected && selected._id === remarksModal.leadId) {
+                            setSelected(data?.data || selected);
+                          }
+                        },
+                        onError: (err) => {
+                          notify.error(err?.response?.data?.message || "Failed to add remark");
+                        },
+                      }
+                    );
+                  }}
+                  className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                  disabled={addRemarkMutation.isPending}
+                >
+                  {addRemarkMutation.isPending ? 'Saving...' : 'Add Remark'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Visits */}
         {visitModal && <AddVisitModal open={visitModal} onClose={() => setVisitModal(false)} lead={visitLead} />}

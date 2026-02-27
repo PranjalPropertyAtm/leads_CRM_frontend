@@ -183,10 +183,8 @@ export const useUpdateLeadStatus = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, status, customerRemark }) => {
-      const payload = { status };
-      if (typeof customerRemark !== 'undefined') payload.customerRemark = customerRemark;
-      const response = await axios.put(`/leads/${id}/status`, payload);
+    mutationFn: async ({ id, status }) => {
+      const response = await axios.put(`/leads/${id}/status`, { status });
       return response.data;
     },
     onSuccess: (data) => {
@@ -218,27 +216,42 @@ export const useMarkDealClosed = () => {
   });
 };
 
-// Update employee remarks (for customer care executives)
-export const useUpdateEmployeeRemarks = () => {
+// Add an employee remark (append; supports multiple remarks per lead)
+export const useAddEmployeeRemark = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, employeeRemarks, customerType }) => {
-      const payload = {
-        employeeRemarks: employeeRemarks || undefined,
-      };
-      // Include customerType if provided (required by validation schema)
-      if (customerType) {
-        payload.customerType = customerType;
-      }
-      const response = await axios.put(`/leads/update/${id}`, payload);
+    mutationFn: async ({ id, remark }) => {
+      const response = await axios.post(`/leads/${id}/remarks`, { remark: remark.trim() });
       return response.data;
     },
     onSuccess: (_, { id }) => {
-      // Refresh lead list and single lead
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       queryClient.invalidateQueries({ queryKey: ['leads', 'my'] });
       queryClient.invalidateQueries({ queryKey: ['lead', id] });
     },
   });
 };
+
+// Internal remarks (customer care): from employeeRemarks — display with date and name
+export const getRemarksList = (lead) => {
+  if (!lead) return [];
+  const r = lead.employeeRemarks;
+  if (Array.isArray(r)) return r;
+  if (typeof r === 'string' && r.trim()) return [{ text: r.trim(), addedBy: null, addedAt: null }];
+  return [];
+};
+
+// Customer remarks (employees): from customerRemarksByEmployee — display with name and time
+export const getCustomerRemarksList = (lead) => {
+  if (!lead) return [];
+  const r = lead.customerRemarksByEmployee;
+  if (Array.isArray(r)) return r;
+  return [];
+};
+
+export const hasRemarks = (lead) =>
+  getRemarksList(lead).length > 0 || getCustomerRemarksList(lead).length > 0;
+
+// True only when lead has internal remarks (customer care) — used for purple line & chatbox indicator
+export const hasInternalRemarks = (lead) => getRemarksList(lead).length > 0;
