@@ -23,7 +23,7 @@ import axiosInstance, { getUploadsUrl } from "../../lib/axios.js";
 import { notify } from "../../utils/toast.js";
 
 import { useNavigate, useLocation } from "react-router-dom";
-import { useUpdateLeadStatus, useMarkDealClosed, useAddEmployeeRemark, useLeadFilterOptions, getRemarksList, getCustomerRemarksList, hasRemarks, hasInternalRemarks } from "../../hooks/useLeadQueries.js";
+import { useUpdateLeadStatus, useMarkDealClosed, useAddEmployeeRemark, useUpdateLeadMetaAd, useLeadFilterOptions, getRemarksList, getCustomerRemarksList, hasRemarks, hasInternalRemarks } from "../../hooks/useLeadQueries.js";
 import { useFetchEmployees } from "../../hooks/useEmployeeQueries.js";
 import { useLoadUser } from "../../hooks/useAuthQueries.js";
 
@@ -136,6 +136,7 @@ export default function LeadsByEmployee() {
   const updateStatusMutation = useUpdateLeadStatus();
   const markDealClosedMutation = useMarkDealClosed();
   const addRemarkMutation = useAddEmployeeRemark();
+  const metaAdMutation = useUpdateLeadMetaAd();
 
   // Restore employee and page when returning from Edit Lead
   useEffect(() => {
@@ -703,6 +704,7 @@ export default function LeadsByEmployee() {
                       "Source",
                       "Status",
                       "Plan",
+                      "Meta-Ad",
                       "Visits",
                       "",
                     ].map((h) => (
@@ -883,6 +885,65 @@ export default function LeadsByEmployee() {
                         ) : (
                           <span className="text-gray-400">—</span>
                         )}
+                      </td>
+
+                      <td className="px-4 py-3">
+                        {!lead.isRegistered ? (
+                          <span className="text-gray-400">—</span>
+                        ) : (() => {
+                          const isCreator = lead.createdBy?._id === user?._id;
+                          const assignedId = lead.assignedTo && (typeof lead.assignedTo === "object" ? lead.assignedTo._id : lead.assignedTo);
+                          const isAssigned = !!user?._id && !!assignedId && String(assignedId) === String(user._id);
+                          const canEdit = user?.role === "admin" || isCreator || isAssigned || isCustomerCare;
+                          const notClosed = !lead.dealClosed && lead.status !== "deal_closed";
+                          const value = lead.metaAdMarked ? "Yes" : "No";
+
+                          if (canEdit && notClosed) {
+                            return (
+                              <select
+                                value={value}
+                                onChange={(e) => {
+                                  const newVal = e.target.value;
+                                  if (newVal === "Yes") {
+                                    metaAdMutation.mutate(
+                                      { id: lead._id, mark: true },
+                                      {
+                                        onSuccess: () => {
+                                          notify.success("Meta-Ad set to Yes; date and time recorded.");
+                                          fetchLeads();
+                                        },
+                                        onError: (err) => {
+                                          notify.error(err?.response?.data?.message || "Failed to update");
+                                          e.target.value = value;
+                                        },
+                                      }
+                                    );
+                                  } else {
+                                    metaAdMutation.mutate(
+                                      { id: lead._id, metaAdEnabled: false },
+                                      {
+                                        onSuccess: () => {
+                                          notify.success("Meta-Ad set to No.");
+                                          fetchLeads();
+                                        },
+                                        onError: (err) => {
+                                          notify.error(err?.response?.data?.message || "Failed to update");
+                                          e.target.value = value;
+                                        },
+                                      }
+                                    );
+                                  }
+                                }}
+                                disabled={metaAdMutation.isPending}
+                                className="text-xs px-2 py-1 rounded border border-gray-300 bg-white focus:ring-2 focus:ring-amber-500 outline-none disabled:opacity-50"
+                              >
+                                <option value="No">No</option>
+                                <option value="Yes">Yes</option>
+                              </select>
+                            );
+                          }
+                          return <span className={lead.metaAdMarked ? "text-amber-700 font-medium" : "text-gray-500"}>{value}</span>;
+                        })()}
                       </td>
 
                       <td className="px-4 py-3">
