@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { X } from "lucide-react";
+import { X, CheckCircle } from "lucide-react";
 import { getUploadsUrl } from "../lib/axios.js";
 import { getRemarksList, getCustomerRemarksList } from "../hooks/useLeadQueries.js";
 import { formatDate, formatTime } from "../utils/dateFormat.js";
@@ -255,6 +255,32 @@ export default function LeadViewDetails({ lead, onClose }) {
               </div>
             )}
           </section>
+
+          {/* Meta-Ad (only for registered leads) — mark here and record date/time */}
+          {lead?.isRegistered && (
+            <section className="rounded-xl border overflow-hidden bg-amber-50/50 border-amber-100">
+              <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wider px-4 pt-4 pb-2">
+                Is Meta-Ad run?
+              </h3>
+              <div className="px-4 pb-4">
+                {lead.metaAdMarked ? (
+                  <div className="space-y-1">
+                    <p className="text-sm text-slate-700 font-medium flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-amber-600" /> Yes
+                    </p>
+                    {lead.metaAdMarkedAt && (
+                      <p className="text-sm text-slate-600">
+                       {formatDate(lead.metaAdMarkedAt)} {formatTime(lead.metaAdMarkedAt)}
+                        {lead.metaAdMarkedBy?.name && ` by ${lead.metaAdMarkedBy.name}`}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-600 font-medium">No</p>
+                )}
+              </div>
+            </section>
+          )}
         </div>
       </motion.div>
     </div>

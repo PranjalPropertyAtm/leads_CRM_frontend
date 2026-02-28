@@ -216,6 +216,26 @@ export const useMarkDealClosed = () => {
   });
 };
 
+// Meta-Ad: enable/disable or record mark (for registered leads only)
+export const useUpdateLeadMetaAd = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, metaAdEnabled, mark }) => {
+      const body = {};
+      if (metaAdEnabled !== undefined) body.metaAdEnabled = metaAdEnabled;
+      if (mark === true) body.mark = true;
+      const response = await axios.put(`/leads/${id}/meta-ad`, body);
+      return response.data;
+    },
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      queryClient.invalidateQueries({ queryKey: ['leads', 'my'] });
+      queryClient.invalidateQueries({ queryKey: ['lead', id] });
+    },
+  });
+};
+
 // Add an employee remark (append; supports multiple remarks per lead)
 export const useAddEmployeeRemark = () => {
   const queryClient = useQueryClient();
