@@ -7,6 +7,8 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   UserPlus,
   MoreVertical,
   HousePlus,
@@ -15,6 +17,7 @@ import {
   MessageSquare,
   Bell,
   Calendar,
+  SlidersHorizontal,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
@@ -64,6 +67,7 @@ export default function AllLeads() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const isSearching = Boolean(filter.trim());
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
   const prevPageSizeRef = useRef(null);
@@ -110,6 +114,25 @@ export default function AllLeads() {
     const u = searchParams.get("urgencyFilter") || "";
     if (VALID_URGENCY.includes(u)) setUrgencyFilter(u);
   }, [searchParams]);
+
+  const activeFiltersCount = [
+    statusFilter,
+    customerTypeFilter,
+    sourceFilter,
+    subPropertyTypeFilter,
+    cityFilter,
+    isRegisteredFilter,
+    createdByFilter,
+    assignedToFilter,
+    startDate,
+    endDate,
+  ].filter(Boolean).length;
+  const hasAnyFilters = activeFiltersCount > 0;
+
+  // Auto-open filters when any filter is applied (so users can see what's active)
+  useEffect(() => {
+    if (hasAnyFilters) setFiltersOpen(true);
+  }, [hasAnyFilters]);
 
   const [selected, setSelected] = useState(null);
 
@@ -500,7 +523,7 @@ export default function AllLeads() {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.98, y: -5 }}
                 transition={{ duration: 0.12 }}
-                className="bg-white shadow-xl border rounded-lg w-44 max-h-[60vh] overflow-y-auto z-[9999]"
+                className="bg-white shadow-xl border rounded-lg w-44 max-h-[60vh] overflow-y-auto z-9999"
                 style={{ position: "fixed", top: coords.top, left: coords.left }}
                 onClick={(e) => e.stopPropagation()}
               >
@@ -571,11 +594,64 @@ export default function AllLeads() {
           </button>
         </div>
 
-        {/* Lead filters — compact */}
-        {!(user?.role === "admin" || isCustomerCare) ? (
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-3 mb-4">
-            <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Filters</p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+        {/* Lead filters (collapsed by default) */}
+        <div className="mb-4">
+          <div className="flex items-center justify-between gap-3">
+            <button
+              type="button"
+              onClick={() => setFiltersOpen((v) => !v)}
+              className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium border transition
+                ${filtersOpen ? "bg-gray-900 text-white border-gray-900" : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"}`}
+            >
+              <SlidersHorizontal size={16} />
+              <span>Filters</span>
+              {activeFiltersCount > 0 && (
+                <span className={`ml-1 inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full text-xs font-semibold
+                  ${filtersOpen ? "bg-white/20 text-white" : "bg-gray-900 text-white"}`}
+                >
+                  {activeFiltersCount}
+                </span>
+              )}
+              {filtersOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            </button>
+
+            {hasAnyFilters && (
+              <button
+                type="button"
+                onClick={() => {
+                  setStatusFilter("");
+                  setCustomerTypeFilter("");
+                  setSourceFilter("");
+                  setSubPropertyTypeFilter("");
+                  setCityFilter("");
+                  setIsRegisteredFilter("");
+                  setCreatedByFilter("");
+                  setAssignedToFilter("");
+                  setStartDate("");
+                  setEndDate("");
+                  setCurrentPage(1);
+                  setFiltersOpen(false);
+                }}
+                className="px-3 py-2 text-sm font-medium text-gray-600 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 transition"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+
+          <AnimatePresence initial={false}>
+            {filtersOpen && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.18 }}
+                className="overflow-hidden"
+              >
+                {!(user?.role === "admin" || isCustomerCare) ? (
+                  <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-3 mt-3">
+                    <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Filters</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
               <div className="space-y-0.5">
                 <label className="block text-[11px] font-medium text-gray-500 uppercase tracking-wide">Status</label>
                 <select
@@ -651,28 +727,11 @@ export default function AllLeads() {
                 </select>
               </div>
             </div>
-            <div className="mt-2 pt-2 border-t border-gray-100 flex justify-end">
-              <button
-                type="button"
-                onClick={() => {
-                  setStatusFilter("");
-                  setCustomerTypeFilter("");
-                  setSourceFilter("");
-                  setSubPropertyTypeFilter("");
-                  setCityFilter("");
-                  setIsRegisteredFilter("");
-                  setCurrentPage(1);
-                }}
-                className="px-3 py-1.5 text-xs font-medium text-gray-500 rounded border border-gray-200 bg-white hover:bg-gray-50"
-              >
-                Clear
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-3 mb-4">
-            <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Filters</p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
+                  </div>
+                ) : (
+                  <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-3 mt-3">
+                    <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Filters</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
               <div className="space-y-0.5">
                 <label className="block text-[11px] font-medium text-gray-500 uppercase tracking-wide">Created by</label>
                 <SearchableSelect
@@ -815,7 +874,11 @@ export default function AllLeads() {
               </div>
             </div>
           </div>
-        )}
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
         {/* Table */}
         <div className="bg-white rounded-xl shadow-md border overflow-hidden">

@@ -18,6 +18,9 @@ import {
   CheckCircle,
   Bell,
   MessageSquare,
+  ChevronDown,
+  ChevronUp,
+  SlidersHorizontal,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMyLeads, useDeleteLead, useUpdateLeadStatus, useMarkDealClosed, useLeadFilterOptions, getRemarksList, getCustomerRemarksList, hasRemarks, useAddEmployeeRemark, useUpdateLeadMetaAd } from "../../hooks/useLeadQueries.js";
@@ -58,6 +61,7 @@ export default function MyLeads() {
   const [cityFilter, setCityFilter] = useState("");
   const [isRegisteredFilter, setIsRegisteredFilter] = useState("");
   const isSearching = Boolean(filter.trim());
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [selected, setSelected] = useState(null);
 
   const queryClient = useQueryClient();
@@ -89,6 +93,21 @@ export default function MyLeads() {
     const u = searchParams.get("urgencyFilter") || "";
     if (VALID_URGENCY.includes(u)) setUrgencyFilter(u);
   }, [searchParams]);
+
+  const activeFiltersCount = [
+    statusFilter,
+    customerTypeFilter,
+    sourceFilter,
+    subPropertyTypeFilter,
+    cityFilter,
+    isRegisteredFilter,
+  ].filter(Boolean).length;
+  const hasAnyFilters = activeFiltersCount > 0;
+
+  // Auto-open filters when any filter is applied
+  useEffect(() => {
+    if (hasAnyFilters) setFiltersOpen(true);
+  }, [hasAnyFilters]);
 
   // Restore page and urgency when returning from Edit Lead
   useEffect(() => {
@@ -529,102 +548,139 @@ export default function MyLeads() {
           </button>
         </div>
 
-        {/* Lead filters — compact */}
-        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-3 mb-4">
-          <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Filters</p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
-            <div className="space-y-0.5">
-              <label className="block text-[11px] font-medium text-gray-500 uppercase tracking-wide">Status</label>
-              <select
-                value={statusFilter}
-                onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
-                className="w-full px-2 py-1.5 rounded border border-gray-200 bg-white text-xs focus:ring-1 focus:ring-blue-500/30 focus:border-blue-400"
-              >
-                <option value="">All</option>
-                <option value="new">New</option>
-                <option value="contacted">Contacted</option>
-                <option value="registered">Registered</option>
-                <option value="visit_scheduled">Visit Scheduled</option>
-                <option value="visit_completed">Visit Completed</option>
-                <option value="deal_closed">Deal Closed</option>
-                <option value="lost">Lost</option>
-              </select>
-            </div>
-            <div className="space-y-0.5">
-              <label className="block text-[11px] font-medium text-gray-500 uppercase tracking-wide">Type</label>
-              <select
-                value={customerTypeFilter}
-                onChange={(e) => { setCustomerTypeFilter(e.target.value); setCurrentPage(1); }}
-                className="w-full px-2 py-1.5 rounded border border-gray-200 bg-white text-xs focus:ring-1 focus:ring-blue-500/30 focus:border-blue-400"
-              >
-                <option value="">All</option>
-                <option value="tenant">Tenant</option>
-                <option value="owner">Owner</option>
-              </select>
-            </div>
-            <div className="space-y-0.5">
-              <label className="block text-[11px] font-medium text-gray-500 uppercase tracking-wide">Source</label>
-              <SearchableSelect
-                compact
-                value={sourceFilter}
-                onChange={(e) => { setSourceFilter(e.target.value); setCurrentPage(1); }}
-                options={[{ value: "", label: "All" }, ...sourceOptions.map((s) => ({ value: s, label: s }))]}
-                placeholder="Search source..."
-              />
-            </div>
-            <div className="space-y-0.5">
-              <label className="block text-[11px] font-medium text-gray-500 uppercase tracking-wide">Sub type</label>
-              <SearchableSelect
-                compact
-                value={subPropertyTypeFilter}
-                onChange={(e) => { setSubPropertyTypeFilter(e.target.value); setCurrentPage(1); }}
-                options={[{ value: "", label: "All" }, ...subPropertyTypeOptions.map((s) => ({ value: s, label: s }))]}
-                placeholder="Search sub property type..."
-              />
-            </div>
-            <div className="space-y-0.5">
-              <label className="block text-[11px] font-medium text-gray-500 uppercase tracking-wide">City</label>
-              <select
-                value={cityFilter}
-                onChange={(e) => { setCityFilter(e.target.value); setCurrentPage(1); }}
-                className="w-full px-2 py-1.5 rounded border border-gray-200 bg-white text-xs focus:ring-1 focus:ring-blue-500/30 focus:border-blue-400"
-              >
-                <option value="">All</option>
-                {cityOptions.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-0.5">
-              <label className="block text-[11px] font-medium text-gray-500 uppercase tracking-wide">Reg.</label>
-              <select
-                value={isRegisteredFilter}
-                onChange={(e) => { setIsRegisteredFilter(e.target.value); setCurrentPage(1); }}
-                className="w-full px-2 py-1.5 rounded border border-gray-200 bg-white text-xs focus:ring-1 focus:ring-blue-500/30 focus:border-blue-400"
-              >
-                <option value="">All</option>
-                <option value="true">Registered</option>
-                <option value="false">Not Registered</option>
-              </select>
-            </div>
-          </div>
-          <div className="mt-2 pt-2 border-t border-gray-100 flex justify-end">
+        {/* Lead filters (collapsed by default) */}
+        <div className="mb-4">
+          <div className="flex items-center justify-between gap-3">
             <button
               type="button"
-              onClick={() => {
-                setStatusFilter("");
-                setCustomerTypeFilter("");
-                setSourceFilter("");
-                setSubPropertyTypeFilter("");
-                setCityFilter("");
-                setIsRegisteredFilter("");
-                setCurrentPage(1);
-              }}
-              className="px-3 py-1.5 text-xs font-medium text-gray-500 rounded border border-gray-200 bg-white hover:bg-gray-50"
+              onClick={() => setFiltersOpen((v) => !v)}
+              className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium border transition
+                ${filtersOpen ? "bg-gray-900 text-white border-gray-900" : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"}`}
             >
-              Clear
+              <SlidersHorizontal size={16} />
+              <span>Filters</span>
+              {activeFiltersCount > 0 && (
+                <span
+                  className={`ml-1 inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full text-xs font-semibold
+                  ${filtersOpen ? "bg-white/20 text-white" : "bg-gray-900 text-white"}`}
+                >
+                  {activeFiltersCount}
+                </span>
+              )}
+              {filtersOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
             </button>
+
+            {hasAnyFilters && (
+              <button
+                type="button"
+                onClick={() => {
+                  setStatusFilter("");
+                  setCustomerTypeFilter("");
+                  setSourceFilter("");
+                  setSubPropertyTypeFilter("");
+                  setCityFilter("");
+                  setIsRegisteredFilter("");
+                  setCurrentPage(1);
+                  setFiltersOpen(false);
+                }}
+                className="px-3 py-2 text-sm font-medium text-gray-600 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 transition"
+              >
+                Clear
+              </button>
+            )}
           </div>
+
+          <AnimatePresence initial={false}>
+            {filtersOpen && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.18 }}
+                className="overflow-hidden"
+              >
+                <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-3 mt-3">
+                  <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Filters</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                    <div className="space-y-0.5">
+                      <label className="block text-[11px] font-medium text-gray-500 uppercase tracking-wide">Status</label>
+                      <select
+                        value={statusFilter}
+                        onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+                        className="w-full px-2 py-1.5 rounded border border-gray-200 bg-white text-xs focus:ring-1 focus:ring-blue-500/30 focus:border-blue-400"
+                      >
+                        <option value="">All</option>
+                        <option value="new">New</option>
+                        <option value="contacted">Contacted</option>
+                        <option value="registered">Registered</option>
+                        <option value="visit_scheduled">Visit Scheduled</option>
+                        <option value="visit_completed">Visit Completed</option>
+                        <option value="deal_closed">Deal Closed</option>
+                        <option value="lost">Lost</option>
+                      </select>
+                    </div>
+                    <div className="space-y-0.5">
+                      <label className="block text-[11px] font-medium text-gray-500 uppercase tracking-wide">Type</label>
+                      <select
+                        value={customerTypeFilter}
+                        onChange={(e) => { setCustomerTypeFilter(e.target.value); setCurrentPage(1); }}
+                        className="w-full px-2 py-1.5 rounded border border-gray-200 bg-white text-xs focus:ring-1 focus:ring-blue-500/30 focus:border-blue-400"
+                      >
+                        <option value="">All</option>
+                        <option value="tenant">Tenant</option>
+                        <option value="owner">Owner</option>
+                      </select>
+                    </div>
+                    <div className="space-y-0.5">
+                      <label className="block text-[11px] font-medium text-gray-500 uppercase tracking-wide">Source</label>
+                      <SearchableSelect
+                        compact
+                        value={sourceFilter}
+                        onChange={(e) => { setSourceFilter(e.target.value); setCurrentPage(1); }}
+                        options={[{ value: "", label: "All" }, ...sourceOptions.map((s) => ({ value: s, label: s }))]}
+                        placeholder="Search source..."
+                      />
+                    </div>
+                    <div className="space-y-0.5">
+                      <label className="block text-[11px] font-medium text-gray-500 uppercase tracking-wide">Sub type</label>
+                      <SearchableSelect
+                        compact
+                        value={subPropertyTypeFilter}
+                        onChange={(e) => { setSubPropertyTypeFilter(e.target.value); setCurrentPage(1); }}
+                        options={[{ value: "", label: "All" }, ...subPropertyTypeOptions.map((s) => ({ value: s, label: s }))]}
+                        placeholder="Search sub property type..."
+                      />
+                    </div>
+                    <div className="space-y-0.5">
+                      <label className="block text-[11px] font-medium text-gray-500 uppercase tracking-wide">City</label>
+                      <select
+                        value={cityFilter}
+                        onChange={(e) => { setCityFilter(e.target.value); setCurrentPage(1); }}
+                        className="w-full px-2 py-1.5 rounded border border-gray-200 bg-white text-xs focus:ring-1 focus:ring-blue-500/30 focus:border-blue-400"
+                      >
+                        <option value="">All</option>
+                        {cityOptions.map((c) => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="space-y-0.5">
+                      <label className="block text-[11px] font-medium text-gray-500 uppercase tracking-wide">Reg.</label>
+                      <select
+                        value={isRegisteredFilter}
+                        onChange={(e) => { setIsRegisteredFilter(e.target.value); setCurrentPage(1); }}
+                        className="w-full px-2 py-1.5 rounded border border-gray-200 bg-white text-xs focus:ring-1 focus:ring-blue-500/30 focus:border-blue-400"
+                      >
+                        <option value="">All</option>
+                        <option value="true">Registered</option>
+                        <option value="false">Not Registered</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* TABLE */}
