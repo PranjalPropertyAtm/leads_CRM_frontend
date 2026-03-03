@@ -1,5 +1,5 @@
 
-import React, { act, useEffect, useState } from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Trash2, Plus, Square, MapPin } from "lucide-react";
 import { useFetchMasters, useSaveMasters } from "../../hooks/useMastersQueries.js";
@@ -11,11 +11,11 @@ export default function AddDetails() {
     const saveMastersMutation = useSaveMasters();
 
     const tabs = [
-        { id: "propertyTypes", label: "Property Types", icon: <Square size={16} /> },
-        { id: "subPropertyTypes", label: "Sub Property Types", icon: <MapPin size={16} /> },
-        { id: "sources", label: "Sources", icon: <Plus size={16} /> },
-        { id: "cities", label: "Cities", icon: <MapPin size={16} /> },
-        { id: "locations", label: "Locations", icon: <MapPin size={16} /> },
+        { id: "propertyTypes", label: "Property Types", icon: <Square size={14} /> },
+        { id: "subPropertyTypes", label: "Sub Property Types", icon: <MapPin size={14} /> },
+        { id: "sources", label: "Sources", icon: <Plus size={14} /> },
+        { id: "cities", label: "Cities", icon: <MapPin size={14} /> },
+        { id: "locations", label: "Locations", icon: <MapPin size={14} /> },
     ];
 
     const [activeTab, setActiveTab] = useState("propertyTypes");
@@ -130,154 +130,391 @@ export default function AddDetails() {
     // render list items for active tab
     const renderList = (tabKey) => {
         const list = safeMasters[tabKey] || [];
-        if (!list.length) {
-            return <p className="text-gray-500 italic text-center py-6">No items added yet.</p>;
-        }
-        return (
-            <ul className="space-y-2">
-                {list.map((it, i) => (
-                    <li
-                        key={i}
-                        className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 hover:bg-gray-100 transition-all duration-150"
-                    >
-                        <div className="flex flex-col">
 
-                            <span className="text-sm font-bold text-gray-800">{it.label ?? it.value}</span>
-                            {it.propertyType && <span className="text-xs text-gray-500">Parent: {it.propertyType}</span>}
-                            {it.city && <span className="text-xs text-gray-500">City: {it.city}</span>}
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <button
-                                onClick={() => requestDelete(tabKey, i)}
-                                className="text-red-600 hover:text-red-700 text-sm"
-                                title="Delete"
+        if (!list.length) {
+            return (
+                <div className="flex flex-col items-center justify-center py-10 text-center rounded-xl border border-dashed border-slate-200 bg-slate-50/40">
+                    <p className="text-sm font-medium text-slate-700">
+                        No {tabs.find((t) => t.id === tabKey)?.label.toLowerCase()} added yet.
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">
+                        Use the form above to add your first entry.
+                    </p>
+                </div>
+            );
+        }
+
+        // Grouped view for sub property types by property type
+        if (tabKey === "subPropertyTypes") {
+            const grouped = list.reduce((acc, item) => {
+                const parent = item.propertyType || "Unassigned";
+                if (!acc[parent]) acc[parent] = [];
+                acc[parent].push(item);
+                return acc;
+            }, {});
+
+            const parentKeys = Object.keys(grouped).sort((a, b) =>
+                a.localeCompare(b, undefined, { sensitivity: "base" })
+            );
+
+            return (
+                <div className="space-y-4">
+                    {parentKeys.map((parentName) => {
+                        const children = grouped[parentName].slice().sort((a, b) =>
+                            (a.label || a.value || "").localeCompare(b.label || b.value || "", undefined, {
+                                sensitivity: "base",
+                            })
+                        );
+                        return (
+                            <div
+                                key={parentName}
+                                className="rounded-2xl border border-slate-100 bg-slate-50/60 overflow-hidden"
                             >
-                                <Trash2 size={14} />
-                            </button>
+                                <div className="px-4 py-3 border-b border-slate-100 bg-slate-100/70 flex items-center justify-between gap-3">
+                                    <div>
+                                        <p className="text-sm font-semibold text-slate-900">
+                                            {parentName}
+                                        </p>
+                                        <p className="text-xs text-slate-500">
+                                            {children.length} sub type
+                                            {children.length > 1 ? "s" : ""}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="px-2.5 py-2 space-y-1.5">
+                                    {children.map((it, idx) => (
+                                        <div
+                                            key={`${parentName}-${idx}`}
+                                            className="group flex items-center justify-between gap-3 rounded-xl px-2.5 py-2 hover:bg-white hover:shadow-xs transition-all"
+                                        >
+                                            <p className="text-sm text-slate-800 font-medium truncate">
+                                                {it.label ?? it.value}
+                                            </p>
+                                            <button
+                                                onClick={() =>
+                                                    requestDelete(
+                                                        tabKey,
+                                                        safeMasters[tabKey].indexOf(it)
+                                                    )
+                                                }
+                                                className="inline-flex items-center justify-center rounded-full p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                                                title="Delete"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            );
+        }
+
+        // Grouped view for locations by city
+        if (tabKey === "locations") {
+            const grouped = list.reduce((acc, item) => {
+                const city = item.city || "Unassigned";
+                if (!acc[city]) acc[city] = [];
+                acc[city].push(item);
+                return acc;
+            }, {});
+
+            const cityKeys = Object.keys(grouped).sort((a, b) =>
+                a.localeCompare(b, undefined, { sensitivity: "base" })
+            );
+
+            return (
+                <div className="space-y-4">
+                    {cityKeys.map((cityName) => {
+                        const locations = grouped[cityName].slice().sort((a, b) =>
+                            (a.label || a.value || "").localeCompare(b.label || b.value || "", undefined, {
+                                sensitivity: "base",
+                            })
+                        );
+                        return (
+                            <div
+                                key={cityName}
+                                className="rounded-2xl border border-slate-100 bg-slate-50/60 overflow-hidden"
+                            >
+                                <div className="px-4 py-3 border-b border-slate-100 bg-slate-100/70 flex items-center justify-between gap-3">
+                                    <div>
+                                        <p className="text-sm font-semibold text-slate-900">
+                                            {cityName}
+                                        </p>
+                                        <p className="text-xs text-slate-500">
+                                            {locations.length} location
+                                            {locations.length > 1 ? "s" : ""}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="px-2.5 py-2 space-y-1.5">
+                                    {locations.map((it, idx) => (
+                                        <div
+                                            key={`${cityName}-${idx}`}
+                                            className="group flex items-center justify-between gap-3 rounded-xl px-2.5 py-2 hover:bg-white hover:shadow-xs transition-all"
+                                        >
+                                            <p className="text-sm text-slate-800 font-medium truncate">
+                                                {it.label ?? it.value}
+                                            </p>
+                                            <button
+                                                onClick={() =>
+                                                    requestDelete(
+                                                        tabKey,
+                                                        safeMasters[tabKey].indexOf(it)
+                                                    )
+                                                }
+                                                className="inline-flex items-center justify-center rounded-full p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                                                title="Delete"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            );
+        }
+
+        // Default flat view for simple lists (propertyTypes, sources, cities)
+        const sorted = list
+            .slice()
+            .sort((a, b) =>
+                (a.label || a.value || "").localeCompare(b.label || b.value || "", undefined, {
+                    sensitivity: "base",
+                })
+            );
+
+        return (
+            <div className="space-y-2">
+                {sorted.map((it, i) => (
+                    <div
+                        key={i}
+                        className="group flex items-center justify-between gap-4 rounded-xl border border-slate-100 bg-slate-50/60 px-3.5 py-3 hover:bg-white hover:border-slate-200 hover:shadow-xs transition-all"
+                    >
+                        <div className="flex items-start gap-3 min-w-0">
+                            <div className="mt-0.5 shrink-0 h-6 w-6 rounded-full bg-slate-900/5 text-[11px] font-semibold text-slate-700 flex items-center justify-center">
+                                {i + 1}
+                            </div>
+                            <div className="min-w-0">
+                                <p className="text-sm font-medium text-slate-900 truncate">
+                                    {it.label ?? it.value}
+                                </p>
+                            </div>
                         </div>
-                    </li>
+                        <button
+                            onClick={() => requestDelete(tabKey, i)}
+                            className="inline-flex items-center justify-center rounded-full p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                            title="Delete"
+                        >
+                            <Trash2 size={16} />
+                        </button>
+                    </div>
                 ))}
-            </ul>
+            </div>
         );
     };
 
     return (
-        <div className="bg-slate-50 p-4 font-[Inter]">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-                <h1 className="text-2xl font-semibold text-slate-800 flex items-center gap-2">Masters — Add / Edit</h1>
-            </div>
+        <div className="min-h-screen bg-slate-50 p-4 font-[Inter]">
+            <div className="w-full space-y-6">
+                <header className="flex flex-col gap-2">
+                    <h1 className="text-2xl md:text-3xl font-semibold text-slate-900">
+                        Masters
+                    </h1>
+                    <p className="text-sm text-slate-500 max-w-2xl">
+                        Configure the master lists used across the application, such as property
+                        types, sub types, sources, cities and locations.
+                    </p>
+                </header>
 
-            <div className="flex flex-wrap gap-2 mb-4 border-b border-slate-200 pb-2">
-                {tabs.map((tab) => (
-                    <button
-                        key={tab.id}
-                        onClick={() => setActiveTab(tab.id)}
-                        className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-t-lg transition ${activeTab === tab.id ? "bg-slate-900 text-white" : "bg-slate-200 text-slate-700 hover:bg-slate-300"
-                            }`}
-                    >
-                        {tab.icon} {tab.label}
-                    </button>
-                ))}
-            </div>
-
-            <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-                {/* Top Add Card (like settings 'Add Designation' card) */}
-                <div className="border p-5 rounded-xl shadow-sm bg-white">
-                    <h2 className="text-lg font-semibold mb-3">
-                        {activeTab === "subPropertyTypes" ? "➕ Add Sub Property Type" : "➕ Add New " + tabs.find(t => t.id === activeTab).label}
-                    </h2>
-
-                    <div className="flex flex-col gap-3">
-                        {activeTab === "subPropertyTypes" && (
-                            <select
-                                value={selectedPropertyType}
-                                onChange={(e) => setSelectedPropertyType(e.target.value)}
-                                className="border px-3 py-2 rounded-lg focus:ring-2 focus:ring-slate-900 outline-none"
-                            >
-                                <option value="">Select Property Type</option>
-                                {safeMasters.propertyTypes.map((pt, idx) => (
-                                    <option key={idx} value={pt.label}>
-                                        {pt.label}
-                                    </option>
-                                ))}
-                            </select>
-                        )}
-                        {activeTab === "locations" && (
-                            <select
-                                value={selectedCity}
-                                onChange={(e) => setSelectedCity(e.target.value)}
-                                className="border px-3 py-2 rounded-lg focus:ring-2 focus:ring-slate-900 outline-none"
-                            >
-                                <option value="">Select City</option>
-                                {safeMasters.cities.map((city, idx) => (
-                                    <option key={idx} value={city.label}>
-                                        {city.label}
-                                    </option>
-                                ))}
-                            </select>
-                        )}
-
-                        <input
-                            type="text"
-                            placeholder={
-                                activeTab === "subPropertyTypes"
-                                    ? "Sub type label (e.g. 2 BHK)"
-                                    : activeTab === "cities"
-                                        ? "City name (e.g. Hyderabad)"
-                                        : activeTab === "sources"
-                                            ? "Source name (e.g. Facebook)"
-                                            : activeTab === "propertyTypes"
-                                                ? "Property type (e.g. Residential)"
-                                                : activeTab === "locations"
-                                                    ? "Location name (e.g. Vikas Nagar)"
-                                                    : "Label"
-                            }
-
-                            className="border px-3 py-2 rounded-lg focus:ring-2 focus:ring-slate-900 outline-none"
-                            value={label}
-                            onChange={(e) => setLabel(e.target.value)}
-                        />
-
-                        {/* optional value field */}
-                        {/* <input
-              type="text"
-              placeholder="Value (optional, e.g. residential)"
-              className="border px-3 py-2 rounded-lg focus:ring-2 focus:ring-slate-900 outline-none"
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-            /> */}
-
-                        <div className="flex items-center gap-3">
-                            <button onClick={handleAdd} className="bg-slate-900 text-white px-4 py-2 rounded-lg">
-                                Add
-                            </button>
-                            <button onClick={() => { setLabel(""); setValue(""); setSelectedPropertyType(""); }} className="px-4 py-2 rounded-lg border">
-                                Reset
-                            </button>
-                        </div>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="inline-flex flex-wrap gap-1 rounded-2xl bg-slate-100 p-1">
+                        {tabs.map((tab) => {
+                            const isActive = activeTab === tab.id;
+                            return (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id)}
+                                    className={`flex items-center gap-2 px-3.5 py-1.5 text-xs md:text-sm font-medium rounded-xl transition
+                                        ${isActive
+                                            ? "bg-slate-900 text-white shadow-sm"
+                                            : "text-slate-700 hover:bg-white/70"
+                                        }`}
+                                >
+                                    <span className="text-slate-500">{tab.icon}</span>
+                                    <span>{tab.label}</span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                    <div className="text-xs text-slate-500">
+                        {loading || saveMastersMutation.isLoading
+                            ? "Saving changes…"
+                            : "Changes are saved automatically"}
                     </div>
                 </div>
 
-                {/* List Card (like settings lists) */}
-                <div className="border p-5 rounded-xl shadow-sm bg-white">
-                    <h2 className="text-lg font-semibold mb-3">📋 {tabs.find(t => t.id === activeTab).label}</h2>
-                    {renderList(activeTab)}
-                </div>
-            </motion.div>
+                <motion.div
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="space-y-6"
+                >
+                    <section className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                        <div className="border-b border-slate-100 px-5 py-4">
+                            <h2 className="text-base md:text-lg font-semibold text-slate-900">
+                                {activeTab === "subPropertyTypes"
+                                    ? "Add Sub Property Type"
+                                    : `Add New ${tabs.find((t) => t.id === activeTab).label}`}
+                            </h2>
+                            <p className="mt-1 text-xs text-slate-500">
+                                Enter the details and click{" "}
+                                <span className="font-medium text-slate-700">Add</span> to update
+                                the selected master list.
+                            </p>
+                        </div>
 
-            {/* Shared confirmation modal */}
-            {showConfirmModal && (
-                <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
-                    <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-md">
-                        <h2 className="text-xl font-semibold text-gray-800 mb-3">Confirm Deletion</h2>
-                        <p className="text-gray-600 mb-5">Are you sure you want to delete <b>"{toDelete?.label}"</b>?</p>
-                        <div className="flex justify-end gap-3">
-                            <button onClick={() => setShowConfirmModal(false)} className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition">Cancel</button>
-                            <button onClick={handleDelete} className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition">Yes, Delete</button>
+                        <div className="px-5 py-5">
+                            {loading ? (
+                                <p className="text-sm text-slate-500">Loading masters…</p>
+                            ) : (
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        {activeTab === "subPropertyTypes" && (
+                                            <select
+                                                value={selectedPropertyType}
+                                                onChange={(e) => setSelectedPropertyType(e.target.value)}
+                                                className="w-full border border-slate-200 px-3 py-2 rounded-lg text-sm text-slate-800 focus:ring-2 focus:ring-slate-900/70 focus:border-slate-900/40 outline-none bg-white"
+                                            >
+                                                <option value="">Select Property Type</option>
+                                                {safeMasters.propertyTypes.map((pt, idx) => (
+                                                    <option key={idx} value={pt.label}>
+                                                        {pt.label}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        )}
+
+                                        {activeTab === "locations" && (
+                                            <select
+                                                value={selectedCity}
+                                                onChange={(e) => setSelectedCity(e.target.value)}
+                                                className="w-full border border-slate-200 px-3 py-2 rounded-lg text-sm text-slate-800 focus:ring-2 focus:ring-slate-900/70 focus:border-slate-900/40 outline-none bg-white"
+                                            >
+                                                <option value="">Select City</option>
+                                                {safeMasters.cities.map((city, idx) => (
+                                                    <option key={idx} value={city.label}>
+                                                        {city.label}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        )}
+
+                                        <input
+                                            type="text"
+                                            placeholder={
+                                                activeTab === "subPropertyTypes"
+                                                    ? "Sub type label (e.g. 2 BHK)"
+                                                    : activeTab === "cities"
+                                                        ? "City name (e.g. Hyderabad)"
+                                                        : activeTab === "sources"
+                                                            ? "Source name (e.g. Facebook)"
+                                                            : activeTab === "propertyTypes"
+                                                                ? "Property type (e.g. Residential)"
+                                                                : activeTab === "locations"
+                                                                    ? "Location name (e.g. Vikas Nagar)"
+                                                                    : "Label"
+                                            }
+                                            className="w-full border border-slate-200 px-3 py-2 rounded-lg text-sm text-slate-800 focus:ring-2 focus:ring-slate-900/70 focus:border-slate-900/40 outline-none bg-white"
+                                            value={label}
+                                            onChange={(e) => setLabel(e.target.value)}
+                                        />
+                                    </div>
+
+                                    <div className="flex flex-wrap items-center gap-3 pt-1">
+                                        <button
+                                            onClick={handleAdd}
+                                            disabled={loading || saveMastersMutation.isLoading}
+                                            className="inline-flex items-center gap-2 bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm hover:bg-slate-800 disabled:opacity-60 disabled:cursor-not-allowed"
+                                        >
+                                            <Plus size={16} />
+                                            <span>Add</span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setLabel("");
+                                                setValue("");
+                                                setSelectedPropertyType("");
+                                                setSelectedCity("");
+                                            }}
+                                            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                                        >
+                                            Reset
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </section>
+
+                    <section className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                        <div className="border-b border-slate-100 px-5 py-4 flex items-center justify-between gap-3">
+                            <div>
+                                <h2 className="text-base md:text-lg font-semibold text-slate-900">
+                                    {tabs.find((t) => t.id === activeTab).label}
+                                </h2>
+                                <p className="mt-1 text-xs text-slate-500">
+                                    Existing values below. Remove items carefully, as they may be
+                                    referenced by existing records.
+                                </p>
+                            </div>
+                        </div>
+                        <div className="px-2 md:px-5 py-3 md:py-5">
+                            {loading ? (
+                                <p className="text-sm text-slate-500">Loading masters…</p>
+                            ) : (
+                                renderList(activeTab)
+                            )}
+                        </div>
+                    </section>
+                </motion.div>
+
+                {showConfirmModal && (
+                    <div className="fixed inset-0 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm z-50">
+                        <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md">
+                            <h2 className="text-lg font-semibold text-slate-900 mb-2">
+                                Confirm deletion
+                            </h2>
+                            <p className="text-sm text-slate-600 mb-5">
+                                Are you sure you want to delete{" "}
+                                <span className="font-semibold text-slate-900">
+                                    "{toDelete?.label}"
+                                </span>
+                                ? This action cannot be undone.
+                            </p>
+                            <div className="flex justify-end gap-3">
+                                <button
+                                    onClick={() => setShowConfirmModal(false)}
+                                    className="px-4 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleDelete}
+                                    className="px-4 py-2 rounded-lg bg-red-600 text-sm font-medium text-white hover:bg-red-700"
+                                >
+                                    Yes, delete
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )}
+            </div>
         </div>
     );
 }
