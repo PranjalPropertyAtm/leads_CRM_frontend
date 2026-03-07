@@ -23,7 +23,7 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useMyLeads, useDeleteLead, useUpdateLeadStatus, useMarkDealClosed, useLeadFilterOptions, getRemarksList, getCustomerRemarksList, hasRemarks, useAddEmployeeRemark, useUpdateLeadMetaAd } from "../../hooks/useLeadQueries.js";
+import { useMyLeads, useDeleteLead, useUpdateLeadStatus, useMarkDealClosed, useLeadFilterOptions, getRemarksList, getCustomerRemarksList, hasRemarks, useAddEmployeeRemark, useUpdateLeadMetaAd, useTenantUrgencyTotalMyLeads } from "../../hooks/useLeadQueries.js";
 import { useLoadUser } from "../../hooks/useAuthQueries.js";
 import { useFetchEmployees } from "../../hooks/useEmployeeQueries.js";
 import { createPortal } from "react-dom";
@@ -67,14 +67,22 @@ export default function MyLeads() {
   const queryClient = useQueryClient();
   const prevPageSizeRef = useRef(null);
 
+  const timelineMode = Boolean(urgencyFilter); // timeline filters apply to tenant leads only
+
   const leadFilters = {
     status: statusFilter,
-    customerType: customerTypeFilter,
+    customerType: timelineMode ? "tenant" : customerTypeFilter,
     source: sourceFilter,
     subPropertyType: subPropertyTypeFilter,
     city: cityFilter,
     isRegistered: isRegisteredFilter,
   };
+
+  useEffect(() => {
+    if (timelineMode && customerTypeFilter === "owner") {
+      setCustomerTypeFilter("tenant");
+    }
+  }, [timelineMode, customerTypeFilter]);
 
   useEffect(() => {
     if (filter.trim()) {
@@ -144,6 +152,18 @@ export default function MyLeads() {
   } = useMyLeads(isSearching ? 1 : currentPage, pageSize, urgencyFilter, leadFilters);
 
   const { leads = [], total = 0, totalPages = 0, countCritical = 0, countOverdue = 0, countHigh = 0 } = data;
+
+  // Tenant-only chip totals per urgency so badges match results (owners excluded)
+  const tenantUrgencyFilters = {
+    status: statusFilter || undefined,
+    source: sourceFilter || undefined,
+    subPropertyType: subPropertyTypeFilter || undefined,
+    city: cityFilter || undefined,
+    isRegistered: isRegisteredFilter || undefined,
+  };
+  const { data: chipCountCritical = countCritical } = useTenantUrgencyTotalMyLeads("critical", tenantUrgencyFilters);
+  const { data: chipCountOverdue = countOverdue } = useTenantUrgencyTotalMyLeads("overdue", tenantUrgencyFilters);
+  const { data: chipCountHigh = countHigh } = useTenantUrgencyTotalMyLeads("high", tenantUrgencyFilters);
 
   const {
       data: employeesData,
@@ -530,21 +550,21 @@ export default function MyLeads() {
             onClick={() => { setUrgencyFilter("critical"); setSearchParams({ urgencyFilter: "critical" }); setCurrentPage(1); }}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-1.5 ${urgencyFilter === "critical" ? "bg-red-600 text-white" : "bg-white border border-gray-300 text-gray-600 hover:bg-gray-50"}`}
           >
-            Critical <span className="bg-black/15 px-1.5 py-0.5 rounded text-xs">{countCritical}</span>
+            Critical <span className="bg-black/15 px-1.5 py-0.5 rounded text-xs">{chipCountCritical}</span>
           </button>
           <button
             type="button"
             onClick={() => { setUrgencyFilter("overdue"); setSearchParams({ urgencyFilter: "overdue" }); setCurrentPage(1); }}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-1.5 ${urgencyFilter === "overdue" ? "bg-amber-600 text-white" : "bg-white border border-gray-300 text-gray-600 hover:bg-gray-50"}`}
           >
-            Overdue <span className="bg-black/15 px-1.5 py-0.5 rounded text-xs">{countOverdue}</span>
+            Overdue <span className="bg-black/15 px-1.5 py-0.5 rounded text-xs">{chipCountOverdue}</span>
           </button>
           <button
             type="button"
             onClick={() => { setUrgencyFilter("high"); setSearchParams({ urgencyFilter: "high" }); setCurrentPage(1); }}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-1.5 ${urgencyFilter === "high" ? "bg-blue-600 text-white" : "bg-white border border-gray-300 text-gray-600 hover:bg-gray-50"}`}
           >
-            High <span className="bg-black/15 px-1.5 py-0.5 rounded text-xs">{countHigh}</span>
+            High <span className="bg-black/15 px-1.5 py-0.5 rounded text-xs">{chipCountHigh}</span>
           </button>
         </div>
 
@@ -624,12 +644,18 @@ export default function MyLeads() {
                       <select
                         value={customerTypeFilter}
                         onChange={(e) => { setCustomerTypeFilter(e.target.value); setCurrentPage(1); }}
+                        disabled={timelineMode}
                         className="w-full px-2 py-1.5 rounded border border-gray-200 bg-white text-xs focus:ring-1 focus:ring-blue-500/30 focus:border-blue-400"
                       >
                         <option value="">All</option>
                         <option value="tenant">Tenant</option>
                         <option value="owner">Owner</option>
                       </select>
+                      {timelineMode && (
+                        <p className="text-[10px] text-gray-400 mt-0.5">
+                          Timeline filters apply to tenant leads only
+                        </p>
+                      )}
                     </div>
                     <div className="space-y-0.5">
                       <label className="block text-[11px] font-medium text-gray-500 uppercase tracking-wide">Source</label>

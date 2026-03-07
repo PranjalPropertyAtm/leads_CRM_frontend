@@ -63,6 +63,111 @@ export const useFetchLeads = (page = 1, limit = 10, urgencyFilter = '', filters 
   });
 };
 
+// Fetch urgency counts for timeline chips (tenant-only).
+// Uses same backend response fields: countCritical/countOverdue/countHigh.
+// This is separate from the main leads list so counts can exclude owner leads
+// without forcing the whole table to tenant.
+export const useTenantTimelineCountsAllLeads = (filters = {}) => {
+  const {
+    createdBy,
+    assignedTo,
+    startDate,
+    endDate,
+    status,
+    source,
+    subPropertyType,
+    city,
+    isRegistered,
+  } = filters;
+
+  return useQuery({
+    queryKey: [
+      'leads',
+      'tenant-timeline-counts',
+      createdBy,
+      assignedTo,
+      startDate,
+      endDate,
+      status,
+      source,
+      subPropertyType,
+      city,
+      isRegistered,
+    ],
+    queryFn: async () => {
+      // Minimal query: we only need counts.
+      const params = { page: 1, limit: 1, customerType: 'tenant' };
+      if (createdBy) params.createdBy = createdBy;
+      if (assignedTo) params.assignedTo = assignedTo;
+      if (startDate) params.startDate = startDate;
+      if (endDate) params.endDate = endDate;
+      if (status) params.status = status;
+      if (source && source.trim()) params.source = source.trim();
+      if (subPropertyType && subPropertyType.trim()) params.subPropertyType = subPropertyType.trim();
+      if (city && city.trim()) params.city = city.trim();
+      if (isRegistered === 'true' || isRegistered === 'false') params.isRegistered = isRegistered;
+
+      const response = await axios.get('/leads/all', { params });
+      const data = response.data || {};
+      return {
+        countCritical: data.countCritical ?? 0,
+        countOverdue: data.countOverdue ?? 0,
+        countHigh: data.countHigh ?? 0,
+      };
+    },
+    staleTime: 30_000,
+  });
+};
+
+// Tenant-only totals for a specific urgency level (so chip counts match the list when clicked).
+export const useTenantUrgencyTotalAllLeads = (urgencyFilter = '', filters = {}) => {
+  const {
+    createdBy,
+    assignedTo,
+    startDate,
+    endDate,
+    status,
+    source,
+    subPropertyType,
+    city,
+    isRegistered,
+  } = filters;
+
+  return useQuery({
+    queryKey: [
+      'leads',
+      'tenant-urgency-total',
+      urgencyFilter || 'all',
+      createdBy,
+      assignedTo,
+      startDate,
+      endDate,
+      status,
+      source,
+      subPropertyType,
+      city,
+      isRegistered,
+    ],
+    queryFn: async () => {
+      const params = { page: 1, limit: 1, customerType: 'tenant' };
+      if (urgencyFilter) params.urgencyFilter = urgencyFilter;
+      if (createdBy) params.createdBy = createdBy;
+      if (assignedTo) params.assignedTo = assignedTo;
+      if (startDate) params.startDate = startDate;
+      if (endDate) params.endDate = endDate;
+      if (status) params.status = status;
+      if (source && source.trim()) params.source = source.trim();
+      if (subPropertyType && subPropertyType.trim()) params.subPropertyType = subPropertyType.trim();
+      if (city && city.trim()) params.city = city.trim();
+      if (isRegistered === 'true' || isRegistered === 'false') params.isRegistered = isRegistered;
+      const response = await axios.get('/leads/all', { params });
+      const data = response.data || {};
+      return data.total ?? 0;
+    },
+    staleTime: 30_000,
+  });
+};
+
 // Fetch distinct source, subPropertyType, city for lead filters (from backend)
 export const useLeadFilterOptions = () => {
   return useQuery({
@@ -178,6 +283,49 @@ export const useMyLeads = (page = 1, limit = 10, urgencyFilter = '', filters = {
   });
 };
 
+// Tenant-only urgency counts for My Leads timeline chips.
+export const useTenantTimelineCountsMyLeads = (filters = {}) => {
+  const { status, source, subPropertyType, city, isRegistered } = filters;
+  return useQuery({
+    queryKey: ['leads', 'my', 'tenant-timeline-counts', status, source, subPropertyType, city, isRegistered],
+    queryFn: async () => {
+      const params = { page: 1, limit: 1, customerType: 'tenant' };
+      if (status) params.status = status;
+      if (source && source.trim()) params.source = source.trim();
+      if (subPropertyType && subPropertyType.trim()) params.subPropertyType = subPropertyType.trim();
+      if (city && city.trim()) params.city = city.trim();
+      if (isRegistered === 'true' || isRegistered === 'false') params.isRegistered = isRegistered;
+      const response = await axios.get('/leads/my', { params });
+      const data = response.data || {};
+      return {
+        countCritical: data.countCritical ?? 0,
+        countOverdue: data.countOverdue ?? 0,
+        countHigh: data.countHigh ?? 0,
+      };
+    },
+    staleTime: 30_000,
+  });
+};
+
+export const useTenantUrgencyTotalMyLeads = (urgencyFilter = '', filters = {}) => {
+  const { status, source, subPropertyType, city, isRegistered } = filters;
+  return useQuery({
+    queryKey: ['leads', 'my', 'tenant-urgency-total', urgencyFilter || 'all', status, source, subPropertyType, city, isRegistered],
+    queryFn: async () => {
+      const params = { page: 1, limit: 1, customerType: 'tenant' };
+      if (urgencyFilter) params.urgencyFilter = urgencyFilter;
+      if (status) params.status = status;
+      if (source && source.trim()) params.source = source.trim();
+      if (subPropertyType && subPropertyType.trim()) params.subPropertyType = subPropertyType.trim();
+      if (city && city.trim()) params.city = city.trim();
+      if (isRegistered === 'true' || isRegistered === 'false') params.isRegistered = isRegistered;
+      const response = await axios.get('/leads/my', { params });
+      const data = response.data || {};
+      return data.total ?? 0;
+    },
+    staleTime: 30_000,
+  });
+};
 // Update lead status
 export const useUpdateLeadStatus = () => {
   const queryClient = useQueryClient();

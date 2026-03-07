@@ -26,7 +26,7 @@ import axiosInstance, { getUploadsUrl } from "../../lib/axios.js";
 import { notify } from "../../utils/toast.js";
 
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
-import { useFetchLeads, useDeleteLead, useUpdateLeadStatus, useMarkDealClosed, useLeadFilterOptions, getRemarksList, getCustomerRemarksList, hasRemarks, hasInternalRemarks, useAddEmployeeRemark, useUpdateLeadMetaAd } from "../../hooks/useLeadQueries.js";
+import { useFetchLeads, useDeleteLead, useUpdateLeadStatus, useMarkDealClosed, useLeadFilterOptions, getRemarksList, getCustomerRemarksList, hasRemarks, hasInternalRemarks, useAddEmployeeRemark, useUpdateLeadMetaAd, useTenantUrgencyTotalAllLeads } from "../../hooks/useLeadQueries.js";
 import { useFetchEmployees } from "../../hooks/useEmployeeQueries.js";
 import { useLoadUser } from "../../hooks/useAuthQueries.js";
 
@@ -72,18 +72,28 @@ export default function AllLeads() {
   const [pageSize, setPageSize] = useState(5);
   const prevPageSizeRef = useRef(null);
 
+  const timelineMode = Boolean(urgencyFilter); // Critical/Overdue/High are timeline-only (tenant)
+
   const leadFilters = {
     createdBy: createdByFilter || undefined,
     assignedTo: assignedToFilter || undefined,
     startDate: startDate || undefined,
     endDate: endDate || undefined,
     status: statusFilter || undefined,
-    customerType: customerTypeFilter || undefined,
+    // When using timeline filters, restrict to tenant leads (owners have no timeline)
+    customerType: (timelineMode ? "tenant" : customerTypeFilter) || undefined,
     source: sourceFilter || undefined,
     subPropertyType: subPropertyTypeFilter || undefined,
     city: cityFilter || undefined,
     isRegistered: isRegisteredFilter || undefined,
   };
+
+  // If user toggles a timeline filter, ensure Type doesn't stay set to Owner.
+  useEffect(() => {
+    if (timelineMode && customerTypeFilter === "owner") {
+      setCustomerTypeFilter("tenant");
+    }
+  }, [timelineMode, customerTypeFilter]);
 
   // Restore page and urgency when returning from Edit Lead
   useEffect(() => {
@@ -184,6 +194,22 @@ export default function AllLeads() {
     isLoading,
   } = useFetchLeads(isSearching ? 1 : currentPage, pageSize, urgencyFilter, leadFilters);
   const { leads = [], total = 0, totalPages = 0, countCritical = 0, countOverdue = 0, countHigh = 0 } = paginatedData;
+
+  // Tenant-only chip totals per urgency so badges match results (owners excluded)
+  const tenantUrgencyFilters = {
+    createdBy: createdByFilter || undefined,
+    assignedTo: assignedToFilter || undefined,
+    startDate: startDate || undefined,
+    endDate: endDate || undefined,
+    status: statusFilter || undefined,
+    source: sourceFilter || undefined,
+    subPropertyType: subPropertyTypeFilter || undefined,
+    city: cityFilter || undefined,
+    isRegistered: isRegisteredFilter || undefined,
+  };
+  const { data: chipCountCritical = countCritical } = useTenantUrgencyTotalAllLeads("critical", tenantUrgencyFilters);
+  const { data: chipCountOverdue = countOverdue } = useTenantUrgencyTotalAllLeads("overdue", tenantUrgencyFilters);
+  const { data: chipCountHigh = countHigh } = useTenantUrgencyTotalAllLeads("high", tenantUrgencyFilters);
 
   // employees query (fetch many for select)
   const {
@@ -576,21 +602,21 @@ export default function AllLeads() {
             onClick={() => { setUrgencyFilter("critical"); setSearchParams({ urgencyFilter: "critical" }); setCurrentPage(1); }}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-1.5 ${urgencyFilter === "critical" ? "bg-red-600 text-white" : "bg-white border border-gray-300 text-gray-600 hover:bg-gray-50"}`}
           >
-            Critical <span className="bg-black/15 px-1.5 py-0.5 rounded text-xs">{countCritical}</span>
+            Critical <span className="bg-black/15 px-1.5 py-0.5 rounded text-xs">{chipCountCritical}</span>
           </button>
           <button
             type="button"
             onClick={() => { setUrgencyFilter("overdue"); setSearchParams({ urgencyFilter: "overdue" }); setCurrentPage(1); }}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-1.5 ${urgencyFilter === "overdue" ? "bg-amber-600 text-white" : "bg-white border border-gray-300 text-gray-600 hover:bg-gray-50"}`}
           >
-            Overdue <span className="bg-black/15 px-1.5 py-0.5 rounded text-xs">{countOverdue}</span>
+            Overdue <span className="bg-black/15 px-1.5 py-0.5 rounded text-xs">{chipCountOverdue}</span>
           </button>
           <button
             type="button"
             onClick={() => { setUrgencyFilter("high"); setSearchParams({ urgencyFilter: "high" }); setCurrentPage(1); }}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-1.5 ${urgencyFilter === "high" ? "bg-blue-600 text-white" : "bg-white border border-gray-300 text-gray-600 hover:bg-gray-50"}`}
           >
-            High <span className="bg-black/15 px-1.5 py-0.5 rounded text-xs">{countHigh}</span>
+            High <span className="bg-black/15 px-1.5 py-0.5 rounded text-xs">{chipCountHigh}</span>
           </button>
         </div>
 
@@ -674,12 +700,18 @@ export default function AllLeads() {
                 <select
                   value={customerTypeFilter}
                   onChange={(e) => { setCustomerTypeFilter(e.target.value); setCurrentPage(1); }}
+                  disabled={timelineMode}
                   className="w-full px-2 py-1.5 rounded border border-gray-200 bg-white text-xs focus:ring-1 focus:ring-blue-500/30 focus:border-blue-400"
                 >
                   <option value="">All</option>
                   <option value="tenant">Tenant</option>
                   <option value="owner">Owner</option>
                 </select>
+                {timelineMode && (
+                  <p className="text-[10px] text-gray-400 mt-0.5">
+                    Timeline filters apply to tenant leads only
+                  </p>
+                )}
               </div>
             <div className="space-y-0.5">
               <label className="block text-[11px] font-medium text-gray-500 uppercase tracking-wide">Source</label>
@@ -799,12 +831,18 @@ export default function AllLeads() {
                 <select
                   value={customerTypeFilter}
                   onChange={(e) => { setCustomerTypeFilter(e.target.value); setCurrentPage(1); }}
+                  disabled={timelineMode}
                   className="w-full px-2 py-1.5 rounded border border-gray-200 bg-white text-xs focus:ring-1 focus:ring-blue-500/30 focus:border-blue-400"
                 >
                   <option value="">All</option>
                   <option value="tenant">Tenant</option>
                   <option value="owner">Owner</option>
                 </select>
+                {timelineMode && (
+                  <p className="text-[10px] text-gray-400 mt-0.5">
+                    Timeline filters apply to tenant leads only
+                  </p>
+                )}
               </div>
               <div className="space-y-0.5">
                 <label className="block text-[11px] font-medium text-gray-500 uppercase tracking-wide">Source</label>

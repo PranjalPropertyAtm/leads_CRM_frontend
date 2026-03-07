@@ -180,6 +180,8 @@ export default function EditLead() {
       payload.propertyLocation = form.propertyLocation;
       payload.area = form.area || undefined;
       payload.landmark = form.landmark || undefined;
+      // Ensure owner leads never retain timeline info if user switches from tenant → owner
+      payload.requirementDuration = null;
     }
 
     updateLead.mutate(
