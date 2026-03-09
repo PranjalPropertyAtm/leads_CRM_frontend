@@ -67,6 +67,51 @@ export default function VisitDetailsModal({ open, onClose, visit }) {
               value={visit?.lead?.customerType || "N/A"}
             />
             <Info label="City" value={visit?.lead?.city || "N/A"} />
+            {isOwnerLead && (
+              <>
+                <Info
+                  label="Property Location"
+                  value={visit?.lead?.propertyLocation || "N/A"}
+                />
+                <Info
+                  label="Property Type"
+                  value={
+                    [visit?.lead?.propertyType, visit?.lead?.subPropertyType]
+                      .filter(Boolean)
+                      .join(" / ") || "N/A"
+                  }
+                />
+                <Info
+                  label="Registered"
+                  value={
+                    visit?.lead?.isRegistered === true ? "Yes" : "No"
+                  }
+                />
+              </>
+            )}
+            {isTenantLead && (
+              <>
+                <Info
+                  label="Location Requirement"
+                  value={
+                    Array.isArray(visit?.lead?.preferredLocation) &&
+                    visit.lead.preferredLocation.length > 0
+                      ? visit.lead.preferredLocation.join(", ")
+                      : "N/A"
+                  }
+                />
+                <Info
+                  label="Property Requirement"
+                  value={visit?.lead?.requirements || "N/A"}
+                />
+                <Info
+                  label="Registered"
+                  value={
+                    visit?.lead?.isRegistered === true ? "Yes" : "No"
+                  }
+                />
+              </>
+            )}
           </div>
         </div>
 
@@ -82,7 +127,7 @@ export default function VisitDetailsModal({ open, onClose, visit }) {
               value={formatDate(visit.visitDate)}
             />
 
-            {/* -------- TENANT LEAD VISIT -------- */}
+            {/* -------- TENANT LEAD VISIT (property they visited) -------- */}
             {isTenantLead && (
               <>
                 <Info
@@ -132,14 +177,14 @@ export default function VisitDetailsModal({ open, onClose, visit }) {
               label="Employee Name"
               value={visit?.visitedBy?.name || "N/A"}
             />
-            <Info
+            {/* <Info
               label="Employee Email"
               value={visit?.visitedBy?.email || "N/A"}
             />
             <Info
               label="Role"
               value={visit?.visitedBy?.role || "N/A"}
-            />
+            /> */}
             <Info
               label="Lead Created By"
               value={visit?.leadCreatedBy?.name ?? "—"}
