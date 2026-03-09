@@ -182,10 +182,18 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { data: stats, isLoading, error } = useDashboardStats();
   const { data: user } = useLoadUser();
+  const isCustomerCare = user?.designation?.toLowerCase().includes("customer care");
+  const useAllLeadsPage = user?.role === "admin" || isCustomerCare;
 
   // Memoize calculations for performance
+  // Urgent & overdue sections show only tenant leads (owners have no timeline)
   const metrics = useMemo(() => {
     if (!stats) return null;
+
+    const allUrgent = stats.urgentLeads || [];
+    const allOverdue = stats.overdueLeads || [];
+    const urgentLeads = allUrgent.filter((l) => l.customerType === "tenant");
+    const overdueLeads = allOverdue.filter((l) => l.customerType === "tenant");
 
     return {
       totalLeads: stats.leads?.total || 0,
@@ -196,8 +204,8 @@ export default function Dashboard() {
       totalVisits: stats.visits?.total || 0,
       recentVisits: stats.visits?.recent || 0,
       recentLeads: stats.recentLeads || [],
-      urgentLeads: stats.urgentLeads || [],
-      overdueLeads: stats.overdueLeads || [],
+      urgentLeads,
+      overdueLeads,
       slaBreach: stats.slaBreach || { count: 0, leads: [] },
       averageClosureDays: stats.averageClosureDays ?? null,
       statusBreakdown: stats.breakdowns?.status || [],
@@ -303,7 +311,7 @@ export default function Dashboard() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-orange-700">Urgent Leads</h2>
               <button
-                onClick={() => navigate(user?.role === "admin" ? "/all-leads?urgencyFilter=critical" : "/my-leads?urgencyFilter=critical")}
+                onClick={() => navigate(useAllLeadsPage ? "/all-leads?urgencyFilter=critical" : "/my-leads?urgencyFilter=critical")}
                 className="text-sm text-blue-600 hover:underline"
               >
                 View all
@@ -314,7 +322,7 @@ export default function Dashboard() {
                 {metrics.urgentLeads.map((lead) => (
                   <div
                     key={lead._id}
-                    onClick={() => navigate(user?.role === "admin" ? "/all-leads?urgencyFilter=critical" : "/my-leads?urgencyFilter=critical")}
+                    onClick={() => navigate(useAllLeadsPage ? "/all-leads?urgencyFilter=critical" : "/my-leads?urgencyFilter=critical")}
                     className="p-3 rounded-lg border border-orange-100 bg-orange-50/50 hover:bg-orange-50 cursor-pointer"
                   >
                     <div className="flex items-center justify-between gap-2">
@@ -352,7 +360,7 @@ export default function Dashboard() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-red-700">Overdue Leads</h2>
               <button
-                onClick={() => navigate(user?.role === "admin" ? "/all-leads?urgencyFilter=overdue" : "/my-leads?urgencyFilter=overdue")}
+                onClick={() => navigate(useAllLeadsPage ? "/all-leads?urgencyFilter=overdue" : "/my-leads?urgencyFilter=overdue")}
                 className="text-sm text-blue-600 hover:underline"
               >
                 View all
@@ -363,7 +371,7 @@ export default function Dashboard() {
                 {metrics.overdueLeads.map((lead) => (
                   <div
                     key={lead._id}
-                    onClick={() => navigate(user?.role === "admin" ? "/all-leads?urgencyFilter=overdue" : "/my-leads?urgencyFilter=overdue")}
+                    onClick={() => navigate(useAllLeadsPage ? "/all-leads?urgencyFilter=overdue" : "/my-leads?urgencyFilter=overdue")}
                     className="p-3 rounded-lg border border-red-100 bg-red-50/50 hover:bg-red-50 cursor-pointer"
                   >
                     <div className="flex items-center justify-between gap-2">

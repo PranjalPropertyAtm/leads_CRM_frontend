@@ -207,9 +207,9 @@ export default function AllLeads() {
     city: cityFilter || undefined,
     isRegistered: isRegisteredFilter || undefined,
   };
-  const { data: chipCountCritical = countCritical } = useTenantUrgencyTotalAllLeads("critical", tenantUrgencyFilters);
-  const { data: chipCountOverdue = countOverdue } = useTenantUrgencyTotalAllLeads("overdue", tenantUrgencyFilters);
-  const { data: chipCountHigh = countHigh } = useTenantUrgencyTotalAllLeads("high", tenantUrgencyFilters);
+  const { data: chipCountCritical, isLoading: loadingCritical } = useTenantUrgencyTotalAllLeads("critical", tenantUrgencyFilters);
+  const { data: chipCountOverdue, isLoading: loadingOverdue } = useTenantUrgencyTotalAllLeads("overdue", tenantUrgencyFilters);
+  const { data: chipCountHigh, isLoading: loadingHigh } = useTenantUrgencyTotalAllLeads("high", tenantUrgencyFilters);
 
   // employees query (fetch many for select)
   const {
@@ -602,21 +602,21 @@ export default function AllLeads() {
             onClick={() => { setUrgencyFilter("critical"); setSearchParams({ urgencyFilter: "critical" }); setCurrentPage(1); }}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-1.5 ${urgencyFilter === "critical" ? "bg-red-600 text-white" : "bg-white border border-gray-300 text-gray-600 hover:bg-gray-50"}`}
           >
-            Critical <span className="bg-black/15 px-1.5 py-0.5 rounded text-xs">{chipCountCritical}</span>
+            Critical <span className="bg-black/15 px-1.5 py-0.5 rounded text-xs">{loadingCritical ? "—" : (chipCountCritical ?? 0)}</span>
           </button>
           <button
             type="button"
             onClick={() => { setUrgencyFilter("overdue"); setSearchParams({ urgencyFilter: "overdue" }); setCurrentPage(1); }}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-1.5 ${urgencyFilter === "overdue" ? "bg-amber-600 text-white" : "bg-white border border-gray-300 text-gray-600 hover:bg-gray-50"}`}
           >
-            Overdue <span className="bg-black/15 px-1.5 py-0.5 rounded text-xs">{chipCountOverdue}</span>
+            Overdue <span className="bg-black/15 px-1.5 py-0.5 rounded text-xs">{loadingOverdue ? "—" : (chipCountOverdue ?? 0)}</span>
           </button>
           <button
             type="button"
             onClick={() => { setUrgencyFilter("high"); setSearchParams({ urgencyFilter: "high" }); setCurrentPage(1); }}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-1.5 ${urgencyFilter === "high" ? "bg-blue-600 text-white" : "bg-white border border-gray-300 text-gray-600 hover:bg-gray-50"}`}
           >
-            High <span className="bg-black/15 px-1.5 py-0.5 rounded text-xs">{chipCountHigh}</span>
+            High <span className="bg-black/15 px-1.5 py-0.5 rounded text-xs">{loadingHigh ? "—" : (chipCountHigh ?? 0)}</span>
           </button>
         </div>
 
