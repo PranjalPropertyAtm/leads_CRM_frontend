@@ -211,8 +211,9 @@ const AdminSidebar = () => {
 
           {openMenus.visits && (
             <div className="ml-4 mt-1 mb-2 space-y-1 border-l-2 border-slate-700/50 pl-4">
-              {/* Admin sees both All + My visits */}
-              {user?.role !== "employee" && (
+                 {(user?.role !== "employee" ||
+                (user?.designation &&
+                  user.designation.toLowerCase().includes("customer care"))) && (
                 <NavLink
                   to="/all-visits"
                   className={({ isActive }) =>
