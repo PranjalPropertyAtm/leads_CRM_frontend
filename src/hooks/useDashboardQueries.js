@@ -7,7 +7,12 @@ export const useDashboardStats = () => {
     queryKey: ["dashboard", "stats"],
     queryFn: async () => {
       const response = await axios.get("/reports/dashboard");
-      return response.data.data;
+      const data = response.data?.data ?? response.data ?? {};
+      return {
+        ...data,
+        urgentLeads: Array.isArray(data.urgentLeads) ? data.urgentLeads : [],
+        overdueLeads: Array.isArray(data.overdueLeads) ? data.overdueLeads : [],
+      };
     },
     staleTime: 30000, // Consider data fresh for 30 seconds
     gcTime: 300000, // Keep in cache for 5 minutes

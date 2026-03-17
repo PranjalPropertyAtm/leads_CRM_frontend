@@ -190,10 +190,10 @@ export default function Dashboard() {
   const metrics = useMemo(() => {
     if (!stats) return null;
 
-    const allUrgent = stats.urgentLeads || [];
-    const allOverdue = stats.overdueLeads || [];
-    const urgentLeads = allUrgent.filter((l) => l.customerType === "tenant");
-    const overdueLeads = allOverdue.filter((l) => l.customerType === "tenant");
+    const allUrgent = Array.isArray(stats.urgentLeads) ? stats.urgentLeads : [];
+    const allOverdue = Array.isArray(stats.overdueLeads) ? stats.overdueLeads : [];
+    const urgentLeads = allUrgent.filter((l) => l && l.customerType === "tenant");
+    const overdueLeads = allOverdue.filter((l) => l && l.customerType === "tenant");
 
     return {
       totalLeads: stats.leads?.total || 0,
@@ -231,6 +231,16 @@ export default function Dashboard() {
         <div className="text-center">
           <p className="text-red-600 mb-2">Error loading dashboard</p>
           <p className="text-sm text-gray-500">{error.message}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!metrics) {
+    return (
+      <div className="min-h-screen bg-slate-50 p-6 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600">No dashboard data available.</p>
         </div>
       </div>
     );
@@ -317,9 +327,9 @@ export default function Dashboard() {
                 View all
               </button>
             </div>
-            {metrics.urgentLeads.length > 0 ? (
+            {(metrics.urgentLeads ?? []).length > 0 ? (
               <div className="space-y-2">
-                {metrics.urgentLeads.map((lead) => (
+                {(metrics.urgentLeads ?? []).map((lead) => (
                   <div
                     key={lead._id}
                     onClick={() => navigate(useAllLeadsPage ? "/all-leads?urgencyFilter=critical" : "/my-leads?urgencyFilter=critical")}
@@ -366,9 +376,9 @@ export default function Dashboard() {
                 View all
               </button>
             </div>
-            {metrics.overdueLeads.length > 0 ? (
+            {(metrics.overdueLeads ?? []).length > 0 ? (
               <div className="space-y-2">
-                {metrics.overdueLeads.map((lead) => (
+                {(metrics.overdueLeads ?? []).map((lead) => (
                   <div
                     key={lead._id}
                     onClick={() => navigate(useAllLeadsPage ? "/all-leads?urgencyFilter=overdue" : "/my-leads?urgencyFilter=overdue")}
