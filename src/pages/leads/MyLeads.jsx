@@ -247,21 +247,33 @@ export default function MyLeads() {
     const [dealClosedModal, setDealClosedModal] = useState({
       isOpen: false,
       leadId: null,
+    paymentScreenshotFile: null,
     });
   // Handle mark deal closed confirmation
   const handleConfirmDealClosed = () => {
     if (!dealClosedModal.leadId) return;
 
-    markDealClosedMutation.mutate(dealClosedModal.leadId, {
-      onSuccess: () => {
-        notify.success("Lead marked as deal closed");
-        setDealClosedModal({ isOpen: false, leadId: null });
+    if (!dealClosedModal.paymentScreenshotFile) {
+      notify.error("Payment screenshot is required to mark this deal as closed.");
+      return;
+    }
+
+    markDealClosedMutation.mutate(
+      {
+        id: dealClosedModal.leadId,
+        paymentScreenshotFile: dealClosedModal.paymentScreenshotFile,
       },
-      onError: (err) => {
-        notify.error(err?.response?.data?.message || "Failed to mark as deal closed");
-        setDealClosedModal({ isOpen: false, leadId: null });
-      },
-    });
+      {
+        onSuccess: () => {
+          notify.success("Lead marked as deal closed");
+          setDealClosedModal({ isOpen: false, leadId: null, paymentScreenshotFile: null });
+        },
+        onError: (err) => {
+          notify.error(err?.response?.data?.message || "Failed to mark as deal closed");
+          setDealClosedModal({ isOpen: false, leadId: null, paymentScreenshotFile: null });
+        },
+      }
+    );
   };
 
   // ------------- Delete -------------
@@ -1050,8 +1062,9 @@ export default function MyLeads() {
                             <button
                               onClick={() => {
                                 setDealClosedModal({
-                                  isOpen: true,
-                                  leadId: lead._id,
+                                isOpen: true,
+                                leadId: lead._id,
+                                paymentScreenshotFile: null,
                                 });
                               }}
                               className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-green-700 font-medium transition"
@@ -1267,13 +1280,30 @@ export default function MyLeads() {
           title="Mark Lead as Deal Closed"
           description="Are you sure you want to mark this lead as deal closed? This action cannot be undone and the lead will become read-only. You will no longer be able to edit, delete, or modify this lead."
           onCancel={() => {
-            setDealClosedModal({ isOpen: false, leadId: null });
+            setDealClosedModal({ isOpen: false, leadId: null, paymentScreenshotFile: null });
           }}
           onConfirm={handleConfirmDealClosed}
           confirmLabel="Yes, Mark as Closed"
           cancelLabel="Cancel"
           loading={markDealClosedMutation.isPending}
-        />
+        >
+          <div className="space-y-2">
+            <p className="text-sm text-gray-600">
+              You must attach a payment screenshot for this closed deal.
+            </p>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) =>
+                setDealClosedModal((prev) => ({
+                  ...prev,
+                  paymentScreenshotFile: e.target.files?.[0] || null,
+                }))
+              }
+              className="block w-full text-sm text-gray-700 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border file:border-gray-300 file:bg-white file:text-gray-700 hover:file:bg-gray-50"
+            />
+          </div>
+        </ConfirmModal>
       </motion.div>
     </div>
   );

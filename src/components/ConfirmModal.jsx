@@ -11,6 +11,7 @@ export default function ConfirmModal({
   cancelLabel = "Cancel",
   loading = false,
   destructive = false,
+  children = null,
 }) {
   // close on Esc
   useEffect(() => {
@@ -47,6 +48,12 @@ export default function ConfirmModal({
             <X size={18} />
           </button>
         </div>
+
+        {children && (
+          <div className="mt-4">
+            {children}
+          </div>
+        )}
 
         <div className="mt-6 flex justify-end gap-3">
           <button

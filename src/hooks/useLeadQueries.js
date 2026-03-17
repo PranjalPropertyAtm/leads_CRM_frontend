@@ -345,16 +345,24 @@ export const useUpdateLeadStatus = () => {
   });
 };
 
-// Mark lead as deal closed
+// Mark lead as deal closed (optionally with payment screenshot)
 export const useMarkDealClosed = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (id) => {
-      const response = await axios.put(`/leads/${id}/mark-deal-closed`);
+    // payload: { id, paymentScreenshotFile? }
+    mutationFn: async ({ id, paymentScreenshotFile }) => {
+      const formData = new FormData();
+      if (paymentScreenshotFile) {
+        formData.append("paymentScreenshot", paymentScreenshotFile);
+      }
+      const response = await axios.put(
+        `/leads/${id}/mark-deal-closed`,
+        formData
+      );
       return response.data;
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       // Invalidate all lead queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       queryClient.invalidateQueries({ queryKey: ['leads', 'my'] });

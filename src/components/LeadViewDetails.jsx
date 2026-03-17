@@ -256,6 +256,55 @@ export default function LeadViewDetails({ lead, onClose }) {
             )}
           </section>
 
+          {/* Deal Closure */}
+          {lead.dealClosed && (
+            <section className="rounded-xl border overflow-hidden bg-emerald-50/40 border-emerald-200">
+              <h3 className="text-xs font-semibold text-emerald-700 uppercase tracking-wider px-4 pt-4 pb-2">
+                Deal Closure
+              </h3>
+              <div className="px-4 pb-4 space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6">
+                  <InfoRow
+                    label="Status"
+                    value={(lead.status ?? "deal_closed").replace(/_/g, " ")}
+                  />
+                  <InfoRow
+                    label="Closed On"
+                    value={
+                      lead.dealClosedDate ? `${formatDate(lead.dealClosedDate)} ${formatTime(lead.dealClosedDate)}` : "—"
+                    }
+                  />
+                  {lead.dealClosedBy?.name && (
+                    <InfoRow
+                      label="Closed By"
+                      value={lead.dealClosedBy.name}
+                    />
+                  )}
+                </div>
+                {lead.dealClosedPaymentScreenshot && (
+                  <div className="pt-2">
+                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">
+                      Payment Screenshot (Deal Close)
+                    </p>
+                    <a
+                      href={getUploadsUrl(lead.dealClosedPaymentScreenshot)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block rounded-lg border border-slate-200 overflow-hidden bg-white hover:shadow-md transition max-w-[200px]"
+                    >
+                      <img
+                        src={getUploadsUrl(lead.dealClosedPaymentScreenshot)}
+                        alt="Deal close payment"
+                        className="w-full h-auto max-h-40 object-contain"
+                      />
+                    </a>
+                    <p className="text-xs text-slate-500 mt-1">Click to open</p>
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+
           {/* Meta-Ad (only for registered leads) — mark here and record date/time */}
           {lead?.isRegistered && (
             <section className="rounded-xl border overflow-hidden bg-amber-50/50 border-amber-100">
