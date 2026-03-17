@@ -14,8 +14,29 @@ const PERMISSION_GROUPS = {
   ],
   Visits: ["visits:add", "visits:view", "visits:edit"],
   Registrations: ["registrations:add", "registrations:view"],
+  Employees: ["employees:view", "employees:add", "employees:edit", "employees:delete"],
+  Masters: ["masters:manage"],
+  Reports: ["reports:view"],
   Profile: ["profile:edit"],
 };
+
+// Same as backend CUSTOMER_CARE_DEFAULT_PERMISSIONS and as permissions for designation "customer care"
+const CUSTOMER_CARE_PERMISSIONS = [
+  "leads:view",
+  "leads:add",
+  "leads:edit",
+  "leads:assign",
+  "visits:add",
+  "visits:view",
+  "visits:edit",
+  "registrations:add",
+  "registrations:view",
+  "employees:view",
+  "reports:view",
+  "profile:edit",
+];
+
+const ALL_PERMISSIONS = Object.values(PERMISSION_GROUPS).flat();
 
 export default function AddPermissions() {
   const { data: paginated = { employees: [] }, isLoading: storeLoading } = useFetchEmployees();
@@ -23,6 +44,7 @@ export default function AddPermissions() {
   const { mutate: updateEmployee, isPending: updatingPermissions } = useUpdateEmployee();
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [permissions, setPermissions] = useState([]);
+  const [role, setRole] = useState("employee");
   const [searchQuery, setSearchQuery] = useState("");
 
   // Fetch all employees is now handled by useFetchEmployees hook
@@ -30,8 +52,34 @@ export default function AddPermissions() {
   // Handle employee selection
   const handleSelectEmployee = (employee) => {
     setSelectedEmployee(employee);
-    setPermissions(employee.permissions || []);
+    const empRole = employee.role === "admin" ? "admin" : employee.role === "customer_care_executive" ? "customer_care_executive" : "employee";
+    setRole(empRole);
+    // For customer care, only allow the fixed set; for admin/employee use saved permissions
+    if (empRole === "customer_care_executive") {
+      const current = employee.permissions || [];
+      setPermissions(current.filter((p) => CUSTOMER_CARE_PERMISSIONS.includes(p)).length > 0
+        ? current.filter((p) => CUSTOMER_CARE_PERMISSIONS.includes(p))
+        : [...CUSTOMER_CARE_PERMISSIONS]);
+    } else if (empRole === "admin") {
+      setPermissions(employee.permissions?.length ? employee.permissions : [...ALL_PERMISSIONS]);
+    } else {
+      setPermissions(employee.permissions || []);
+    }
     setSearchQuery("");
+  };
+
+  // When role dropdown changes: restrict permissions to the role's allowed set
+  const handleRoleChange = (newRole) => {
+    setRole(newRole);
+    if (newRole === "customer_care_executive") {
+      setPermissions((prev) => {
+        const within = prev.filter((p) => CUSTOMER_CARE_PERMISSIONS.includes(p));
+        return within.length > 0 ? within : [...CUSTOMER_CARE_PERMISSIONS];
+      });
+    } else if (newRole === "admin") {
+      setPermissions([...ALL_PERMISSIONS]);
+    }
+    // employee: keep current permissions as-is
   };
 
   // Toggle permission
@@ -43,21 +91,26 @@ export default function AddPermissions() {
     );
   };
 
+  // Permissions allowed for current role (for Customer Care we only show and send these)
+  const allowedPermissionsForRole = role === "customer_care_executive" ? CUSTOMER_CARE_PERMISSIONS : null;
+
   // Save permissions
   const handleSavePermissions = async () => {
     if (!selectedEmployee) {
       notify.error("Please select an employee");
       return;
     }
+    const toSave = allowedPermissionsForRole ? permissions.filter((p) => allowedPermissionsForRole.includes(p)) : permissions;
 
     updateEmployee(
-      { employeeId: selectedEmployee._id, updateData: { permissions } },
+      { employeeId: selectedEmployee._id, updateData: { permissions: toSave, role } },
       {
         onSuccess: () => {
-          notify.success("Permissions updated successfully");
+          notify.success("Permissions and role updated successfully");
           setSelectedEmployee({
             ...selectedEmployee,
-            permissions: permissions,
+            permissions: toSave,
+            role,
           });
         },
         onError: (error) => {
@@ -155,6 +208,13 @@ export default function AddPermissions() {
                     <p className="text-xs text-gray-500 mt-1">
                       {employee.designation}
                     </p>
+                    <span className={`inline-block mt-1 text-xs px-2 py-0.5 rounded ${
+                      employee.role === "admin" ? "bg-indigo-100 text-indigo-800" :
+                      employee.role === "customer_care_executive" ? "bg-amber-100 text-amber-800" :
+                      "bg-gray-100 text-gray-600"
+                    }`}>
+                      {employee.role === "admin" ? "Admin" : employee.role === "customer_care_executive" ? "Customer Care" : "Employee"}
+                    </span>
                   </motion.button>
                 ))
               )}
@@ -178,9 +238,24 @@ export default function AddPermissions() {
                   <p className="text-sm text-gray-600 mb-1">
                     {selectedEmployee.email}
                   </p>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-gray-600 mb-2">
                     Designation: {selectedEmployee.designation}
                   </p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-gray-700">Role:</span>
+                    <select
+                      value={role}
+                      onChange={(e) => handleRoleChange(e.target.value)}
+                      className="px-3 py-1.5 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+                    >
+                      <option value="admin">Admin (Super Admin) — All permissions</option>
+                      <option value="customer_care_executive">Customer Care Executive</option>
+                      <option value="employee">Normal Employee</option>
+                    </select>
+                    <span className="text-xs text-gray-500">
+                      Admin has full access; Customer Care can view all leads; Employee has limited access.
+                    </span>
+                  </div>
                 </div>
 
                 {/* Permissions */}
@@ -190,34 +265,45 @@ export default function AddPermissions() {
                 </h2>
 
                 <div className="space-y-6">
-                  {Object.entries(PERMISSION_GROUPS).map((group) => (
-                    <div key={group[0]}>
-                      <h3 className="text-md font-medium text-gray-700 mb-3 flex items-center gap-2">
-                        <CheckCircle size={16} className="text-green-600" />
-                        {group[0]}
-                      </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 ml-6">
-                        {group[1].map((permission) => (
-                          <label
-                            key={permission}
-                            className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={permissions.includes(permission)}
-                              onChange={() =>
-                                handlePermissionToggle(permission)
-                              }
-                              className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-2 focus:ring-purple-500 cursor-pointer"
-                            />
-                            <span className="text-sm text-gray-700">
-                              {permission}
-                            </span>
-                          </label>
-                        ))}
+                  {role === "customer_care_executive" && (
+                    <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4">
+                      Customer Care Executive can only have the permissions listed below. Other permissions are not available for this role.
+                    </p>
+                  )}
+                  {Object.entries(PERMISSION_GROUPS).map((group) => {
+                    const permsInGroup = allowedPermissionsForRole
+                      ? group[1].filter((p) => allowedPermissionsForRole.includes(p))
+                      : group[1];
+                    if (permsInGroup.length === 0) return null;
+                    return (
+                      <div key={group[0]}>
+                        <h3 className="text-md font-medium text-gray-700 mb-3 flex items-center gap-2">
+                          <CheckCircle size={16} className="text-green-600" />
+                          {group[0]}
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 ml-6">
+                          {permsInGroup.map((permission) => (
+                            <label
+                              key={permission}
+                              className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={permissions.includes(permission)}
+                                onChange={() =>
+                                  handlePermissionToggle(permission)
+                                }
+                                className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-2 focus:ring-purple-500 cursor-pointer"
+                              />
+                              <span className="text-sm text-gray-700">
+                                {permission}
+                              </span>
+                            </label>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {/* Selected Permissions Summary */}

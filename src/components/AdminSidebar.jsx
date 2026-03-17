@@ -21,8 +21,9 @@ const AdminSidebar = () => {
   
   // Determine if user can see "Leads by Employee"
   const canViewLeadsByEmployee = user && (
-    user.role !== "employee" || 
-    (user.designation && user.designation.toLowerCase().includes("customer care"))
+    user.role === "admin" ||
+    user.role === "customer_care_executive" ||
+    (user.designation && user.designation.toLowerCase && user.designation.toLowerCase().includes("customer care"))
   );
 
   const [openMenus, setOpenMenus] = useState({
@@ -211,9 +212,9 @@ const AdminSidebar = () => {
 
           {openMenus.visits && (
             <div className="ml-4 mt-1 mb-2 space-y-1 border-l-2 border-slate-700/50 pl-4">
-                 {(user?.role !== "employee" ||
-                (user?.designation &&
-                  user.designation.toLowerCase().includes("customer care"))) && (
+                 {(user?.role === "admin" ||
+                  user?.role === "customer_care_executive" ||
+                  (user?.designation && user.designation.toLowerCase().includes("customer care"))) && (
                 <NavLink
                   to="/all-visits"
                   className={({ isActive }) =>

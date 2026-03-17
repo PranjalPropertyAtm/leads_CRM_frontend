@@ -10,6 +10,7 @@ export default function EditEmployeeModal({ open, onClose, employee }) {
     email: "",
     phone: "",
     designation: "",
+    role: "employee",
     status: "active",
   });
   const [errors, setErrors] = useState({});
@@ -22,6 +23,7 @@ export default function EditEmployeeModal({ open, onClose, employee }) {
         email: employee.email || "",
         phone: employee.phone || "",
         designation: employee.designation || "",
+        role: employee.role === "admin" ? "admin" : employee.role === "customer_care_executive" ? "customer_care_executive" : "employee",
         status: employee.status || "active",
       });
       setErrors({});
@@ -71,6 +73,7 @@ export default function EditEmployeeModal({ open, onClose, employee }) {
           email: formData.email,
           phone: formData.phone || undefined,
           designation: formData.designation,
+          role: formData.role,
           status: formData.status,
         },
       },
@@ -191,8 +194,25 @@ export default function EditEmployeeModal({ open, onClose, employee }) {
               )}
             </div>
 
+            {/* Role */}
+            <div>
+              <label className="flex text-sm font-medium text-gray-700 mb-2">
+                Role
+              </label>
+              <select
+                name="role"
+                value={formData.role}
+                onChange={handleInputChange}
+                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="admin">Admin — All permissions</option>
+                {/* <option value="customer_care_executive">Customer Care Executive</option> */}
+                <option value="employee">Employee</option>
+              </select>
+            </div>
+
             {/* Status */}
-            <div className="md:col-span-2">
+            <div>
               <label className="flex text-sm font-medium text-gray-700 mb-2">
                 Status *
               </label>

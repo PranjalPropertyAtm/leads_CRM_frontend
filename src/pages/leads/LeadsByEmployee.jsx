@@ -42,8 +42,7 @@ export default function LeadsByEmployee() {
   const navigate = useNavigate();
   const location = useLocation();
   const { data: user } = useLoadUser();
-  const isCustomerCare = user?.designation && 
-    user.designation.toLowerCase().includes("customer care");
+  const isCustomerCare = user?.role === "customer_care_executive" || (user?.designation && String(user.designation).toLowerCase().includes("customer care"));
 
   // Filters
   const [selectedEmployee, setSelectedEmployee] = useState("");

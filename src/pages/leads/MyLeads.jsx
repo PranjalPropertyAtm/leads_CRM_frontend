@@ -48,7 +48,7 @@ export default function MyLeads() {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: user } = useLoadUser();
-  const isCustomerCare = user?.designation?.toLowerCase().includes("customer care");
+  const isCustomerCare = user?.role === "customer_care_executive" || (user?.designation && String(user.designation).toLowerCase().includes("customer care"));
   const urgencyFromUrl = searchParams.get("urgencyFilter") || "";
   const initialUrgency = VALID_URGENCY.includes(urgencyFromUrl) ? urgencyFromUrl : "";
 

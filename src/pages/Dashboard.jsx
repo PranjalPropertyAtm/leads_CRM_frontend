@@ -182,7 +182,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { data: stats, isLoading, error } = useDashboardStats();
   const { data: user } = useLoadUser();
-  const isCustomerCare = user?.designation?.toLowerCase().includes("customer care");
+  const isCustomerCare = user?.role === "customer_care_executive" || (user?.designation && String(user.designation).toLowerCase().includes("customer care"));
   const useAllLeadsPage = user?.role === "admin" || isCustomerCare;
 
   // Memoize calculations for performance
