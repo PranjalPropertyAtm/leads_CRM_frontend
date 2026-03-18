@@ -551,9 +551,9 @@ export default function Dashboard() {
                     <div className="text-gray-700">
                       <span className="font-semibold text-gray-900">{emp.total}</span> leads
                     </div>
-                    <div className="px-2 py-1 text-xs rounded-full bg-green-50 text-green-700 border border-green-100">
+                    {/* <div className="px-2 py-1 text-xs rounded-full bg-green-50 text-green-700 border border-green-100">
                       {emp.dealClosed} closed
-                    </div>
+                    </div> */}
                   </div>
                 </div>
               ))}

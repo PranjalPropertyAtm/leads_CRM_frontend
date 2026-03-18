@@ -15,7 +15,7 @@ export default function Reminders() {
   const [pageSize, setPageSize] = useState(10);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [isCompleted, setIsCompleted] = useState("");
+  const [status, setStatus] = useState("");
   const [employeeId, setEmployeeId] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [addModalOpen, setAddModalOpen] = useState(false);
@@ -33,9 +33,15 @@ export default function Reminders() {
     data = { reminders: [], total: 0, totalPages: 0, page: 1 }, 
     isLoading 
   } = useAllReminders(currentPage, pageSize, {
+    ...(status === "pending"
+      ? { isCompleted: "false" }
+      : status === "completed"
+        ? { isCompleted: "true" }
+        : status === "cancelled"
+          ? { isCancelled: "true" }
+          : {}),
     startDate: startDate || undefined,
     endDate: endDate || undefined,
-    isCompleted: isCompleted || undefined,
     employeeId: employeeId || undefined,
   });
 
@@ -94,7 +100,7 @@ export default function Reminders() {
   const clearFilters = () => {
     setStartDate("");
     setEndDate("");
-    setIsCompleted("");
+    setStatus("");
     if (user?.role !== "employee") {
       setEmployeeId("");
     }
@@ -204,16 +210,17 @@ export default function Reminders() {
                 Status
               </label>
               <select
-                value={isCompleted}
+                value={status}
                 onChange={(e) => {
-                  setIsCompleted(e.target.value);
+                  setStatus(e.target.value);
                   setCurrentPage(1);
                 }}
                 className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm font-medium"
               >
                 <option value="">All Status</option>
-                <option value="false">Pending</option>
-                <option value="true">Completed</option>
+                <option value="pending">Pending</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
               </select>
             </div>
 
@@ -242,7 +249,7 @@ export default function Reminders() {
             )}
           </div>
 
-          {(startDate || endDate || isCompleted || (isAdmin && employeeId) || searchQuery) && (
+          {(startDate || endDate || status || (isAdmin && employeeId) || searchQuery) && (
             <div className="mt-4 pt-4 border-t border-gray-200">
               <button
                 onClick={clearFilters}

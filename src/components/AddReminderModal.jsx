@@ -1,10 +1,10 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { X, Calendar, Clock } from "lucide-react";
 import { notify } from "../utils/toast";
 import { useCreateReminder } from "../hooks/useReminderQueries";
 import { time12To24 } from "../utils/dateFormat";
 
-export default function AddReminderModal({ open, onClose, lead = null }) {
+export default function AddReminderModal({ open, onClose, lead = null, onCreated, prefillTitle = "" }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [reminderDate, setReminderDate] = useState("");
@@ -15,6 +15,15 @@ export default function AddReminderModal({ open, onClose, lead = null }) {
   const createReminderMutation = useCreateReminder();
 
   if (!open) return null;
+
+  useEffect(() => {
+    const t = String(prefillTitle || "").trim();
+    if (t && !title.trim()) {
+      setTitle(t);
+    }
+    // only when modal opens / prefill changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, prefillTitle]);
 
   const handleSubmit = () => {
     if (createReminderMutation.isPending) return;
@@ -38,8 +47,11 @@ export default function AddReminderModal({ open, onClose, lead = null }) {
         leadId: lead?._id || null,
       },
       {
-        onSuccess: () => {
+        onSuccess: (res) => {
           notify.success("Reminder created successfully");
+          if (typeof onCreated === "function") {
+            onCreated(res);
+          }
           onClose();
           // Reset form
           setTitle("");

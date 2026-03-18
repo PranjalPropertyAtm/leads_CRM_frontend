@@ -83,6 +83,7 @@ export default function LeadsByEmployee() {
   // Reminders
   const [reminderModal, setReminderModal] = useState(false);
   const [reminderLead, setReminderLead] = useState(null);
+  const [pendingVisitScheduled, setPendingVisitScheduled] = useState(null); // { leadId, prevStatus }
 
   // Status change confirmation
   const [statusChangeModal, setStatusChangeModal] = useState({
@@ -834,6 +835,15 @@ export default function LeadsByEmployee() {
                               return;
                             }
 
+                            // If changing to visit_scheduled, force user to create a reminder first
+                            if (newStatus === "visit_scheduled") {
+                              setPendingVisitScheduled({ leadId: lead._id, prevStatus: currentStatus });
+                              setReminderLead(lead);
+                              setReminderModal(true);
+                              e.target.value = currentStatus;
+                              return;
+                            }
+
                             updateStatusMutation.mutate(
                               { id: lead._id, status: newStatus },
                               {
@@ -1298,8 +1308,29 @@ export default function LeadsByEmployee() {
         {reminderModal && (
           <AddReminderModal
             open={reminderModal}
-            onClose={() => setReminderModal(false)}
+            onClose={() => {
+              setReminderModal(false);
+              setPendingVisitScheduled(null);
+            }}
             lead={reminderLead}
+            prefillTitle={pendingVisitScheduled?.leadId ? "Visit" : ""}
+            onCreated={() => {
+              if (!pendingVisitScheduled?.leadId) return;
+              updateStatusMutation.mutate(
+                { id: pendingVisitScheduled.leadId, status: "visit_scheduled" },
+                {
+                  onSuccess: () => {
+                    notify.success("Status updated to Visit Scheduled");
+                    setPendingVisitScheduled(null);
+                    fetchLeads();
+                  },
+                  onError: (err) => {
+                    notify.error(err?.response?.data?.message || "Failed to update status");
+                    setPendingVisitScheduled(null);
+                  },
+                }
+              );
+            }}
           />
         )}
 
