@@ -2,6 +2,7 @@
 
 
 import React, { useState } from "react";
+import { localDateInputValue } from "../utils/dateFormat";
 import { notify } from "../utils/toast";
 import SearchableSelect from "./SearchableSelect";
 import { useFetchEmployees } from "../hooks/useEmployeeQueries";
@@ -9,6 +10,7 @@ import { useAddVisit } from "../hooks/useVisitQueries";
 
 export default function AddVisitModal({ open, onClose, lead }) {
   const [visitedBy, setVisitedBy] = useState("");
+  const [visitDate, setVisitDate] = useState(() => localDateInputValue());
 
   // TENANT-only fields
   const [ownerName, setOwnerName] = useState("");
@@ -18,9 +20,6 @@ export default function AddVisitModal({ open, onClose, lead }) {
   // OWNER-only fields
   const [tenantName, setTenantName] = useState("");
   const [tenantRequirements, setTenantRequirements] = useState("");
-
-  // Common optional field
-  const [tenantFeedback, setTenantFeedback] = useState("");
 
   const isTenant = lead?.customerType === "tenant";
   const isOwner = lead?.customerType === "owner";
@@ -61,16 +60,20 @@ export default function AddVisitModal({ open, onClose, lead }) {
       {
         leadId: lead._id,
         visitedBy,
+        visitDate: visitDate || undefined,
         ownerName: isTenant ? ownerName : undefined,
         propertyLocation: isTenant ? propertyLocation : undefined,
         propertyDetails: isTenant ? propertyDetails : undefined,
         tenantName: isOwner ? tenantName : undefined,
         tenantRequirements: isOwner ? tenantRequirements : undefined,
-        tenantFeedback,
       },
       {
-        onSuccess: () => {
-          notify.success("Visit Added Successfully");
+        onSuccess: (data) => {
+          notify.success(
+            data?.visitReminderCreated
+              ? "Visit added. A reminder was created for the visit date."
+              : "Visit Added Successfully"
+          );
           onClose();
         },
         onError: (err) =>
@@ -79,20 +82,22 @@ export default function AddVisitModal({ open, onClose, lead }) {
     );
   };
 
-  console.log("LEAD PASSED:", lead);
-
-
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[99999]">
       <div className="bg-white p-6 rounded-xl w-full max-w-md shadow-xl animate-fadeIn">
         
-        <h2 className="text-xl font-semibold mb-4">
-          Add Visit for {lead?.customerName || lead?.ownerName}
+        <h2 className="text-xl font-semibold mb-1">
+          Add Visit — {lead?.customerName || lead?.ownerName}
           <span className="text-gray-500 text-sm">
             {" "}
             ({(lead?.customerType || "").toUpperCase()})
           </span>
         </h2>
+        {/* <p className="text-sm text-gray-600 mb-4">
+          Record the planned visit <strong>before you go</strong>. Feedback is
+          optional here; after the visit, add feedback from{" "}
+          <strong>Visit History</strong> on this lead.
+        </p> */}
 
         {/* Employee Select */}
         <SearchableSelect
@@ -171,15 +176,14 @@ export default function AddVisitModal({ open, onClose, lead }) {
           </>
         )}
 
-        {/* COMMON: Tenant Feedback */}
+        {/* Visit Date */}
         <div className="mt-3">
-          <label className="text-sm">Tenant Feedback (Optional)</label>
-          <textarea
+          <label className="text-sm">Visit Date</label>
+          <input
+            type="date"
             className="w-full border rounded-lg px-3 py-2 mt-1"
-            rows={2}
-            value={tenantFeedback}
-            onChange={(e) => setTenantFeedback(e.target.value)}
-            placeholder="Example: Liked the property..."
+            value={visitDate}
+            onChange={(e) => setVisitDate(e.target.value)}
           />
         </div>
 

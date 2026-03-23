@@ -4,6 +4,7 @@ import { Search, Eye, PlusCircle, ChevronLeft, ChevronRight } from "lucide-react
 import { useMyVisits } from "../../hooks/useVisitQueries";
 import VisitDetailsModal from "../../components/VisitDetailsModal";
 import { formatDate } from "../../utils/dateFormat";
+import { getVisitOutcome } from "../../utils/visitStatus";
 // import AddVisitModal from "../../components/AddVisitModal";
 
 export default function MyVisits() {
@@ -98,7 +99,7 @@ export default function MyVisits() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-gradient-to-r from-gray-50 to-gray-100/50 border-b border-gray-200">
-                    {["S.No", "Lead Name", "Property Location", "Date", "Actions"].map(
+                    {["S.No", "Lead Name", "Property Location", "Date", "Status", "Actions"].map(
                       (h) => (
                         <th key={h} className="px-6 py-4 font-bold text-xs uppercase tracking-wider text-gray-700 text-left">
                           {h}
@@ -129,6 +130,30 @@ export default function MyVisits() {
                         <span className="text-gray-700 font-medium">
                           {formatDate(visit.visitDate)}
                         </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        {(() => {
+                          const o = getVisitOutcome(visit);
+                          const label =
+                            o === "cancelled"
+                              ? "Cancelled"
+                              : o === "completed"
+                                ? "Completed"
+                                : "Planned";
+                          const cls =
+                            o === "cancelled"
+                              ? "bg-gray-200 text-gray-800"
+                              : o === "completed"
+                                ? "bg-green-100 text-green-800"
+                                : "bg-indigo-100 text-indigo-800";
+                          return (
+                            <span
+                              className={`text-xs font-semibold px-2 py-1 rounded-full ${cls}`}
+                            >
+                              {label}
+                            </span>
+                          );
+                        })()}
                       </td>
                       <td className="px-6 py-4">
                         <button
@@ -223,6 +248,7 @@ export default function MyVisits() {
           open={visitDetailsModal}
           onClose={() => setVisitDetailsModal(false)}
           visit={selectedVisit}
+          onVisitUpdated={(v) => v && setSelectedVisit(v)}
         />
 
 

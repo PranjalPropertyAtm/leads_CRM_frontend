@@ -14,6 +14,29 @@ export function formatDate(value) {
 }
 
 /**
+ * YYYY-MM-DD for `<input type="date">` using the **local** calendar (not `toISOString()`, which is UTC).
+ */
+export function localDateInputValue(d = new Date()) {
+  const x = d instanceof Date ? d : new Date(d);
+  if (Number.isNaN(x.getTime())) return "";
+  const y = x.getFullYear();
+  const m = String(x.getMonth() + 1).padStart(2, "0");
+  const day = String(x.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+/**
+ * Format date + time together.
+ * Example: "19/03/2026, 2:35 PM"
+ */
+export function formatDateTime(value) {
+  if (value == null || value === "") return "";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "";
+  return `${formatDate(d)}, ${formatTime(d)}`;
+}
+
+/**
  * Format date with long month name (e.g. "25 December 2024") - for display where needed.
  * @param {string|Date|number} value
  * @returns {string}

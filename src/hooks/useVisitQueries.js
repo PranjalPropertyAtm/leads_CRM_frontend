@@ -9,11 +9,48 @@ export const useAddVisit = () => {
       const res = await axios.post("/visits/add", payload);
       return res.data;
     },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries(["visits"]);
+      queryClient.invalidateQueries(["leadVisits"]);
+      queryClient.invalidateQueries(["leads"]);
+      if (data?.visitReminderCreated) {
+        queryClient.invalidateQueries(["reminders"]);
+      }
+    },
+  });
+};
+
+export const useUpdateVisitFeedback = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ visitId, payload }) => {
+      const res = await axios.patch(`/visits/${visitId}/feedback`, payload);
+      return res.data;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(["visits"]);
       queryClient.invalidateQueries(["leadVisits"]);
       queryClient.invalidateQueries(["leads"]);
-    }
+    },
+  });
+};
+
+export const useCancelVisit = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ visitId, cancellationReason }) => {
+      const res = await axios.patch(`/visits/${visitId}/cancel`, {
+        cancellationReason: cancellationReason || undefined,
+      });
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(["visits"]);
+      queryClient.invalidateQueries(["leadVisits"]);
+      queryClient.invalidateQueries(["leads"]);
+    },
   });
 };
 
