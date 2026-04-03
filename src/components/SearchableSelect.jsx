@@ -94,11 +94,14 @@ export default function SearchableSelect({
       // add
       if (cur.length >= max) return; // respect max
       next = [...cur, opt.value];
+      onChange({ target: { name: targetName, value: next } });
+      // Close when max selections reached (e.g. 2 for preferred tenant type, 3 for locations)
+      if (next.length >= max) setOpen(false);
     } else {
       // remove
       next = cur.filter((v) => v !== opt.value);
+      onChange({ target: { name: targetName, value: next } });
     }
-    onChange({ target: { name: targetName, value: next } });
   };
 
   const removeTag = (val) => {

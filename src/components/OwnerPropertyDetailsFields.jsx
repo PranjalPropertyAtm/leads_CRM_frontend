@@ -1,5 +1,6 @@
 import React from "react";
 import { AlertCircle } from "lucide-react";
+import SearchableSelect from "./SearchableSelect";
 
 /** Matches backend: masters value contains "commercial" (case-insensitive). */
 export function isCommercialPropertyType(propertyType) {
@@ -14,7 +15,7 @@ export function emptyOwnerPropertyDetails() {
     petsAllowed: "",
     parkingAvailable: "",
     securityDepositAmount: "",
-    preferredTenantType: "",
+    preferredTenantType: [],
     nonVegetarianAllowed: "",
     religiousConsiderations: "",
     preferredBusinessUse: "",
@@ -67,7 +68,12 @@ export function ownerPropertyDetailsFromLead(lead) {
     petsAllowed: yesNoFromApi(o.petsAllowed),
     parkingAvailable: o.parkingAvailable ?? "",
     securityDepositAmount: o.securityDepositAmount ?? "",
-    preferredTenantType: o.preferredTenantType ?? "",
+    preferredTenantType: (() => {
+      const v = o.preferredTenantType;
+      if (Array.isArray(v)) return v.map((x) => String(x).trim()).filter(Boolean);
+      if (typeof v === "string" && v.trim()) return [v.trim()];
+      return [];
+    })(),
     nonVegetarianAllowed: yesNoFromApi(o.nonVegetarianAllowed),
     religiousConsiderations: o.religiousConsiderations ?? "",
     preferredBusinessUse: o.preferredBusinessUse ?? "",
@@ -98,8 +104,11 @@ export function validateOwnerPropertyDetailsForm(slice, propertyType) {
       Object.assign(e, p("preferredBusinessUse", "Preferred business / use required"));
   } else {
     if (!slice.petsAllowed) Object.assign(e, p("petsAllowed", "Required"));
-    if (!String(slice.preferredTenantType || "").trim())
-      Object.assign(e, p("preferredTenantType", "Preferred tenant type required"));
+    const ptt = Array.isArray(slice.preferredTenantType) ? slice.preferredTenantType : [];
+    if (ptt.length < 1)
+      Object.assign(e, p("preferredTenantType", "Select at least one preferred tenant type"));
+    if (ptt.length > 2)
+      Object.assign(e, p("preferredTenantType", "Select at most 2 preferred tenant types"));
     if (!slice.nonVegetarianAllowed) Object.assign(e, p("nonVegetarianAllowed", "Required"));
     if (!String(slice.religiousConsiderations || "").trim())
       Object.assign(e, p("religiousConsiderations", "Required (e.g. None if not applicable)"));
@@ -137,7 +146,9 @@ export function buildOwnerPropertyDetailsPayload(slice, propertyType) {
   return {
     ...base,
     petsAllowed: yesNoToBool(slice.petsAllowed),
-    preferredTenantType: String(slice.preferredTenantType || "").trim(),
+    preferredTenantType: Array.isArray(slice.preferredTenantType)
+      ? slice.preferredTenantType.map((s) => String(s).trim()).filter(Boolean).slice(0, 2)
+      : [],
     nonVegetarianAllowed: yesNoToBool(slice.nonVegetarianAllowed),
     religiousConsiderations: String(slice.religiousConsiderations || "").trim(),
   };
@@ -239,9 +250,8 @@ const VACANT = [
   { value: "not_vacant", label: "Not vacant — available from a future date" },
 ];
 
-/** Stored as the option value string (matches backend `preferredTenantType`). */
-const PREFERRED_TENANT_TYPE = [
-  { value: "", label: "Select" },
+/** Options for multi-select (max 2). Values match backend `preferredTenantType` entries. */
+const PREFERRED_TENANT_BASE_OPTIONS = [
   { value: "Family", label: "Family" },
   { value: "Working professionals", label: "Working professionals" },
   { value: "Bachelors", label: "Bachelors" },
@@ -250,16 +260,13 @@ const PREFERRED_TENANT_TYPE = [
   { value: "Any / no preference", label: "Any / no preference" },
 ];
 
-function preferredTenantTypeOptions(current) {
-  const v = String(current ?? "").trim();
-  if (!v) return PREFERRED_TENANT_TYPE;
-  const inList = PREFERRED_TENANT_TYPE.some((o) => o.value === v);
-  if (inList) return PREFERRED_TENANT_TYPE;
-  return [
-    PREFERRED_TENANT_TYPE[0],
-    { value: v, label: `${v} (saved text)` },
-    ...PREFERRED_TENANT_TYPE.slice(1),
-  ];
+function preferredTenantTypeMultiOptions(selected) {
+  const arr = Array.isArray(selected) ? selected : selected ? [selected] : [];
+  const inBase = new Set(PREFERRED_TENANT_BASE_OPTIONS.map((o) => o.value));
+  const extras = arr
+    .filter((v) => v && !inBase.has(String(v)))
+    .map((v) => ({ value: String(v), label: `${v} (saved)` }));
+  return [...extras, ...PREFERRED_TENANT_BASE_OPTIONS];
 }
 
 /**
@@ -349,13 +356,19 @@ export default function OwnerPropertyDetailsFields({ value, onChange, errors = {
             error={err("preferredBusinessUse")}
           />
         ) : (
-          <SelectField
-            label="Preferred tenant type *"
-            options={preferredTenantTypeOptions(value.preferredTenantType)}
-            value={value.preferredTenantType}
-            onChange={(e) => patch({ preferredTenantType: e.target.value })}
-            error={err("preferredTenantType")}
-          />
+          <div className="md:col-span-2">
+            <SearchableSelect
+              label="Preferred tenant type * (max 2)"
+              name="preferredTenantType"
+              value={Array.isArray(value.preferredTenantType) ? value.preferredTenantType : []}
+              options={preferredTenantTypeMultiOptions(value.preferredTenantType)}
+              onChange={(e) => patch({ preferredTenantType: e.target.value })}
+              error={err("preferredTenantType")}
+              placeholder="Search tenant type..."
+              multi
+              max={2}
+            />
+          </div>
         )}
         {!commercial && (
           <>
@@ -471,7 +484,12 @@ export function formatOwnerPropertyDetailsForDisplay(o, propertyType) {
     { label: "Pets allowed", value: yesNo(o.petsAllowed) },
     parkingRow,
     depositRow,
-    { label: "Preferred tenant type", value: o.preferredTenantType || "—" },
+    {
+      label: "Preferred tenant type",
+      value: Array.isArray(o.preferredTenantType)
+        ? o.preferredTenantType.filter(Boolean).join(", ") || "—"
+        : o.preferredTenantType || "—",
+    },
     { label: "Non-veg allowed", value: yesNo(o.nonVegetarianAllowed) },
     { label: "Religious / other considerations", value: o.religiousConsiderations || "—" },
     occRow,

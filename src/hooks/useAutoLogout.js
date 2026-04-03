@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { notify } from "../utils/toast";
 import axios from "../lib/axios.js";
 
-const INACTIVITY_LIMIT = 10 * 60 * 1000; // 10 minutes
+const INACTIVITY_LIMIT = 15 * 60 * 1000; // 15 minutes — reset on any tracked activity
 
 export const useAutoLogout = (onLogout) => {
   const timerRef = useRef(null);
