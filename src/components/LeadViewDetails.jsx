@@ -4,12 +4,16 @@ import { X, CheckCircle } from "lucide-react";
 import { getUploadsUrl } from "../lib/axios.js";
 import { getRemarksList, getCustomerRemarksList } from "../hooks/useLeadQueries.js";
 import { formatDate, formatTime } from "../utils/dateFormat.js";
+import { formatOwnerPropertyDetailsForDisplay } from "./OwnerPropertyDetailsFields";
+import { formatTenantRequirementDetailsForDisplay } from "./TenantRequirementDetailsFields";
 
 function InfoRow({ label, value }) {
   return (
     <div className="py-2 border-b border-slate-100 last:border-0">
-      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-0.5">{label}</p>
-      <p className="text-sm font-medium text-slate-900">{value ?? "—"}</p>
+      <p className="text-xs font-semibold text-slate-500 mb-0.5">{label}</p>
+      <p className="text-sm font-semibold text-slate-900 whitespace-pre-wrap">
+        {value ?? "—"}
+      </p>
     </div>
   );
 }
@@ -75,7 +79,7 @@ export default function LeadViewDetails({ lead, onClose }) {
         <div className="flex-1 overflow-y-auto p-6 space-y-5">
           {/* Lead Information */}
           <section className="bg-slate-50 rounded-xl border border-slate-100 overflow-hidden">
-            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-4 pt-4 pb-2">
+            <h3 className="text-xs font-semibold text-slate-600 px-4 pt-4 pb-2">
               Lead Information
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 px-4 pb-4">
@@ -113,6 +117,13 @@ export default function LeadViewDetails({ lead, onClose }) {
                     }
                   />
                   <InfoRow label="Budget" value={lead.budget ? `₹${lead.budget}` : "—"} />
+                  {lead.tenantRequirementDetails &&
+                    formatTenantRequirementDetailsForDisplay(
+                      lead.tenantRequirementDetails,
+                      lead.propertyType
+                    ).map(({ label, value }) => (
+                      <InfoRow key={`treq-${label}`} label={label} value={value} />
+                    ))}
                 </>
               )}
               {lead.customerType === "owner" && (
@@ -120,6 +131,20 @@ export default function LeadViewDetails({ lead, onClose }) {
                   <InfoRow label="Property Location" value={lead.propertyLocation || "—"} />
                   <InfoRow label="Landmark" value={lead.landmark || "—"} />
                   <InfoRow label="Area" value={lead.area ? `${lead.area} sq ft` : "—"} />
+                  {lead.ownerPropertyDetails &&
+                    formatOwnerPropertyDetailsForDisplay(
+                      lead.ownerPropertyDetails,
+                      lead.propertyType
+                    ).map(({ label, value }) => (
+                      <InfoRow key={label} label={label} value={value} />
+                    ))}
+                  {lead.ownerPropertyDetails?.isPropertyVacant === false &&
+                    lead.ownerPropertyDetails?.propertyAvailableFrom && (
+                      <InfoRow
+                        label="Available from"
+                        value={formatDate(lead.ownerPropertyDetails.propertyAvailableFrom)}
+                      />
+                    )}
                 </>
               )}
               <InfoRow label="Property Type" value={lead.propertyType || "—"} />
@@ -128,10 +153,10 @@ export default function LeadViewDetails({ lead, onClose }) {
             </div>
             {lead.requirements && (
               <div className="px-4 pb-4 pt-0">
-                <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">
+                <p className="text-xs font-medium text-slate-500 mb-1">
                   Requirements
                 </p>
-                <p className="text-sm text-slate-800 bg-white rounded-lg p-3 border border-slate-100">
+                <p className="text-sm text-slate-800 bg-white rounded-lg p-3 border border-slate-100 whitespace-pre-wrap">
                   {lead.requirements}
                 </p>
               </div>
@@ -140,8 +165,8 @@ export default function LeadViewDetails({ lead, onClose }) {
 
           {/* Customer Remarks */}
           {getCustomerRemarksList(lead).length > 0 && (
-            <section className="bg-amber-50/50 rounded-xl border border-amber-100 overflow-hidden">
-              <h3 className="text-xs font-semibold text-amber-800/80 uppercase tracking-wider px-4 pt-4 pb-2">
+            <section className="bg-slate-50 rounded-xl border border-slate-100 overflow-hidden">
+              <h3 className="text-xs font-semibold text-slate-600 px-4 pt-4 pb-2">
                 Customer Remarks
               </h3>
               <ul className="px-4 pb-4 space-y-2">
@@ -163,8 +188,8 @@ export default function LeadViewDetails({ lead, onClose }) {
 
           {/* Internal Remarks (Customer Care) */}
           {getRemarksList(lead).length > 0 && (
-            <section className="bg-blue-50/50 rounded-xl border border-blue-100 overflow-hidden">
-              <h3 className="text-xs font-semibold text-blue-800/80 uppercase tracking-wider px-4 pt-4 pb-2">
+            <section className="bg-slate-50 rounded-xl border border-slate-100 overflow-hidden">
+              <h3 className="text-xs font-semibold text-slate-600 px-4 pt-4 pb-2">
                 Internal Remarks (Customer Care)
               </h3>
               <ul className="px-4 pb-4 space-y-2">
@@ -188,11 +213,11 @@ export default function LeadViewDetails({ lead, onClose }) {
           <section
             className={`rounded-xl border overflow-hidden ${
               lead?.isRegistered || lead?.registrationDetails?.planName
-                ? "bg-emerald-50/50 border-emerald-100"
+                ? "bg-slate-50 border-slate-100"
                 : "bg-slate-50 border-slate-100"
             }`}
           >
-            <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wider px-4 pt-4 pb-2">
+            <h3 className="text-xs font-semibold text-slate-600 px-4 pt-4 pb-2">
               Registration
             </h3>
             {lead?.isRegistered || lead?.registrationDetails?.planName ? (
@@ -258,8 +283,8 @@ export default function LeadViewDetails({ lead, onClose }) {
 
           {/* Deal Closure */}
           {lead.dealClosed && (
-            <section className="rounded-xl border overflow-hidden bg-emerald-50/40 border-emerald-200">
-              <h3 className="text-xs font-semibold text-emerald-700 uppercase tracking-wider px-4 pt-4 pb-2">
+            <section className="rounded-xl border overflow-hidden bg-slate-50 border-slate-100">
+              <h3 className="text-xs font-semibold text-slate-600 px-4 pt-4 pb-2">
                 Deal Closure
               </h3>
               <div className="px-4 pb-4 space-y-3">
@@ -307,8 +332,8 @@ export default function LeadViewDetails({ lead, onClose }) {
 
           {/* Meta-Ad (only for registered leads) — mark here and record date/time */}
           {lead?.isRegistered && (
-            <section className="rounded-xl border overflow-hidden bg-amber-50/50 border-amber-100">
-              <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wider px-4 pt-4 pb-2">
+            <section className="rounded-xl border overflow-hidden bg-slate-50 border-slate-100">
+              <h3 className="text-xs font-semibold text-slate-600 px-4 pt-4 pb-2">
                 Is Meta-Ad run?
               </h3>
               <div className="px-4 pb-4">

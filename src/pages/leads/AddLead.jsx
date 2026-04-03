@@ -16,6 +16,18 @@ import {
 } from "../../hooks/useMastersQueries";
 import { useFetchEmployees } from "../../hooks/useEmployeeQueries";
 import SearchableSelect from "../../components/SearchableSelect";
+import OwnerPropertyDetailsFields, {
+  emptyOwnerPropertyDetails,
+  validateOwnerPropertyDetailsForm,
+  buildOwnerPropertyDetailsPayload,
+  reconcileOwnerDetailsOnPropertyTypeChange,
+} from "../../components/OwnerPropertyDetailsFields";
+import TenantRequirementDetailsFields, {
+  emptyTenantRequirementDetails,
+  validateTenantRequirementDetailsForm,
+  buildTenantRequirementDetailsPayload,
+  reconcileTenantDetailsOnPropertyTypeChange,
+} from "../../components/TenantRequirementDetailsFields";
 
 
 export default function AddLead() {
@@ -41,6 +53,8 @@ export default function AddLead() {
     landmark: "",
     requirementDurationValue: 30,
     requirementDurationUnit: "days",
+    ownerPropertyDetails: emptyOwnerPropertyDetails(),
+    tenantRequirementDetails: emptyTenantRequirementDetails(),
   });
 
   const [errors, setErrors] = useState({});
@@ -91,10 +105,18 @@ export default function AddLead() {
         e.preferredLocation = "Preferred location required";
       else if (Array.isArray(form.preferredLocation) && form.preferredLocation.length > 3)
         e.preferredLocation = "Select at most 3 preferred locations";
+      Object.assign(
+        e,
+        validateTenantRequirementDetailsForm(form.tenantRequirementDetails, form.propertyType)
+      );
     } else {
       if (!form.ownerName.trim()) e.ownerName = "Owner name required";
       if (!form.propertyLocation) e.propertyLocation = "Location required";
       if (!form.landmark?.trim()) e.landmark = "Location details required";
+      Object.assign(
+        e,
+        validateOwnerPropertyDetailsForm(form.ownerPropertyDetails, form.propertyType)
+      );
     }
 
     setErrors(e);
@@ -140,11 +162,19 @@ export default function AddLead() {
     if (customerType === "tenant") {
       payload.customerName = form.customerName;
       payload.preferredLocation = form.preferredLocation;
+      payload.tenantRequirementDetails = buildTenantRequirementDetailsPayload(
+        form.tenantRequirementDetails,
+        form.propertyType
+      );
     } else {
       payload.ownerName = form.ownerName;
       payload.propertyLocation = form.propertyLocation;
       payload.area = form.area || undefined;
       payload.landmark = form.landmark || undefined;
+      payload.ownerPropertyDetails = buildOwnerPropertyDetailsPayload(
+        form.ownerPropertyDetails,
+        form.propertyType
+      );
     }
 
     createLead.mutate(payload, {
@@ -177,6 +207,8 @@ export default function AddLead() {
       landmark: "",
       requirementDurationValue: 30,
       requirementDurationUnit: "days",
+      ownerPropertyDetails: emptyOwnerPropertyDetails(),
+      tenantRequirementDetails: emptyTenantRequirementDetails(),
     });
     setErrors({});
   };
@@ -223,7 +255,16 @@ export default function AddLead() {
           <div className="flex gap-4">
             <button
               type="button"
-              onClick={() => setCustomerType("tenant")}
+              onClick={() => {
+                if (customerType !== "tenant") {
+                  setForm((p) => ({
+                    ...p,
+                    ownerPropertyDetails: emptyOwnerPropertyDetails(),
+                    tenantRequirementDetails: emptyTenantRequirementDetails(),
+                  }));
+                }
+                setCustomerType("tenant");
+              }}
               className={`px-4 py-2 rounded-lg ${customerType === "tenant"
                 ? "bg-blue-600 text-white"
                 : "bg-gray-100"
@@ -234,7 +275,16 @@ export default function AddLead() {
 
             <button
               type="button"
-              onClick={() => setCustomerType("owner")}
+              onClick={() => {
+                if (customerType !== "owner") {
+                  setForm((p) => ({
+                    ...p,
+                    ownerPropertyDetails: emptyOwnerPropertyDetails(),
+                    tenantRequirementDetails: emptyTenantRequirementDetails(),
+                  }));
+                }
+                setCustomerType("owner");
+              }}
               className={`px-4 py-2 rounded-lg ${customerType === "owner"
                 ? "bg-blue-600 text-white"
                 : "bg-gray-100"
@@ -316,8 +366,19 @@ export default function AddLead() {
                   value={form.propertyType}
                   options={propertyTypes}
                   onChange={(e) => {
-                    handleChange(e);
-                    setForm((p) => ({ ...p, subPropertyType: "" }));
+                    const next = e.target.value;
+                    setForm((p) => ({
+                      ...p,
+                      propertyType: next,
+                      subPropertyType: "",
+                      tenantRequirementDetails: reconcileTenantDetailsOnPropertyTypeChange(
+                        p.tenantRequirementDetails,
+                        next,
+                        p.propertyType
+                      ),
+                    }));
+                    if (errors.propertyType) setErrors((prev) => ({ ...prev, propertyType: "" }));
+                    if (errors.subPropertyType) setErrors((prev) => ({ ...prev, subPropertyType: "" }));
                   }}
                   error={errors.propertyType}
                 />
@@ -331,6 +392,15 @@ export default function AddLead() {
                   disabled={!form.propertyType}
                   onChange={handleChange}
                   error={errors.subPropertyType}
+                />
+
+                <TenantRequirementDetailsFields
+                  propertyType={form.propertyType}
+                  value={form.tenantRequirementDetails}
+                  onChange={(next) =>
+                    setForm((p) => ({ ...p, tenantRequirementDetails: next }))
+                  }
+                  errors={errors}
                 />
               </>
             )}
@@ -401,7 +471,21 @@ export default function AddLead() {
                   name="propertyType"
                   value={form.propertyType}
                   options={propertyTypes}
-                  onChange={handleChange}
+                  onChange={(e) => {
+                    const next = e.target.value;
+                    setForm((p) => ({
+                      ...p,
+                      propertyType: next,
+                      subPropertyType: "",
+                      ownerPropertyDetails: reconcileOwnerDetailsOnPropertyTypeChange(
+                        p.ownerPropertyDetails,
+                        next,
+                        p.propertyType
+                      ),
+                    }));
+                    if (errors.propertyType) setErrors((prev) => ({ ...prev, propertyType: "" }));
+                    if (errors.subPropertyType) setErrors((prev) => ({ ...prev, subPropertyType: "" }));
+                  }}
                   error={errors.propertyType}
                 />
 
@@ -425,6 +509,15 @@ export default function AddLead() {
                   step="any"
                   suffix="sq ft"
                   placeholder="e.g., 1200"
+                />
+
+                <OwnerPropertyDetailsFields
+                  propertyType={form.propertyType}
+                  value={form.ownerPropertyDetails}
+                  onChange={(next) =>
+                    setForm((p) => ({ ...p, ownerPropertyDetails: next }))
+                  }
+                  errors={errors}
                 />
               </>
             )}

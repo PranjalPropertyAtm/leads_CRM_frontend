@@ -6,6 +6,20 @@ import { useFetchMasters, getPropertyTypes, getSubPropertyTypes, getCities, getS
 import { useFetchEmployees } from "../hooks/useEmployeeQueries";
 import SearchableSelect from "./SearchableSelect";
 import { notify } from "../utils/toast";
+import OwnerPropertyDetailsFields, {
+  emptyOwnerPropertyDetails,
+  ownerPropertyDetailsFromLead,
+  validateOwnerPropertyDetailsForm,
+  buildOwnerPropertyDetailsPayload,
+  reconcileOwnerDetailsOnPropertyTypeChange,
+} from "./OwnerPropertyDetailsFields";
+import TenantRequirementDetailsFields, {
+  emptyTenantRequirementDetails,
+  tenantRequirementDetailsFromLead,
+  validateTenantRequirementDetailsForm,
+  buildTenantRequirementDetailsPayload,
+  reconcileTenantDetailsOnPropertyTypeChange,
+} from "./TenantRequirementDetailsFields";
 
 export default function EditLeadModal({ open, onClose, lead }) {
   const [customerType, setCustomerType] = useState(lead?.customerType || "tenant");
@@ -25,6 +39,8 @@ export default function EditLeadModal({ open, onClose, lead }) {
     requirements: "",
     area: "",
     landmark: "",
+    ownerPropertyDetails: emptyOwnerPropertyDetails(),
+    tenantRequirementDetails: emptyTenantRequirementDetails(),
   });
   const [errors, setErrors] = useState({});
 
@@ -69,6 +85,8 @@ export default function EditLeadModal({ open, onClose, lead }) {
         requirements: lead.requirements || "",
         area: lead.area || "",
         landmark: lead.landmark || "",
+        ownerPropertyDetails: ownerPropertyDetailsFromLead(lead),
+        tenantRequirementDetails: tenantRequirementDetailsFromLead(lead),
       });
       setErrors({});
     }
@@ -105,9 +123,17 @@ export default function EditLeadModal({ open, onClose, lead }) {
         e.preferredLocation = "Preferred location required";
       else if (Array.isArray(form.preferredLocation) && form.preferredLocation.length > 3)
         e.preferredLocation = "Select at most 3 preferred locations";
+      Object.assign(
+        e,
+        validateTenantRequirementDetailsForm(form.tenantRequirementDetails, form.propertyType)
+      );
     } else {
       if (!form.ownerName.trim()) e.ownerName = "Owner name required";
       if (!form.propertyLocation) e.propertyLocation = "Property location required";
+      Object.assign(
+        e,
+        validateOwnerPropertyDetailsForm(form.ownerPropertyDetails, form.propertyType)
+      );
     }
 
     setErrors(e);
@@ -139,11 +165,19 @@ export default function EditLeadModal({ open, onClose, lead }) {
     if (customerType === "tenant") {
       payload.customerName = form.customerName;
       payload.preferredLocation = form.preferredLocation;
+      payload.tenantRequirementDetails = buildTenantRequirementDetailsPayload(
+        form.tenantRequirementDetails,
+        form.propertyType
+      );
     } else {
       payload.ownerName = form.ownerName;
       payload.propertyLocation = form.propertyLocation;
       payload.area = form.area || undefined;
       payload.landmark = form.landmark || undefined;
+      payload.ownerPropertyDetails = buildOwnerPropertyDetailsPayload(
+        form.ownerPropertyDetails,
+        form.propertyType
+      );
     }
 
     updateLead.mutate(
@@ -186,14 +220,32 @@ export default function EditLeadModal({ open, onClose, lead }) {
           <div className="flex gap-4">
             <button
               type="button"
-              onClick={() => setCustomerType("tenant")}
+              onClick={() => {
+                if (customerType !== "tenant") {
+                  setForm((p) => ({
+                    ...p,
+                    ownerPropertyDetails: emptyOwnerPropertyDetails(),
+                    tenantRequirementDetails: emptyTenantRequirementDetails(),
+                  }));
+                }
+                setCustomerType("tenant");
+              }}
               className={`px-4 py-2 rounded-lg ${customerType === "tenant" ? "bg-blue-600 text-white" : "bg-gray-100"}`}
             >
               Tenant
             </button>
             <button
               type="button"
-              onClick={() => setCustomerType("owner")}
+              onClick={() => {
+                if (customerType !== "owner") {
+                  setForm((p) => ({
+                    ...p,
+                    ownerPropertyDetails: emptyOwnerPropertyDetails(),
+                    tenantRequirementDetails: emptyTenantRequirementDetails(),
+                  }));
+                }
+                setCustomerType("owner");
+              }}
               className={`px-4 py-2 rounded-lg ${customerType === "owner" ? "bg-blue-600 text-white" : "bg-gray-100"}`}
             >
               Owner
@@ -255,8 +307,19 @@ export default function EditLeadModal({ open, onClose, lead }) {
                   value={form.propertyType}
                   options={propertyTypes}
                   onChange={(e) => {
-                    handleChange(e);
-                    setForm((p) => ({ ...p, subPropertyType: "" }));
+                    const next = e.target.value;
+                    setForm((p) => ({
+                      ...p,
+                      propertyType: next,
+                      subPropertyType: "",
+                      tenantRequirementDetails: reconcileTenantDetailsOnPropertyTypeChange(
+                        p.tenantRequirementDetails,
+                        next,
+                        p.propertyType
+                      ),
+                    }));
+                    if (errors.propertyType) setErrors((prev) => ({ ...prev, propertyType: "" }));
+                    if (errors.subPropertyType) setErrors((prev) => ({ ...prev, subPropertyType: "" }));
                   }}
                   error={errors.propertyType}
                 />
@@ -268,6 +331,15 @@ export default function EditLeadModal({ open, onClose, lead }) {
                   disabled={!form.propertyType}
                   onChange={handleChange}
                   error={errors.subPropertyType}
+                />
+
+                <TenantRequirementDetailsFields
+                  propertyType={form.propertyType}
+                  value={form.tenantRequirementDetails}
+                  onChange={(next) =>
+                    setForm((p) => ({ ...p, tenantRequirementDetails: next }))
+                  }
+                  errors={errors}
                 />
               </>
             )}
@@ -316,7 +388,21 @@ export default function EditLeadModal({ open, onClose, lead }) {
                   name="propertyType"
                   value={form.propertyType}
                   options={propertyTypes}
-                  onChange={handleChange}
+                  onChange={(e) => {
+                    const next = e.target.value;
+                    setForm((p) => ({
+                      ...p,
+                      propertyType: next,
+                      subPropertyType: "",
+                      ownerPropertyDetails: reconcileOwnerDetailsOnPropertyTypeChange(
+                        p.ownerPropertyDetails,
+                        next,
+                        p.propertyType
+                      ),
+                    }));
+                    if (errors.propertyType) setErrors((prev) => ({ ...prev, propertyType: "" }));
+                    if (errors.subPropertyType) setErrors((prev) => ({ ...prev, subPropertyType: "" }));
+                  }}
                   error={errors.propertyType}
                 />
                 <SelectField
@@ -344,6 +430,15 @@ export default function EditLeadModal({ open, onClose, lead }) {
                   name="landmark"
                   value={form.landmark}
                   onChange={handleChange}
+                />
+
+                <OwnerPropertyDetailsFields
+                  propertyType={form.propertyType}
+                  value={form.ownerPropertyDetails}
+                  onChange={(next) =>
+                    setForm((p) => ({ ...p, ownerPropertyDetails: next }))
+                  }
+                  errors={errors}
                 />
               </>
             )}
