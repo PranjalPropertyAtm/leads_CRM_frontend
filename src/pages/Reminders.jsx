@@ -102,6 +102,19 @@ export default function Reminders() {
     (user?.designation && String(user.designation).toLowerCase().includes("customer care"));
   const seesAllReminders = user?.role === "admin" || isCustomerCare;
 
+  const isReminderCreator = (reminder) => {
+    if (!user?._id || !reminder?.createdBy) return false;
+    const cid = reminder.createdBy._id ?? reminder.createdBy;
+    return String(cid) === String(user._id);
+  };
+
+  /** Admin: none. Employees (my list only): yes. Customer care: yes only for reminders they created. */
+  const canCompleteOrCancelReminder = (reminder) => {
+    if (user?.role === "admin") return false;
+    if (!seesAllReminders) return true;
+    return isReminderCreator(reminder);
+  };
+
   const clearFilters = () => {
     setStartDate("");
     setEndDate("");
@@ -355,7 +368,7 @@ export default function Reminders() {
                                
                               </div>
                             </div>
-                            {!seesAllReminders && (
+                            {canCompleteOrCancelReminder(reminder) && (
                               <div className="flex gap-2 ml-4">
                                 <button
                                   onClick={() => handleComplete(reminder._id)}

@@ -14,6 +14,19 @@ export default function RemindersList({ date, showAddButton = true }) {
     user?.role === "customer_care_executive" ||
     (user?.designation && String(user.designation).toLowerCase().includes("customer care"));
   const seesAllReminders = user?.role === "admin" || isCustomerCare;
+
+  const isReminderCreator = (reminder) => {
+    if (!user?._id || !reminder?.createdBy) return false;
+    const cid = reminder.createdBy._id ?? reminder.createdBy;
+    return String(cid) === String(user._id);
+  };
+
+  const canCompleteOrCancelReminder = (reminder) => {
+    if (user?.role === "admin") return false;
+    if (!seesAllReminders) return true;
+    return isReminderCreator(reminder);
+  };
+
   const { data: reminders = [], isLoading } = useRemindersByDate(date);
   const [selectedReminder, setSelectedReminder] = useState(null);
   const [addModalOpen, setAddModalOpen] = useState(false);
@@ -175,7 +188,7 @@ export default function RemindersList({ date, showAddButton = true }) {
                                 )}
                           </div>
                         </div>
-                        {!seesAllReminders && (
+                        {canCompleteOrCancelReminder(reminder) && (
                           <div className="flex gap-2 ml-4">
                             <button
                               onClick={() => handleComplete(reminder._id)}
