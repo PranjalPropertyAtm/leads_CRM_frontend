@@ -350,7 +350,7 @@ export default function Dashboard() {
                         {getCountdownText(lead)}
                       </span>
                       {" · Due "}{formatDate(lead.expectedClosureDate)}
-                      {user?.role === "admin" && lead.createdBy?.name && (
+                      {useAllLeadsPage && lead.createdBy?.name && (
                         <span className="block mt-0.5 text-gray-500">Created by {lead.createdBy.name}</span>
                       )}
                     </p>
@@ -397,7 +397,7 @@ export default function Dashboard() {
                       {lead.mobileNumber && " · "}
                       <span className="text-red-600 font-medium">{getCountdownText(lead)}</span>
                       {" · Expected "}{formatDate(lead.expectedClosureDate)}
-                      {user?.role === "admin" && lead.createdBy?.name && (
+                      {useAllLeadsPage && lead.createdBy?.name && (
                         <span className="block mt-0.5 text-gray-500">Created by {lead.createdBy.name}</span>
                       )}
                     </p>

@@ -1,11 +1,10 @@
 import React, { useState } from "react";
-import { motion } from "framer-motion";
-import { Search, Eye, PlusCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { useMyVisits } from "../../hooks/useVisitQueries";
 import VisitDetailsModal from "../../components/VisitDetailsModal";
+import VisitListFilters from "../../components/VisitListFilters";
 import { formatDate } from "../../utils/dateFormat";
 import { getVisitOutcome } from "../../utils/visitStatus";
-// import AddVisitModal from "../../components/AddVisitModal";
 
 export default function MyVisits() {
   const [filter, setFilter] = useState("");
@@ -13,13 +12,22 @@ export default function MyVisits() {
   const [selectedVisit, setSelectedVisit] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [customerTypeFilter, setCustomerTypeFilter] = useState("all");
 
-  // const [addModalOpen, setAddModalOpen] = useState(false);
+  const resetPage = () => setCurrentPage(1);
 
-  const { 
-    data = { visits: [], total: 0, totalPages: 0, page: 1 }, 
-    isLoading 
-  } = useMyVisits(currentPage, pageSize);
+  const {
+    data = { visits: [], total: 0, totalPages: 0, page: 1 },
+    isLoading,
+  } = useMyVisits(currentPage, pageSize, {
+    startDate: startDate || undefined,
+    endDate: endDate || undefined,
+    status: statusFilter,
+    customerType: customerTypeFilter,
+  });
 
   const { visits = [], total = 0, totalPages = 0 } = data;
   
@@ -58,7 +66,9 @@ export default function MyVisits() {
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-1">My Visits</h1>
-            <p className="text-sm text-gray-600 font-medium">View and manage your property visits</p>
+            <p className="text-sm text-gray-600 font-medium">
+              Visits where you are the assigned visiting employee
+            </p>
           </div>
 
           <div className="flex items-center gap-3">
@@ -74,13 +84,33 @@ export default function MyVisits() {
               />
             </div>
 
-            {/* <button
-              onClick={() => setAddModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              <PlusCircle size={18} /> Add Visit
-            </button> */}
           </div>
+        </div>
+
+        <div className="mb-8">
+          <VisitListFilters
+            startDate={startDate}
+            endDate={endDate}
+            onStartDateChange={(v) => {
+              setStartDate(v);
+              resetPage();
+            }}
+            onEndDateChange={(v) => {
+              setEndDate(v);
+              resetPage();
+            }}
+            status={statusFilter}
+            onStatusChange={(v) => {
+              setStatusFilter(v);
+              resetPage();
+            }}
+            customerType={customerTypeFilter}
+            onCustomerTypeChange={(v) => {
+              setCustomerTypeFilter(v);
+              resetPage();
+            }}
+            showVisitedByFilter={false}
+          />
         </div>
 
         {/* TABLE */}
@@ -252,9 +282,6 @@ export default function MyVisits() {
         />
 
 
-        {/* {addModalOpen && (
-          <AddVisitModal open={addModalOpen} onClose={() => setAddModalOpen(false)} />
-        )} */}
       </div>
     </div>
   );

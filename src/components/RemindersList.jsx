@@ -10,7 +10,10 @@ import CancelReminderModal from "./CancelReminderModal";
 
 export default function RemindersList({ date, showAddButton = true }) {
   const { data: user } = useLoadUser();
-  const isAdmin = user?.role !== "employee";
+  const isCustomerCare =
+    user?.role === "customer_care_executive" ||
+    (user?.designation && String(user.designation).toLowerCase().includes("customer care"));
+  const seesAllReminders = user?.role === "admin" || isCustomerCare;
   const { data: reminders = [], isLoading } = useRemindersByDate(date);
   const [selectedReminder, setSelectedReminder] = useState(null);
   const [addModalOpen, setAddModalOpen] = useState(false);
@@ -151,7 +154,7 @@ export default function RemindersList({ date, showAddButton = true }) {
                                 <span>{formatTime24To12(reminder.reminderTime)}</span>
                               </div>
                             )}
-                            {isAdmin && reminder.createdBy && (
+                            {seesAllReminders && reminder.createdBy && (
                               <div className="flex items-center gap-1">
                                 <User size={12} />
                                 <span className="font-medium text-blue-600">
@@ -172,7 +175,7 @@ export default function RemindersList({ date, showAddButton = true }) {
                                 )}
                           </div>
                         </div>
-                        {!isAdmin && (
+                        {!seesAllReminders && (
                           <div className="flex gap-2 ml-4">
                             <button
                               onClick={() => handleComplete(reminder._id)}
@@ -238,7 +241,7 @@ export default function RemindersList({ date, showAddButton = true }) {
                                 <span>{formatTime24To12(reminder.reminderTime)}</span>
                               </div>
                             )}
-                            {isAdmin && reminder.createdBy && (
+                            {seesAllReminders && reminder.createdBy && (
                               <div className="flex items-center gap-1">
                                 <User size={12} />
                                 <span className="font-medium text-blue-600">
@@ -260,7 +263,7 @@ export default function RemindersList({ date, showAddButton = true }) {
                           </div>
                         
                         </div>
-                        {/* {!isAdmin && (
+                        {/* {!seesAllReminders && (
                           <button
                             onClick={() => handleDelete(reminder._id)}
                             className="p-1 text-red-600 hover:bg-red-100 rounded transition ml-2"

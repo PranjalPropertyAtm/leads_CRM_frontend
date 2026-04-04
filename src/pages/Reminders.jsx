@@ -97,11 +97,16 @@ export default function Reminders() {
     setCurrentPage(1);
   };
 
+  const isCustomerCare =
+    user?.role === "customer_care_executive" ||
+    (user?.designation && String(user.designation).toLowerCase().includes("customer care"));
+  const seesAllReminders = user?.role === "admin" || isCustomerCare;
+
   const clearFilters = () => {
     setStartDate("");
     setEndDate("");
     setStatus("");
-    if (user?.role !== "employee") {
+    if (seesAllReminders) {
       setEmployeeId("");
     }
     setSearchQuery("");
@@ -117,8 +122,6 @@ export default function Reminders() {
     setCancelModalOpen(true);
   };
 
-  const isAdmin = user?.role !== "employee";
-
   return (
     <div className="bg-slate-50 p-6 font-[Inter]">
       <motion.div
@@ -130,15 +133,15 @@ export default function Reminders() {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-1">
-              {isAdmin ? "All Reminders" : "My Reminders"}
+              {seesAllReminders ? "All Reminders" : "My Reminders"}
             </h1>
             <p className="text-sm text-gray-600 font-medium">
-              {isAdmin 
-                ? "View and manage all reminders created by employees" 
+              {seesAllReminders
+                ? "View and manage all reminders created by employees"
                 : "View and manage your reminders"}
             </p>
           </div>
-          {!isAdmin && (
+          {!seesAllReminders && (
             <button
               onClick={() => setAddModalOpen(true)}
               className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-200 font-semibold text-sm"
@@ -151,7 +154,7 @@ export default function Reminders() {
 
         {/* Filters */}
         <div className="bg-white rounded-xl shadow-md border p-6 mb-6">
-          <div className={`grid grid-cols-1 ${isAdmin ? "md:grid-cols-5" : "md:grid-cols-4"} gap-4`}>
+          <div className={`grid grid-cols-1 ${seesAllReminders ? "md:grid-cols-5" : "md:grid-cols-4"} gap-4`}>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Search
@@ -224,8 +227,8 @@ export default function Reminders() {
               </select>
             </div>
 
-            {/* Employee filter - Admin only */}
-            {isAdmin && (
+            {/* Employee filter - admin & customer care */}
+            {seesAllReminders && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Employee
@@ -249,7 +252,7 @@ export default function Reminders() {
             )}
           </div>
 
-          {(startDate || endDate || status || (isAdmin && employeeId) || searchQuery) && (
+          {(startDate || endDate || status || (seesAllReminders && employeeId) || searchQuery) && (
             <div className="mt-4 pt-4 border-t border-gray-200">
               <button
                 onClick={clearFilters}
@@ -330,7 +333,7 @@ export default function Reminders() {
                                     <span>{formatTime24To12(reminder.reminderTime)}</span>
                                   </div>
                                 )}
-                                {isAdmin && reminder.createdBy && (
+                                {seesAllReminders && reminder.createdBy && (
                                   <div className="flex items-center gap-1">
                                     <User size={14} />
                                     <span className="font-medium text-blue-600">
@@ -352,7 +355,7 @@ export default function Reminders() {
                                
                               </div>
                             </div>
-                            {!isAdmin && (
+                            {!seesAllReminders && (
                               <div className="flex gap-2 ml-4">
                                 <button
                                   onClick={() => handleComplete(reminder._id)}
@@ -419,7 +422,7 @@ export default function Reminders() {
                                   <span>{formatTime24To12(reminder.reminderTime)}</span>
                                 </div>
                               )}
-                              {isAdmin && reminder.createdBy && (
+                              {seesAllReminders && reminder.createdBy && (
                                 <div className="flex items-center gap-1">
                                   <User size={12} />
                                   <span className="font-medium text-blue-600">
@@ -430,7 +433,7 @@ export default function Reminders() {
                               )}
                             </div>
                           </div>
-                          {/* {!isAdmin && (
+                          {/* {!seesAllReminders && (
                             <button
                               onClick={() => handleDelete(reminder._id)}
                               className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition ml-4"
@@ -491,7 +494,7 @@ export default function Reminders() {
                                   <span>{formatTime24To12(reminder.reminderTime)}</span>
                                 </div>
                               )}
-                              {isAdmin && reminder.createdBy && (
+                              {seesAllReminders && reminder.createdBy && (
                                 <div className="flex items-center gap-1">
                                   <User size={12} />
                                   <span className="font-medium text-blue-600">

@@ -54,13 +54,18 @@ export const useCancelVisit = () => {
   });
 };
 
-export const useMyVisits = (page = 1, limit = 10) => {
+export const useMyVisits = (page = 1, limit = 10, filters = {}) => {
+  const { startDate, endDate, status, customerType } = filters;
   return useQuery({
-    queryKey: ["visits", "my", page, limit],
+    queryKey: ["visits", "my", page, limit, startDate, endDate, status, customerType],
     queryFn: async () => {
-      const res = await axios.get("/visits/my", {
-        params: { page, limit }
-      });
+      const params = { page, limit };
+      if (startDate) params.startDate = startDate;
+      if (endDate) params.endDate = endDate;
+      if (status && status !== "all") params.status = status;
+      if (customerType && customerType !== "all") params.customerType = customerType;
+
+      const res = await axios.get("/visits/my", { params });
       return {
         visits: res.data.data || [],
         total: res.data.total || 0,
@@ -68,18 +73,22 @@ export const useMyVisits = (page = 1, limit = 10) => {
         limit: res.data.limit || limit,
         totalPages: res.data.totalPages || Math.ceil((res.data.total || 0) / limit),
       };
-    }
+    },
   });
 };
 
-export const useAllVisits = (page = 1, limit = 10, startDate = null, endDate = null) => {
+export const useAllVisits = (page = 1, limit = 10, filters = {}) => {
+  const { startDate, endDate, status, customerType, visitedBy } = filters;
   return useQuery({
-    queryKey: ["visits", "all", page, limit, startDate, endDate],
+    queryKey: ["visits", "all", page, limit, startDate, endDate, status, customerType, visitedBy],
     queryFn: async () => {
       const params = { page, limit };
       if (startDate) params.startDate = startDate;
       if (endDate) params.endDate = endDate;
-      
+      if (status && status !== "all") params.status = status;
+      if (customerType && customerType !== "all") params.customerType = customerType;
+      if (visitedBy) params.visitedBy = visitedBy;
+
       const res = await axios.get("/visits/all", { params });
       return {
         visits: res.data.data || [],
@@ -88,7 +97,7 @@ export const useAllVisits = (page = 1, limit = 10, startDate = null, endDate = n
         limit: res.data.limit || limit,
         totalPages: res.data.totalPages || Math.ceil((res.data.total || 0) / limit),
       };
-    }
+    },
   });
 };
 

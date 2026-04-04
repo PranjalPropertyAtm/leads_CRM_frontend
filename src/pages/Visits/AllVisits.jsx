@@ -1,10 +1,25 @@
 import React, { useState } from "react";
-import { motion } from "framer-motion";
-import { Search, Eye, ChevronLeft, ChevronRight, Calendar } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { useAllVisits } from "../../hooks/useVisitQueries";
+import { useLoadUser } from "../../hooks/useAuthQueries";
+import { useFetchEmployees } from "../../hooks/useEmployeeQueries";
 import VisitDetailsModal from "../../components/VisitDetailsModal";
+import VisitListFilters from "../../components/VisitListFilters";
 import { formatDate } from "../../utils/dateFormat";
 import { getVisitOutcome } from "../../utils/visitStatus";
+
+function canSeeOrgWideVisits(user) {
+  if (!user) return false;
+  if (user.role === "admin") return true;
+  if (user.role === "customer_care_executive") return true;
+  if (
+    typeof user.designation === "string" &&
+    user.designation.toLowerCase().includes("customer care")
+  ) {
+    return true;
+  }
+  return false;
+}
 
 export default function AllVisits() {
   const [filter, setFilter] = useState("");
@@ -14,11 +29,28 @@ export default function AllVisits() {
   const [pageSize, setPageSize] = useState(10);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [customerTypeFilter, setCustomerTypeFilter] = useState("all");
+  const [visitedByFilter, setVisitedByFilter] = useState("");
 
-  const { 
-    data = { visits: [], total: 0, totalPages: 0, page: 1 }, 
-    isLoading 
-  } = useAllVisits(currentPage, pageSize, startDate || null, endDate || null);
+  const { data: user } = useLoadUser();
+  const orgWide = canSeeOrgWideVisits(user);
+
+  const { data: employeesData } = useFetchEmployees(1, 1000);
+  const employeeOptions = employeesData?.employees || [];
+
+  const resetPage = () => setCurrentPage(1);
+
+  const {
+    data = { visits: [], total: 0, totalPages: 0, page: 1 },
+    isLoading,
+  } = useAllVisits(currentPage, pageSize, {
+    startDate: startDate || undefined,
+    endDate: endDate || undefined,
+    status: statusFilter,
+    customerType: customerTypeFilter,
+    visitedBy: visitedByFilter || undefined,
+  });
 
   const { visits = [], total = 0, totalPages = 0 } = data;
 
@@ -52,7 +84,11 @@ export default function AllVisits() {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-1">All Visits</h1>
-              <p className="text-sm text-gray-600 font-medium">View and manage all property visits</p>
+              <p className="text-sm text-gray-600 font-medium">
+                {orgWide
+                  ? "View and manage all property visits"
+                  : "Visits you recorded for any employee and visits assigned to you as the visitor"}
+              </p>
             </div>
 
             <div className="relative">
@@ -68,76 +104,35 @@ export default function AllVisits() {
             </div>
           </div>
 
-          {/* Date Filter */}
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Start Date
-                </label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-3 text-gray-400" size={16} />
-                  <input
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => {
-                      setStartDate(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                    className="pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 bg-white shadow-sm w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm font-medium"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  End Date
-                </label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-3 text-gray-400" size={16} />
-                  <input
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => {
-                      setEndDate(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                    min={startDate || undefined}
-                    className="pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 bg-white shadow-sm w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm font-medium"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {(startDate || endDate) && (
-              <div className="mt-4 pt-4 border-t border-gray-200">
-                <button
-                  onClick={() => {
-                    setStartDate("");
-                    setEndDate("");
-                    setCurrentPage(1);
-                  }}
-                  className="text-sm text-blue-600 hover:text-blue-700 font-medium hover:underline"
-                >
-                  Clear Date Filter
-                </button>
-                {(startDate || endDate) && (
-                  <p className="text-sm text-gray-600 mt-2">
-                    {startDate && (
-                      <span>
-                        From: <span className="font-semibold text-gray-900">{formatDate(startDate)}</span>
-                      </span>
-                    )}
-                    {endDate && (
-                      <span className={startDate ? " ml-4" : ""}>
-                        To: <span className="font-semibold text-gray-900">{formatDate(endDate)}</span>
-                      </span>
-                    )}
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
+          <VisitListFilters
+            startDate={startDate}
+            endDate={endDate}
+            onStartDateChange={(v) => {
+              setStartDate(v);
+              resetPage();
+            }}
+            onEndDateChange={(v) => {
+              setEndDate(v);
+              resetPage();
+            }}
+            status={statusFilter}
+            onStatusChange={(v) => {
+              setStatusFilter(v);
+              resetPage();
+            }}
+            customerType={customerTypeFilter}
+            onCustomerTypeChange={(v) => {
+              setCustomerTypeFilter(v);
+              resetPage();
+            }}
+            visitedBy={visitedByFilter}
+            onVisitedByChange={(v) => {
+              setVisitedByFilter(v);
+              resetPage();
+            }}
+            showVisitedByFilter
+            employeeOptions={employeeOptions}
+          />
         </div>
 
         {/* TABLE */}
@@ -158,7 +153,10 @@ export default function AllVisits() {
                   <tr className="bg-gradient-to-r from-gray-50 to-gray-100/50 border-b border-gray-200">
                     {["S.No", "Lead Name", "Visited By", "Location", "Date", "Status", "Actions"].map(
                       (h) => (
-                        <th key={h} className="px-6 py-4 font-bold text-xs uppercase tracking-wider text-gray-700 text-left">
+                        <th
+                          key={h}
+                          className="px-6 py-4 font-bold text-xs uppercase tracking-wider text-gray-700 text-left"
+                        >
                           {h}
                         </th>
                       )

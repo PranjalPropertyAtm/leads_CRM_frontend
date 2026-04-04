@@ -212,24 +212,19 @@ const AdminSidebar = () => {
 
           {openMenus.visits && (
             <div className="ml-4 mt-1 mb-2 space-y-1 border-l-2 border-slate-700/50 pl-4">
-                 {(user?.role === "admin" ||
-                  user?.role === "customer_care_executive" ||
-                  (user?.designation && user.designation.toLowerCase().includes("customer care"))) && (
-                <NavLink
-                  to="/all-visits"
-                  className={({ isActive }) =>
-                    `block px-3 py-2 rounded-md text-sm transition-all duration-200
-                     ${isActive 
-                       ? "bg-slate-800/70 text-white font-medium" 
-                       : "text-slate-400 hover:bg-slate-800/30 hover:text-slate-200"}`
-                  }
-                  onClick={() => setIsOpen(false)}
-                >
-                  All Visits
-                </NavLink>
-              )}
+              <NavLink
+                to="/all-visits"
+                className={({ isActive }) =>
+                  `block px-3 py-2 rounded-md text-sm transition-all duration-200
+                   ${isActive 
+                     ? "bg-slate-800/70 text-white font-medium" 
+                     : "text-slate-400 hover:bg-slate-800/30 hover:text-slate-200"}`
+                }
+                onClick={() => setIsOpen(false)}
+              >
+                All Visits
+              </NavLink>
 
-              {/* All users see My Visits */}
               <NavLink
                 to="/my-visits"
                 className={({ isActive }) =>
