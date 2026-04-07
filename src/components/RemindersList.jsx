@@ -324,8 +324,27 @@ export default function RemindersList({ date, showAddButton = true }) {
                               Reason: {reminder.cancellationReason}
                             </p>
                           )}
-
-                          
+                          <div className="flex items-center gap-4 text-xs text-gray-600 flex-wrap mt-2">
+                            <div className="flex items-center gap-1">
+                              <Calendar size={12} />
+                              <span>{formatDate(reminder.reminderDate)}</span>
+                            </div>
+                            {reminder.reminderTime && (
+                              <div className="flex items-center gap-1">
+                                <Clock size={12} />
+                                <span>{formatTime24To12(reminder.reminderTime)}</span>
+                              </div>
+                            )}
+                            {seesAllReminders && reminder.createdBy && (
+                              <div className="flex items-center gap-1">
+                                <User size={12} />
+                                <span className="font-medium text-blue-600">
+                                  Created by: {reminder.createdBy.name}
+                                  {reminder.createdBy.designation && ` (${reminder.createdBy.designation})`}
+                                </span>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </motion.div>
