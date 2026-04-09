@@ -101,6 +101,7 @@ export default function Reminders() {
     user?.role === "customer_care_executive" ||
     (user?.designation && String(user.designation).toLowerCase().includes("customer care"));
   const seesAllReminders = user?.role === "admin" || isCustomerCare;
+  const canAddReminder = !!user && user?.role !== "admin";
 
   const isReminderCreator = (reminder) => {
     if (!user?._id || !reminder?.createdBy) return false;
@@ -154,7 +155,7 @@ export default function Reminders() {
                 : "View and manage your reminders"}
             </p>
           </div>
-          {!seesAllReminders && (
+          {canAddReminder && (
             <button
               onClick={() => setAddModalOpen(true)}
               className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-200 font-semibold text-sm"
@@ -444,6 +445,16 @@ export default function Reminders() {
                                   </span>
                                 </div>
                               )}
+                              {reminder.lead && (
+                                <div className="text-gray-500">
+                                  Lead: {reminder.lead.customerName || reminder.lead.ownerName}
+                                </div>
+                              )}
+                              {reminder.lead && (
+                                <div className="text-gray-500">
+                                  Call: {reminder.lead.mobileNumber}
+                                </div>
+                              )}
                             </div>
                           </div>
                           {/* {!seesAllReminders && (
@@ -514,6 +525,16 @@ export default function Reminders() {
                                     Created by: {reminder.createdBy.name}
                                   
                                   </span>
+                                </div>
+                              )}
+                              {reminder.lead && (
+                                <div className="text-gray-500">
+                                  Lead: {reminder.lead.customerName || reminder.lead.ownerName}
+                                </div>
+                              )}
+                              {reminder.lead && (
+                                <div className="text-gray-500">
+                                  Call: {reminder.lead.mobileNumber}
                                 </div>
                               )}
                             </div>

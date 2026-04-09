@@ -14,6 +14,7 @@ export default function RemindersList({ date, showAddButton = true }) {
     user?.role === "customer_care_executive" ||
     (user?.designation && String(user.designation).toLowerCase().includes("customer care"));
   const seesAllReminders = user?.role === "admin" || isCustomerCare;
+  const canAddReminder = !!user && user?.role !== "admin";
 
   const isReminderCreator = (reminder) => {
     if (!user?._id || !reminder?.createdBy) return false;
@@ -103,7 +104,7 @@ export default function RemindersList({ date, showAddButton = true }) {
               </span>
             )}
           </div>
-          {showAddButton && (
+          {showAddButton && canAddReminder && (
             <button
               onClick={() => setAddModalOpen(true)}
               className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
@@ -342,6 +343,16 @@ export default function RemindersList({ date, showAddButton = true }) {
                                   Created by: {reminder.createdBy.name}
                                   {reminder.createdBy.designation && ` (${reminder.createdBy.designation})`}
                                 </span>
+                              </div>
+                            )}
+                            {reminder.lead && (
+                              <div className="text-gray-500">
+                                Lead: {reminder.lead.customerName || reminder.lead.ownerName}
+                              </div>
+                            )}
+                            {reminder.lead && (
+                              <div className="text-gray-500">
+                                Call: {reminder.lead.mobileNumber}
                               </div>
                             )}
                           </div>
