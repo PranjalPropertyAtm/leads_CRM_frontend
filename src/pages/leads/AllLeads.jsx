@@ -18,6 +18,7 @@ import {
   Bell,
   Calendar,
   SlidersHorizontal,
+  GitMerge,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
@@ -31,6 +32,7 @@ import { useFetchEmployees } from "../../hooks/useEmployeeQueries.js";
 import { useLoadUser } from "../../hooks/useAuthQueries.js";
 
 import AddVisitModal from "../../components/AddVisitModal.jsx";
+import SuggestedMatchesModal from "../../components/SuggestedMatchesModal.jsx";
 import AddReminderModal from "../../components/AddReminderModal.jsx";
 import VisitHistory from "../../components/VisitHistory.jsx";
 import SearchableSelect from "../../components/SearchableSelect.jsx";
@@ -159,6 +161,7 @@ export default function AllLeads() {
   const [visitModal, setVisitModal] = useState(false);
   const [visitHistoryOpen, setVisitHistoryOpen] = useState(false);
   const [visitLead, setVisitLead] = useState(null);
+  const [matchesModal, setMatchesModal] = useState({ open: false, lead: null });
 
   // reminders
   const [reminderModal, setReminderModal] = useState(false);
@@ -1216,6 +1219,18 @@ export default function AllLeads() {
                               <Eye size={14} /> View Details
                             </button>
 
+                            {(user?.role === "admin" || canShowAllActions) && notClosed && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setMatchesModal({ open: true, lead });
+                                }}
+                                className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-indigo-600 transition"
+                              >
+                                <GitMerge size={14} /> Suggestions
+                              </button>
+                            )}
+
                             {canShowAllActions && notClosed && (
                               <button
                                 onClick={(e) => {
@@ -1507,6 +1522,11 @@ export default function AllLeads() {
 
         {/* Visits */}
         {visitModal && <AddVisitModal open={visitModal} onClose={() => setVisitModal(false)} lead={visitLead} />}
+        <SuggestedMatchesModal
+          open={matchesModal.open}
+          lead={matchesModal.lead}
+          onClose={() => setMatchesModal({ open: false, lead: null })}
+        />
         {visitHistoryOpen && <VisitHistory open={visitHistoryOpen} onClose={() => setVisitHistoryOpen(false)} leadId={visitLead?._id} />}
 
         {/* Reminders */}

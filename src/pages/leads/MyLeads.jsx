@@ -21,6 +21,7 @@ import {
   ChevronDown,
   ChevronUp,
   SlidersHorizontal,
+  GitMerge,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMyLeads, useDeleteLead, useUpdateLeadStatus, useMarkDealClosed, useLeadFilterOptions, getRemarksList, getCustomerRemarksList, hasRemarks, useAddEmployeeRemark, useUpdateLeadMetaAd, useTenantUrgencyTotalMyLeads } from "../../hooks/useLeadQueries.js";
@@ -31,6 +32,7 @@ import { notify } from "../../utils/toast.js";
 import axiosInstance, { getUploadsUrl } from "../../lib/axios.js";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import AddVisitModal from "../../components/AddVisitModal.jsx";
+import SuggestedMatchesModal from "../../components/SuggestedMatchesModal.jsx";
 import AddReminderModal from "../../components/AddReminderModal.jsx";
 import VisitHistory from "../../components/VisitHistory.jsx";
 import RegisterLeadModal from "../../components/RegisterLeadModal.jsx";
@@ -136,7 +138,8 @@ export default function MyLeads() {
   const [visitModal, setVisitModal] = useState(false);
   const [visitHistoryOpen, setVisitHistoryOpen] = useState(false);
   const [visitLead, setVisitLead] = useState(null);
-  
+  const [matchesModal, setMatchesModal] = useState({ open: false, lead: null });
+
   // Reminders
   const [reminderModal, setReminderModal] = useState(false);
   const [reminderLead, setReminderLead] = useState(null);
@@ -989,6 +992,15 @@ export default function MyLeads() {
                             <Eye size={14} /> View Details
                           </button>
 
+                          {(user?.role === "admin" || canShowAllActions) && notClosed && (
+                            <button
+                              onClick={() => setMatchesModal({ open: true, lead })}
+                              className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm text-indigo-600 transition"
+                            >
+                              <GitMerge size={14} /> Suggestions
+                            </button>
+                          )}
+
                           {canShowAllActions && notClosed && (
                             <button
                               onClick={() =>
@@ -1277,6 +1289,11 @@ export default function MyLeads() {
 
         {/* Visits */}
         {visitModal && <AddVisitModal open={visitModal} onClose={() => setVisitModal(false)} lead={visitLead} />}
+        <SuggestedMatchesModal
+          open={matchesModal.open}
+          lead={matchesModal.lead}
+          onClose={() => setMatchesModal({ open: false, lead: null })}
+        />
         {visitHistoryOpen && <VisitHistory open={visitHistoryOpen} onClose={() => setVisitHistoryOpen(false)} leadId={visitLead?._id} />}
         
         {/* Reminders */}

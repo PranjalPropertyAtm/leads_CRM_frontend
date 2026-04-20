@@ -20,14 +20,14 @@ function InfoRow({ label, value }) {
 
 /**
  * Reusable View Details drawer for a lead. Renders nothing if lead is null.
- * @param {{ lead: object | null, onClose: function }} props
+ * @param {{ lead: object | null, onClose: function, overlayZClass?: string }} props
  */
-export default function LeadViewDetails({ lead, onClose }) {
+export default function LeadViewDetails({ lead, onClose, overlayZClass = "z-50" }) {
   if (!lead) return null;
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4"
+      className={`fixed inset-0 ${overlayZClass} flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4`}
       onClick={onClose}
     >
       <motion.div

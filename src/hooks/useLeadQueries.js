@@ -168,6 +168,27 @@ export const useTenantUrgencyTotalAllLeads = (urgencyFilter = '', filters = {}) 
   });
 };
 
+/** Ranked opposite-type leads for tenant ↔ owner pairing (see backend services/leadMatching.js). */
+export const useSuggestedMatches = (leadId, options = {}) => {
+  const { enabled = true, limit = 10 } = options;
+  return useQuery({
+    queryKey: ['lead-suggested-matches', leadId, limit],
+    queryFn: async () => {
+      const response = await axios.get(`/leads/${leadId}/suggested-matches`, {
+        params: { limit },
+      });
+      const payload = response.data?.data;
+      return {
+        sourceLeadId: payload?.sourceLeadId,
+        sourceCustomerType: payload?.sourceCustomerType,
+        matches: Array.isArray(payload?.matches) ? payload.matches : [],
+      };
+    },
+    enabled: Boolean(leadId) && enabled,
+    staleTime: 60_000,
+  });
+};
+
 // Fetch distinct source, subPropertyType, city for lead filters (from backend)
 export const useLeadFilterOptions = () => {
   return useQuery({
@@ -229,6 +250,7 @@ export const useUpdateLead = () => {
 
       // 🔥 MOST IMPORTANT – refresh single lead
       queryClient.invalidateQueries({ queryKey: ['lead', id] })
+      queryClient.invalidateQueries({ queryKey: ['lead-suggested-matches', id] })
     },
   })
 }
@@ -362,12 +384,14 @@ export const useMarkDealClosed = () => {
       );
       return response.data;
     },
-    onSuccess: () => {
+    onSuccess: (_, { id }) => {
       // Invalidate all lead queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       queryClient.invalidateQueries({ queryKey: ['leads', 'my'] });
       // Deal-closed affects customer stats - refresh customers
       queryClient.invalidateQueries({ queryKey: ['customers'] });
+      queryClient.invalidateQueries({ queryKey: ['lead-suggested-matches'] });
+      if (id) queryClient.invalidateQueries({ queryKey: ['lead', id] });
     },
   });
 };
